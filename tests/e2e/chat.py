@@ -73,6 +73,9 @@ with sync_playwright() as pw:
     check("then its reply replaces the indicator", until(p, "document.querySelector('.chat-msg.is-bot') && !document.querySelector('.chat-typing')"))
     check("the reply is word for word, with formatting", plain(scene1[1]) in log_text(p) and p.locator(".chat-msg.is-bot strong").first.inner_text() == "Study mode on." and p.locator(".chat-msg.is-bot code").first.inner_text() == "@mention", log_text(p))
     check("the bot is labelled as an app", p.inner_text(".chat-msg.is-bot .chat-app") == "APP")
+    av = p.evaluate("(() => { const b = document.querySelector('.chat-msg.is-bot .chat-avatar img'); return { src: b && b.getAttribute('src'), loaded: !!b && b.complete && b.naturalWidth > 0, gray: !!b && getComputedStyle(b).filter.includes('grayscale(1)'), round: getComputedStyle(document.querySelector('.chat-avatar')).borderRadius }; })()")
+    check("AmIgo's chat head is its picture, black-and-white and round", av["src"] == "./assets/projects/amigo-avatar.jpg" and av["loaded"] and av["gray"] and av["round"] == "50%", str(av))
+    check("no book emoji in the replay", "📚" not in log_text(p) and "📕" not in log_text(p))
 
     p.click(".chat-toggle"); p.wait_for_timeout(100); count = rows(p)
     p.wait_for_timeout(1500)
@@ -80,6 +83,7 @@ with sync_playwright() as pw:
     p.click(".chat-toggle")
     check("play resumes it", until(p, f"{LOG}.includes('amigo explain how CI/CD works')") and p.inner_text(".chat-toggle") == "pause")
 
+    check("ck's chat head is the chimken icon", p.locator(".chat-msg.is-user .chat-avatar .icon-chimken").count() == 1 and p.inner_text(".chat-msg.is-user .chat-avatar").strip() == "")
     check("then the full CI/CD answer is shown", until(p, f"{LOG}.includes('should the pipeline catch and stop the broken code?') && !document.querySelector('.chat-line[hidden]')"))
     check("the CI/CD answer is word for word", plain(scene1[3]) in log_text(p), log_text(p)[-200:])
     streamed = p.evaluate("window.__streamed")
@@ -135,7 +139,7 @@ with sync_playwright() as pw:
     p = ctx.new_page(); fired = []
     p.on("dialog", lambda d: (fired.append(d.message), d.dismiss()))
     p.goto(URL); p.wait_for_load_state("networkidle"); to_chat(p); p.wait_for_timeout(300)
-    check("message text is never rendered as HTML", p.locator(".chat-log img, .chat-log b").count() == 0 and not fired and "<img src=x onerror=alert(1)>" in p.inner_text(".chat-log"))
+    check("message text is never rendered as HTML", p.locator(".chat-text img, .chat-text b").count() == 0 and not fired and "<img src=x onerror=alert(1)>" in p.inner_text(".chat-log"))
     ctx.close()
     b.close()
 finish()

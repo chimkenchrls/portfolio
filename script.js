@@ -25,6 +25,7 @@
   // A project's screenshots as [{ kind, src, label }], desktop first. Only local
   // files in ./assets/projects/ are accepted.
   const SHOT_PATH = /^\.\/assets\/projects\/[\w.-]+\.(jpe?g|png|webp)$/;
+  const ICON_NAME = /^[a-z][a-z0-9-]*$/;
   const projectShots = (project) => ['desktop', 'mobile']
     .map((kind) => ({ kind, src: project && project.media ? project.media[kind] : null, label: `${project.title} on ${kind}` }))
     .filter((shot) => typeof shot.src === 'string' && SHOT_PATH.test(shot.src));
@@ -759,6 +760,12 @@
         if (!isText(pr.chat.bot) || !Array.isArray(scenes) || !scenes.length || !scenes.every(sceneOk)) {
           errors.push(`${p}.chat: needs bot and scenes of { from: user|bot|system, text }`);
         }
+        if (pr.chat.botAvatar !== undefined && !SHOT_PATH.test(String(pr.chat.botAvatar))) {
+          errors.push(`${p}.chat.botAvatar: a file in ./assets/projects/`);
+        }
+        if (pr.chat.userIcon !== undefined && !ICON_NAME.test(String(pr.chat.userIcon))) {
+          errors.push(`${p}.chat.userIcon: the name of an icon in ./assets/icons/`);
+        }
       }
       if (pr.diagram !== undefined && pr.diagram !== null) {
         const nodeOk = (node) => node && isText(node.name) && (node.note === undefined || isText(node.note));
@@ -880,8 +887,21 @@
       const isBot = message.from === 'bot';
       const name = isBot ? chat.bot : (message.name || chat.user || 'user');
       const row = el('div', `chat-msg ${isBot ? 'is-bot' : 'is-user'}`);
-      const avatar = el('span', 'chat-avatar', name.slice(0, 1).toUpperCase());
+      // Picture for the bot, an icon for the user, else the name's first letter.
+      const avatar = el('span', 'chat-avatar');
       avatar.setAttribute('aria-hidden', 'true');
+      if (isBot && SHOT_PATH.test(String(chat.botAvatar))) {
+        const img = el('img');
+        img.src = chat.botAvatar;
+        img.alt = '';
+        img.draggable = false;
+        avatar.classList.add('has-picture');
+        avatar.append(img);
+      } else if (!isBot && ICON_NAME.test(String(chat.userIcon))) {
+        avatar.append(el('span', `icon icon-${chat.userIcon}`));
+      } else {
+        avatar.textContent = name.slice(0, 1).toUpperCase();
+      }
       const bubble = el('div', 'chat-bubble');
       const label = el('p', 'chat-name', name);
       if (isBot) label.append(el('span', 'chat-app', 'APP'));

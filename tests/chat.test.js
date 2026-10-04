@@ -77,3 +77,32 @@ test('validateData checks chat and diagram shapes', () => {
   assert.ok(validateData(bad).some((e) => e.startsWith(`projects[${i}].diagram`)));
   assert.deepEqual(validateData(data), []);
 });
+
+test('chat avatars: AmIgo has its picture, ck uses the chimken icon', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const amigo = data.projects.find((p) => p.title === 'AmIgo');
+  assert.equal(amigo.chat.botAvatar, './assets/projects/amigo-avatar.jpg');
+  const bytes = fs.readFileSync(path.join(__dirname, '..', amigo.chat.botAvatar));
+  assert.ok(bytes.length < 20 * 1024, `avatar is ${Math.round(bytes.length / 1024)} KB`);
+  assert.equal(bytes.indexOf(Buffer.from('Exif\0\0')), -1);
+  assert.equal(amigo.chat.userIcon, 'chimken');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'assets', 'icons', `${amigo.chat.userIcon}.svg`)));
+});
+
+test('the book emoji were removed from the study-mode messages', () => {
+  const amigo = data.projects.find((p) => p.title === 'AmIgo');
+  const texts = amigo.chat.scenes.flatMap((s) => s.messages).map((m) => m.text);
+  assert.ok(texts.every((t) => !/[\u{1F4D5}\u{1F4DA}]/u.test(t)), 'no 📕 / 📚');
+  assert.ok(texts.includes("**Study mode on.** Paste your notes or name a topic, then `@mention` me to have it explained, or say **quiz me** and I'll drill you on it. `/study` again to stop."));
+  assert.ok(texts.includes('**Study mode off** — back to normal.'));
+});
+
+test('validateData only accepts a local avatar and a simple icon name', () => {
+  const copy = () => JSON.parse(JSON.stringify(data));
+  const i = data.projects.findIndex((p) => p.title === 'AmIgo');
+  let bad = copy(); bad.projects[i].chat.botAvatar = 'https://evil.example/a.jpg';
+  assert.ok(validateData(bad).some((e) => e.startsWith(`projects[${i}].chat.botAvatar`)));
+  bad = copy(); bad.projects[i].chat.userIcon = 'x" onload="alert(1)';
+  assert.ok(validateData(bad).some((e) => e.startsWith(`projects[${i}].chat.userIcon`)));
+});

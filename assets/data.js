@@ -201,11 +201,13 @@ const PORTFOLIO_DATA = {
         "AmIgo is a Discord AI bot that acts like a chaotic, performative group chat friend chatting in casual Taglish when mentioned, replied to, or called by name. Powered by Google's Gemini API with per-channel conversation memory, with a study mode, and a persistent-facts system so it can remember and recall things about the server over time.",
       tags: ["Discord.js", "TypeScript", "SQLite3", "Google Gemini API"],
       links: { source: null, live: null },
-      // A real conversation with the bot, replayed in a chat window. Keep the
-      // wording exactly as it happened. **bold** and `code` are supported.
+      // A real conversation with the bot, replayed in a chat window. The wording
+      // is as it happened (minus the book emoji). **bold** and `code` are supported.
       chat: {
         bot: "AmIgo",
         user: "ck",
+        botAvatar: "./assets/projects/amigo-avatar.jpg", // the bot's picture
+        userIcon: "chimken", // an icon from ./assets/icons/ for my messages
         scenes: [
           {
             label: "study mode",
@@ -213,7 +215,7 @@ const PORTFOLIO_DATA = {
               { from: "system", text: "ck used /study" },
               {
                 from: "bot",
-                text: "📚 **Study mode on.** Paste your notes or name a topic, then `@mention` me to have it explained, or say **quiz me** and I'll drill you on it. `/study` again to stop.",
+                text: "**Study mode on.** Paste your notes or name a topic, then `@mention` me to have it explained, or say **quiz me** and I'll drill you on it. `/study` again to stop.",
               },
               { from: "user", text: "amigo explain how CI/CD works" },
               {
@@ -221,7 +223,7 @@ const PORTFOLIO_DATA = {
                 text: "CI/CD (Continuous Integration / Continuous Delivery) automates the process of building, testing, and releasing software so you can push updates quickly and safely.\n\n**Worked Example:**\nImagine you add a new \"Dark Mode\" button to your app on GitHub.\n1. **CI:** As soon as you push your code, an automated pipeline runs tests to make sure your new button didn't break existing features.\n2. **CD:** Once the tests pass, the pipeline automatically deploys the updated app to your live web server for users to see.\n\n**Quick Check:**\nIf a developer pushes code with a syntax error, at which stage—Continuous Integration (testing/building) or Continuous Deployment (releasing)—should the pipeline catch and stop the broken code?",
               },
               { from: "system", text: "ck used /study" },
-              { from: "bot", text: "📕 **Study mode off** — back to normal." },
+              { from: "bot", text: "**Study mode off** — back to normal." },
             ],
           },
           {
