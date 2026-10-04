@@ -90,7 +90,8 @@ with sync_playwright() as pw:
 
     type_run(p, "projects")
     jump = p.locator('.terminal-screen a[href="#projects"]').last
-    check("projects lists data and links to the section", "AmIgo" in screen(p) and jump.count() == 1)
+    titles = p.evaluate("PORTFOLIO_DATA.projects.map(x => x.title)")
+    check("projects lists data and links to the section", all(t in screen(p) for t in titles) and jump.count() == 1, str(titles))
     jump.click(); p.wait_for_timeout(900)
     check("section link jumps there", p.evaluate("location.hash") == "#projects")
 
@@ -108,7 +109,7 @@ with sync_playwright() as pw:
     side = p.evaluate("(() => { const a = document.querySelector('.terminal-art-pic').getBoundingClientRect(), i = document.querySelector('.terminal-art-info').getBoundingClientRect(); return a.right <= i.left + 1; })()")
     check("desktop: art sits beside the facts", side)
     nf = screen(p)
-    check("neofetch shows real facts", "chimkenchrls ------------" in " ".join(nf.split()) and "28 tools in 6 groups" in nf and "high score 3236" in nf and "STI College Lucena" in nf)
+    check("neofetch shows real facts", "chimkenchrls ------------" in " ".join(nf.split()) and "tools in" in nf and "high score 3236" in nf and "STI College Lucena" in nf)
     check("neofetch art keeps its spacing", p.eval_on_selector(".terminal-art-pic", "n => getComputedStyle(n).whiteSpace") == "pre")
     p.locator(".terminal").screenshot(path="/tmp/shots/neofetch.png") if __import__("os").path.isdir("/tmp/shots") else None
 

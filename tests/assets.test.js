@@ -175,3 +175,9 @@ test('About: no highlight chips, and the bio uses the full column width', () => 
   const bioRule = css.slice(css.indexOf('.about-bio {'), css.indexOf('}', css.indexOf('.about-bio {')));
   assert.doesNotMatch(bioRule, /max-width/, 'bio is no longer capped at 64ch');
 });
+
+test('a screenshot viewer dialog exists for enlarging project shots', () => {
+  const html = read('index.html');
+  assert.match(html, /<dialog[^>]*class="shot-viewer"/);
+  assert.match(html, /class="shot-viewer-close"/);
+});

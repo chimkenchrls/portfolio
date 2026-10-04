@@ -567,7 +567,7 @@ body.is-rail .sidebar-controls { flex-direction: column; }
   border: 1px dashed var(--fg-muted);
   border-radius: 999px;
 }
-.project-desc { max-width: 68ch; margin-top: 8px; font-size: 14px; color: var(--fg-muted); }
+.project-desc { max-width: 68ch; font-size: 14px; color: var(--fg-muted); }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
 .tag {
   padding: 2px 8px;
@@ -578,6 +578,86 @@ body.is-rail .sidebar-controls { flex-direction: column; }
   border-radius: 999px;
 }
 .project-links { display: flex; gap: 16px; margin-top: 12px; font-family: var(--font-mono); font-size: 12px; }
+
+/* Project screenshots: a browser frame with a phone overlapping its corner */
+.project-body { margin-top: 8px; }
+.project.has-media .project-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 36px;
+  align-items: start;
+}
+.project-media { position: relative; padding: 0 22px 26px 0; } /* room for the phone overhang */
+.project-media.only-desktop { padding: 0; }
+.project-media.only-mobile { display: flex; justify-content: center; padding: 0; }
+.device {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  cursor: zoom-in;
+  transition: border-color var(--t-fast) ease, transform var(--t) var(--ease);
+}
+.device:hover { border-color: var(--fg-muted); transform: translateY(-2px); }
+.device img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  filter: grayscale(1);
+  transition: filter 250ms ease;
+}
+.device:hover img,
+.device:focus-visible img { filter: none; }
+.device-desktop { width: 100%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
+.device-desktop img { height: auto; aspect-ratio: 16 / 10; }
+.device-bar { display: flex; gap: 5px; padding: 7px 9px; background: var(--bg); border-bottom: 1px solid var(--border); }
+.device-bar span { width: 6px; height: 6px; border: 1px solid var(--fg-muted); border-radius: 50%; }
+.device-mobile {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 27%;
+  aspect-ratio: 9 / 19;
+  background: var(--bg);
+  border: 2px solid var(--fg);
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
+}
+.only-mobile .device-mobile { position: static; width: 38%; }
+
+.shot-viewer {
+  max-width: min(1100px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 0;
+  overflow: auto;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.shot-viewer::backdrop { background: rgba(0, 0, 0, 0.6); }
+.shot-viewer-stage img { display: block; max-width: 100%; height: auto; }
+.shot-viewer-stage.is-mobile img { width: auto; max-height: calc(100dvh - 34px); }
+.shot-viewer-close {
+  position: sticky;
+  top: 8px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  float: right;
+  width: 32px;
+  height: 32px;
+  margin: 8px 8px -40px 0;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  line-height: 1;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
 
 /* Outside the IDE — intro beside a stacked photo deck */
 /* overflow-x: clip keeps tilted and sliding cards from widening the page. */
@@ -931,6 +1011,8 @@ body.is-rail .sidebar-controls { flex-direction: column; }
 }
 
 @media (max-width: 860px) {
+  .project.has-media .project-body { grid-template-columns: 1fr; gap: 20px; }
+  .project-media { max-width: 420px; }
   /* Stacked hero is centered, like the React site on small screens. */
   .hero { flex-direction: column; align-items: center; gap: 28px; min-height: 0; text-align: center; }
   .hero-text { align-items: center; }

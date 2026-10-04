@@ -76,7 +76,7 @@ test('whoami describes ck from the page and current education', () => {
 
 test('projects, stack, and education summarise data.js and link to their sections', () => {
   const projects = run('projects');
-  assert.ok(texts(projects).some((t) => /AmIgo/.test(t)) && texts(projects).some((t) => /Thready/.test(t)));
+  for (const { title } of data.projects) assert.ok(texts(projects).some((t) => t.includes(title)), `projects is missing ${title}`);
   assert.equal(projects.lines.at(-1).jump, 'projects');
   const stack = run('stack');
   assert.ok(stack.lines.some((l) => l.label === 'DevOps & Cloud' && /Docker \+ Compose/.test(l.text)));
@@ -229,8 +229,9 @@ test('neofetch shows the chimken art beside real facts from data.js', () => {
   assert.match(info, /role\s+Aspiring DevOps Engineer \| Cloud Engineer/);
   assert.match(info, /school\s+STI College Lucena/);
   assert.match(info, /location\s+Sariaya, Quezon, Philippines/);
-  assert.match(info, /stack\s+28 tools in 6 groups/);
-  assert.match(info, /projects\s+3/);
+  const tools = data.stack.reduce((n, group) => n + group.items.length, 0);
+  assert.match(info, new RegExp(`stack\\s+${tools} tools in ${data.stack.length} groups`));
+  assert.match(info, new RegExp(`projects\\s+${data.projects.length}\\b`));
   assert.match(info, /chimken\s+high score 3236/);
   assert.match(info, /contact\s+charleskenneth129@gmail\.com/);
 });

@@ -204,3 +204,15 @@ test('monthLabels keeps a first label that has room', () => {
   }
   assert.deepEqual(monthLabels(buildContributionWeeks(days)).map((l) => l.label), ['Jan', 'Feb']);
 });
+
+test('projectShots returns the safe screenshots of a project, desktop first', () => {
+  const { projectShots } = require('../script.js');
+  assert.deepEqual(projectShots({ title: 'X', media: { mobile: './assets/projects/x-mobile.jpg', desktop: './assets/projects/x-desktop.jpg' } }), [
+    { kind: 'desktop', src: './assets/projects/x-desktop.jpg', label: 'X on desktop' },
+    { kind: 'mobile', src: './assets/projects/x-mobile.jpg', label: 'X on mobile' },
+  ]);
+  assert.deepEqual(projectShots({ title: 'X', media: { mobile: './assets/projects/x-mobile.jpg' } }).map((s) => s.kind), ['mobile']);
+  assert.deepEqual(projectShots({ title: 'X', media: { desktop: 'javascript:alert(1)', mobile: 'https://evil.example/a.jpg' } }), []);
+  assert.deepEqual(projectShots({ title: 'X' }), []);
+  assert.deepEqual(projectShots({ title: 'X', media: null }), []);
+});

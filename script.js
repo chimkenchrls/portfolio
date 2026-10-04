@@ -22,6 +22,13 @@
 
   const PROJECT_STATUSES = ['done', 'in-progress', 'coming-soon'];
 
+  // A project's screenshots as [{ kind, src, label }], desktop first. Only local
+  // files in ./assets/projects/ are accepted.
+  const SHOT_PATH = /^\.\/assets\/projects\/[\w.-]+\.(jpe?g|png|webp)$/;
+  const projectShots = (project) => ['desktop', 'mobile']
+    .map((kind) => ({ kind, src: project && project.media ? project.media[kind] : null, label: `${project.title} on ${kind}` }))
+    .filter((shot) => typeof shot.src === 'string' && SHOT_PATH.test(shot.src));
+
   const safeLocalVideo = (src) => typeof src === 'string' && /^\.\/assets\/outside\/[\w.-]+\.mp4$/.test(src);
 
   const padCount = (value, width = 4) => {
@@ -695,6 +702,15 @@
       ['source', 'live'].forEach((k) => {
         if (links[k] !== undefined && !isOptionalUrl(links[k])) errors.push(`${p}.links.${k}: https URL or null`);
       });
+      if (pr.media !== undefined && pr.media !== null) {
+        const kinds = Object.keys(pr.media);
+        if (!kinds.length || kinds.some((kind) => !['desktop', 'mobile'].includes(kind))) {
+          errors.push(`${p}.media: use desktop and/or mobile`);
+        }
+        kinds.forEach((kind) => {
+          if (!SHOT_PATH.test(String(pr.media[kind]))) errors.push(`${p}.media.${kind}: a file in ./assets/projects/`);
+        });
+      }
     });
     checkList('certifications', data.certifications, (c, p) => {
       if (!isText(c.title) || !isText(c.issuer) || !isText(c.date)) errors.push(`${p}: title, issuer, date required`);
@@ -725,7 +741,7 @@
     module.exports = {
       SECTIONS, padCount, safeUrl, computeTiles, revealDelays, joinParts,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels,
-      isTypingTarget, resolveShortcut, validateData,
+      isTypingTarget, resolveShortcut, validateData, projectShots,
       CHIMKEN, createChimkenState, stepChimken, spawnGap,
       obstaclePool, spawnObstacle, hitsObstacle, milestone,
       chimkenView, buildSky, skyOffset, starAlpha,
@@ -870,6 +886,34 @@
       return box;
     });
 
+    // Screenshots as a device pair: a browser frame with a phone overlapping its
+    // corner. Each frame is a button that opens the shot larger (see shotViewer).
+    const deviceFrames = (shots) => {
+      const media = el('div', `project-media${shots.length === 1 ? ` only-${shots[0].kind}` : ''}`);
+      shots.forEach((shot) => {
+        const frame = el('button', `device device-${shot.kind}`);
+        frame.type = 'button';
+        frame.dataset.shot = shot.src;
+        frame.dataset.shotLabel = shot.label;
+        frame.setAttribute('aria-label', `Enlarge screenshot: ${shot.label}`);
+        if (shot.kind === 'desktop') {
+          const bar = el('span', 'device-bar');
+          bar.setAttribute('aria-hidden', 'true');
+          bar.append(el('span'), el('span'), el('span'));
+          frame.append(bar);
+        }
+        const img = el('img');
+        img.src = shot.src;
+        img.alt = '';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.draggable = false;
+        frame.append(img);
+        media.append(frame);
+      });
+      return media;
+    };
+
     const projects = ({ projects: items = [] }) => items.map((project) => {
       const li = el('li', 'project');
       const head = el('div', 'project-head');
@@ -877,7 +921,9 @@
       head.append(el('h3', 'project-title', project.title), el('span', metaClass, project.meta));
       li.append(head);
 
-      li.append(project.description
+      const body = el('div', 'project-body');
+      const info = el('div', 'project-info');
+      info.append(project.description
         ? el('p', 'project-desc', project.description)
         : pendingEl('p', 'Details coming soon.'));
 
@@ -886,7 +932,7 @@
         const ul = el('ul', 'tags');
         ul.setAttribute('aria-label', 'Technologies');
         tags.forEach((tag) => ul.append(el('li', 'tag', tag)));
-        li.append(ul);
+        info.append(ul);
       }
 
       const links = project.links || {};
@@ -896,8 +942,16 @@
         const row = el('p', 'project-links');
         if (source) row.append(externalLink(source, 'source ↗'));
         if (live) row.append(externalLink(live, 'live ↗'));
-        li.append(row);
+        info.append(row);
       }
+      body.append(info);
+
+      const shots = projectShots(project);
+      if (shots.length) {
+        li.classList.add('has-media');
+        body.append(deviceFrames(shots));
+      }
+      li.append(body);
       return li;
     });
 
@@ -2168,6 +2222,39 @@
   })();
 
   /* ==========================================================================
+     16. Screenshot viewer — enlarges a project shot in a dialog
+     ========================================================================== */
+
+  const shotViewer = (() => {
+    const init = () => {
+      const dialog = $('.shot-viewer');
+      const stage = $('.shot-viewer-stage');
+      if (!dialog || !stage || typeof dialog.showModal !== 'function') return;
+      let returnFocus = null;
+
+      document.addEventListener('click', (event) => {
+        const frame = event.target.closest('[data-shot]');
+        if (!frame) return;
+        const img = el('img');
+        img.src = frame.dataset.shot;
+        img.alt = frame.dataset.shotLabel || '';
+        stage.replaceChildren(img);
+        stage.classList.toggle('is-mobile', frame.classList.contains('device-mobile'));
+        returnFocus = frame;
+        dialog.showModal();
+      });
+      $('.shot-viewer-close', dialog).addEventListener('click', () => dialog.close());
+      dialog.addEventListener('click', (event) => { if (event.target === dialog) dialog.close(); });
+      dialog.addEventListener('close', () => {
+        stage.replaceChildren();
+        if (returnFocus && returnFocus.isConnected) returnFocus.focus({ preventScroll: true });
+        returnFocus = null;
+      });
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      99. Boot
      ========================================================================== */
 
@@ -2186,6 +2273,7 @@
     githubGraph.init(data);
     photoDeck.init(data);
     terminal.init(data);
+    shotViewer.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());
   };

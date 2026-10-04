@@ -16,10 +16,14 @@ test('content matches the approved spec', () => {
   const data = require('../assets/data.js');
   assert.equal(data.profile.email, 'charleskenneth129@gmail.com');
   assert.equal(data.profile.linkedin, 'https://www.linkedin.com/in/kennethcharlesvaldez');
-  assert.deepEqual(data.projects.map((p) => [p.title, p.status]), [
-    ['AmIgo', 'done'], ['Thready', 'in-progress'], ['Ambiancy', 'coming-soon'],
-  ]);
-  assert.equal(data.projects[2].description, null);
+  // Projects are free to be added, reordered, and reworded: check their shape, not their text.
+  assert.ok(data.projects.length >= 1);
+  const titles = data.projects.map((p) => p.title);
+  assert.equal(new Set(titles).size, titles.length, 'project titles are unique');
+  for (const project of data.projects) {
+    assert.ok(['done', 'in-progress', 'coming-soon'].includes(project.status), `${project.title}: status`);
+    assert.ok(project.description === null || project.description.trim().length > 20, `${project.title}: description`);
+  }
   assert.deepEqual(data.stack.map((g) => g.category), [
     'DevOps & Cloud', 'Security & Identity', 'Backend', 'Frontend', 'AI & Machine Learning', 'Developer Tools',
   ]);
@@ -118,4 +122,31 @@ test('validateData only accepts local mp4/webm videos', () => {
   const data = JSON.parse(JSON.stringify(require('../assets/data.js')));
   data.outside[0].video = './assets/outside/clip.mov';
   assert.ok(validateData(data).some((e) => e.startsWith('outside[0].video')));
+});
+
+test('project screenshots: listed files exist, are web-sized, and carry no metadata', () => {
+  const data = require('../assets/data.js');
+  const withMedia = data.projects.filter((p) => p.media);
+  assert.ok(withMedia.length >= 2, 'at least two projects show screenshots');
+  for (const project of withMedia) {
+    const shots = Object.entries(project.media);
+    assert.ok(shots.length >= 1 && shots.every(([kind]) => ['desktop', 'mobile'].includes(kind)), `${project.title}: desktop and/or mobile`);
+    for (const [kind, file] of shots) {
+      assert.match(file, /^\.\/assets\/projects\/[\w.-]+\.jpg$/, `${project.title} ${kind}`);
+      const bytes = fs.readFileSync(path.join(ROOT, file));
+      assert.ok(bytes.length < 250 * 1024, `${file} is ${Math.round(bytes.length / 1024)} KB`);
+      assert.equal(bytes.indexOf(Buffer.from('Exif\0\0')), -1, `${file} has EXIF metadata`);
+    }
+  }
+});
+
+test('validateData rejects screenshots outside assets/projects or of unknown kinds', () => {
+  const { validateData } = require('../script.js');
+  const data = JSON.parse(JSON.stringify(require('../assets/data.js')));
+  data.projects[0].media = { desktop: 'https://evil.example/x.jpg' };
+  assert.ok(validateData(data).some((e) => e.startsWith('projects[0].media.desktop')));
+  data.projects[0].media = { tablet: './assets/projects/x.jpg' };
+  assert.ok(validateData(data).some((e) => e.startsWith('projects[0].media')));
+  data.projects[0].media = null;
+  assert.ok(!validateData(data).some((e) => e.startsWith('projects[0].media')), 'null means no screenshots');
 });

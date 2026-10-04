@@ -136,13 +136,40 @@ const PORTFOLIO_DATA = {
 
   projects: [
     {
-      title: "AmIgo",
-      meta: "2026",
-      status: "done",
+      title: "Ambiancy",
+      meta: "in progress",
+      status: "in-progress",
       description:
-        "AmIgo is a Discord AI bot that acts like a chaotic, performative group chat friend chatting in casual Taglish when mentioned, replied to, or called by name. Powered by Google's Gemini API with per-channel conversation memory, with an English tutor mode, and a persistent-facts system so it can remember and recall things about the server over time.",
-      tags: ["Discord.js", "TypeScript", "SQLite3", "Google Gemini API"],
-      links: { source: null, live: null },
+        "A free ambient sound mixer. Layer sounds such as rain, a fireplace and a coffee shop, set each one's volume, and share the mix by link. Built as a DevOps portfolio project: the app is small, and the way it is built, shipped and run is the point.",
+      tags: ["React", "TypeScript", "Vite", "Vitest", "Docker Compose", "nginx"],
+      links: { source: "https://github.com/chimkenchrls/ambiancy", live: null },
+      // Screenshots live in ./assets/projects/ (desktop and/or mobile).
+      media: {
+        desktop: "./assets/projects/ambiancy-desktop.jpg",
+        mobile: "./assets/projects/ambiancy-mobile.jpg",
+      },
+    },
+    {
+      title: "Pakisuyo Express",
+      meta: "2026",
+      status: "in-progress",
+      description:
+        "A website for a local food delivery service whose orders were taken entirely by hand through Facebook Messenger. The site provides a validated order form with map-pin location capture, a directory of more than 150 stores in Sariaya and Lucena sourced from OpenStreetMap, and an interactive preview of a future delivery app.",
+      tags: [
+        "Vite",
+        "GitHub Actions",
+        "Lighthouse CI",
+        "Playwright",
+        "Netlify",
+      ],
+      links: {
+        source: "https://github.com/chimkenchrls/pakisuyo-express",
+        live: "https://pakisuyoexpress.netlify.app",
+      },
+      media: {
+        desktop: "./assets/projects/pakisuyo-express-desktop.jpg",
+        mobile: "./assets/projects/pakisuyo-express-mobile.jpg",
+      },
     },
     {
       title: "Thready",
@@ -163,11 +190,12 @@ const PORTFOLIO_DATA = {
       links: { source: null, live: null },
     },
     {
-      title: "Ambiancy",
-      meta: "coming soon",
-      status: "coming-soon",
-      description: null,
-      tags: ["coming soon"],
+      title: "AmIgo",
+      meta: "2026",
+      status: "done",
+      description:
+        "AmIgo is a Discord AI bot that acts like a chaotic, performative group chat friend chatting in casual Taglish when mentioned, replied to, or called by name. Powered by Google's Gemini API with per-channel conversation memory, with an English tutor mode, and a persistent-facts system so it can remember and recall things about the server over time.",
+      tags: ["Discord.js", "TypeScript", "SQLite3", "Google Gemini API"],
       links: { source: null, live: null },
     },
   ],
