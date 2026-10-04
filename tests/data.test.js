@@ -150,3 +150,20 @@ test('validateData rejects screenshots outside assets/projects or of unknown kin
   data.projects[0].media = null;
   assert.ok(!validateData(data).some((e) => e.startsWith('projects[0].media')), 'null means no screenshots');
 });
+
+test('three projects show desktop + mobile screenshots (Ambiancy, Pakisuyo Express, Thready)', () => {
+  const data = require('../assets/data.js');
+  const both = data.projects.filter((p) => p.media && p.media.desktop && p.media.mobile);
+  assert.ok(both.length >= 3, `only ${both.length} projects have both screenshots`);
+});
+
+test("a project's description uses the same feature names as its chat replay", () => {
+  const data = require('../assets/data.js');
+  for (const project of data.projects.filter((p) => p.chat)) {
+    const said = project.chat.scenes.flatMap((s) => s.messages).map((m) => m.text).join(' ');
+    if (/study mode/i.test(said)) {
+      assert.match(project.description, /study mode/i, `${project.title}: the bot calls it "study mode"`);
+      assert.doesNotMatch(project.description, /tutor mode/i, `${project.title}: description still says "tutor mode"`);
+    }
+  }
+});

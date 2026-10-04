@@ -188,15 +188,63 @@ const PORTFOLIO_DATA = {
         "Tailscale",
       ],
       links: { source: null, live: null },
+      media: {
+        desktop: "./assets/projects/thready-desktop.jpg",
+        mobile: "./assets/projects/thready-mobile.jpg",
+      },
     },
     {
       title: "AmIgo",
       meta: "2026",
       status: "done",
       description:
-        "AmIgo is a Discord AI bot that acts like a chaotic, performative group chat friend chatting in casual Taglish when mentioned, replied to, or called by name. Powered by Google's Gemini API with per-channel conversation memory, with an English tutor mode, and a persistent-facts system so it can remember and recall things about the server over time.",
+        "AmIgo is a Discord AI bot that acts like a chaotic, performative group chat friend chatting in casual Taglish when mentioned, replied to, or called by name. Powered by Google's Gemini API with per-channel conversation memory, with a study mode, and a persistent-facts system so it can remember and recall things about the server over time.",
       tags: ["Discord.js", "TypeScript", "SQLite3", "Google Gemini API"],
       links: { source: null, live: null },
+      // A real conversation with the bot, replayed in a chat window. Keep the
+      // wording exactly as it happened. **bold** and `code` are supported.
+      chat: {
+        bot: "AmIgo",
+        user: "ck",
+        scenes: [
+          {
+            label: "study mode",
+            messages: [
+              { from: "system", text: "ck used /study" },
+              {
+                from: "bot",
+                text: "📚 **Study mode on.** Paste your notes or name a topic, then `@mention` me to have it explained, or say **quiz me** and I'll drill you on it. `/study` again to stop.",
+              },
+              { from: "user", text: "amigo explain how CI/CD works" },
+              {
+                from: "bot",
+                text: "CI/CD (Continuous Integration / Continuous Delivery) automates the process of building, testing, and releasing software so you can push updates quickly and safely.\n\n**Worked Example:**\nImagine you add a new \"Dark Mode\" button to your app on GitHub.\n1. **CI:** As soon as you push your code, an automated pipeline runs tests to make sure your new button didn't break existing features.\n2. **CD:** Once the tests pass, the pipeline automatically deploys the updated app to your live web server for users to see.\n\n**Quick Check:**\nIf a developer pushes code with a syntax error, at which stage—Continuous Integration (testing/building) or Continuous Deployment (releasing)—should the pipeline catch and stop the broken code?",
+              },
+              { from: "system", text: "ck used /study" },
+              { from: "bot", text: "📕 **Study mode off** — back to normal." },
+            ],
+          },
+          {
+            label: "banter",
+            messages: [
+              { from: "user", text: "hello amigo" },
+              {
+                from: "bot",
+                text: "yo, ano'ng ganap? ako lang ba 'yung 6'0 ft, family oriented, at marunong sumagot ng po at opo dito? haha, kamusta bro?",
+              },
+            ],
+          },
+        ],
+      },
+      // How it fits together (from the bot's own code; no hosting claims).
+      diagram: {
+        flow: [
+          { name: "Discord", note: "mentions · slash commands" },
+          { name: "AmIgo", note: "Node.js · TypeScript · discord.js" },
+          { name: "Gemini API", note: "streamed replies" },
+        ],
+        store: { name: "SQLite", note: "chat memory · saved notes" },
+      },
     },
   ],
 

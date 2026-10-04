@@ -181,3 +181,16 @@ test('a screenshot viewer dialog exists for enlarging project shots', () => {
   assert.match(html, /<dialog[^>]*class="shot-viewer"/);
   assert.match(html, /class="shot-viewer-close"/);
 });
+
+test('desktop screenshots are shown whole in their frame, never cropped', () => {
+  const css = read('style.css');
+  const rule = css.slice(css.indexOf('.device-desktop img {'), css.indexOf('}', css.indexOf('.device-desktop img {')));
+  assert.match(rule, /object-fit:\s*contain/);
+  assert.match(rule, /aspect-ratio:\s*16 \/ 10/, 'the frame keeps a fixed shape so nothing jumps while images load');
+});
+
+test('the GitHub panel reserves its space instead of popping in', () => {
+  const js = read('script.js');
+  assert.match(js, /skeletonDays\(/, 'a placeholder grid is drawn before the data arrives');
+  assert.doesNotMatch(js, /catch \{\s*panel\.hidden = true;/, 'a failed load must not collapse the panel');
+});

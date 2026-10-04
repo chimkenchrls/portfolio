@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 from common import check, finish, new_page
 
 SHOTS = os.environ.get("SHOTS")
-GEO = """() => [...document.querySelectorAll('.project.has-media')].map(li => {
+GEO = """() => [...document.querySelectorAll('.project.has-media:not(.has-chat)')].map(li => {
   const r = (s) => { const n = li.querySelector(s); if (!n) return null; const b = n.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
   const imgs = [...li.querySelectorAll('.device img')];
   return { title: li.querySelector('.project-title').textContent, info: r('.project-info'), media: r('.project-media'), desktop: r('.device-desktop'), mobile: r('.device-mobile'),
@@ -20,7 +20,8 @@ with sync_playwright() as pw:
         plain = p.evaluate("PORTFOLIO_DATA.projects.filter(x => !x.media).length")
         rows = p.evaluate(GEO)
         check(f"{name}: every project with screenshots shows frames", [r["title"] for r in rows] == expected and len(rows) >= 2, str([r["title"] for r in rows]))
-        check(f"{name}: projects without screenshots stay text-only", p.locator(".project:not(.has-media)").count() == plain)
+        chats = p.evaluate("PORTFOLIO_DATA.projects.filter(x => !x.media && x.chat).length")
+        check(f"{name}: projects without screenshots or a chat stay text-only", p.locator(".project:not(.has-media)").count() == plain - chats)
         for r in rows:
             t = r["title"]
             check(f"{name}: {t}: screenshots loaded", r["loaded"])

@@ -612,7 +612,9 @@ body.is-rail .sidebar-controls { flex-direction: column; }
 .device:hover img,
 .device:focus-visible img { filter: none; }
 .device-desktop { width: 100%; border-radius: 8px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); }
-.device-desktop img { height: auto; aspect-ratio: 16 / 10; }
+/* The frame keeps a fixed 16:10 shape (nothing jumps while images load) and
+   shows the whole screenshot; a wider shot leaves a little empty window below. */
+.device-desktop img { height: auto; aspect-ratio: 16 / 10; object-fit: contain; }
 .device-bar { display: flex; gap: 5px; padding: 7px 9px; background: var(--bg); border-bottom: 1px solid var(--border); }
 .device-bar span { width: 6px; height: 6px; border: 1px solid var(--fg-muted); border-radius: 50%; }
 .device-mobile {
@@ -627,6 +629,109 @@ body.is-rail .sidebar-controls { flex-direction: column; }
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
 }
 .only-mobile .device-mobile { position: static; width: 38%; }
+
+/* Chat replay (a project's real conversation) */
+.project.has-chat .project-body { grid-template-columns: minmax(0, 1fr) 360px; }
+.project-media.is-chat { padding: 0; }
+.chat { overflow: hidden; font-size: 13px; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 8px; }
+.chat-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.chat-title { font-weight: 600; color: var(--fg); }
+.chat-scene:not(:empty)::before { content: "· "; }
+.chat-toggle {
+  margin-left: auto;
+  padding: 1px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.chat-toggle:hover { color: var(--fg); border-color: var(--fg-muted); }
+.chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 340px;
+  padding: 12px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.chat-log:focus-visible { outline: 1px solid var(--fg-muted); outline-offset: -3px; }
+.chat-msg { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+.chat-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.is-bot .chat-avatar { color: var(--bg); background: var(--fg); border-color: var(--fg); }
+.chat-name { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.chat-app {
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--bg);
+  background: var(--fg);
+  border-radius: 3px;
+}
+.chat-text { overflow-wrap: anywhere; }
+.chat-gap { height: 8px; }
+.chat-text code {
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+}
+.chat-system,
+.chat-typing,
+.chat-divider { padding-left: 38px; font-family: var(--font-mono); font-size: 11px; color: var(--fg-muted); }
+.chat-system::before { content: "↳ "; }
+.chat-divider { padding: 6px 0 0; text-align: center; border-top: 1px dashed var(--border); }
+@media (prefers-reduced-motion: no-preference) {
+  .chat-dots { animation: chat-blink 1s steps(1) infinite; }
+}
+@keyframes chat-blink {
+  50% { opacity: 0.2; }
+}
+
+/* Architecture diagram: boxes joined by arrows, a store under the middle one */
+.diagram { margin-top: 18px; font-family: var(--font-mono); }
+.diagram-flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: stretch; gap: 6px; }
+.diagram-node {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px;
+  text-align: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.diagram-node strong { font-size: 12px; font-weight: 600; }
+.diagram-node span { font-size: 10px; line-height: 1.4; color: var(--fg-muted); overflow-wrap: anywhere; }
+.diagram-node.is-store { border-style: dashed; }
+.diagram-arrow { align-self: center; font-size: 13px; color: var(--fg-muted); }
+.diagram-store { display: grid; justify-items: center; gap: 2px; width: 46%; margin: 2px auto 0; }
 
 .shot-viewer {
   max-width: min(1100px, calc(100vw - 32px));
@@ -1013,6 +1118,8 @@ body.is-rail .sidebar-controls { flex-direction: column; }
 @media (max-width: 860px) {
   .project.has-media .project-body { grid-template-columns: 1fr; gap: 20px; }
   .project-media { max-width: 420px; }
+  .project.has-chat .project-body { grid-template-columns: 1fr; }
+  .project-media.is-chat { max-width: none; }
   /* Stacked hero is centered, like the React site on small screens. */
   .hero { flex-direction: column; align-items: center; gap: 28px; min-height: 0; text-align: center; }
   .hero-text { align-items: center; }

@@ -216,3 +216,15 @@ test('projectShots returns the safe screenshots of a project, desktop first', ()
   assert.deepEqual(projectShots({ title: 'X' }), []);
   assert.deepEqual(projectShots({ title: 'X', media: null }), []);
 });
+
+test('skeletonDays is a full, empty 53-week grid ending this week (placeholder for the GitHub graph)', () => {
+  const { skeletonDays, buildContributionWeeks } = require('../script.js');
+  const days = skeletonDays(Date.UTC(2026, 9, 7)); // a Wednesday
+  assert.equal(days.length, 53 * 7);
+  assert.ok(days.every((d) => d.level === 0 && d.count === 0 && /^\d{4}-\d{2}-\d{2}$/.test(d.date)));
+  assert.equal(new Date(`${days[0].date}T00:00:00Z`).getUTCDay(), 0, 'starts on a Sunday');
+  assert.equal(days[days.length - 1].date, '2026-10-10', 'ends on the Saturday of the current week');
+  const weeks = buildContributionWeeks(days);
+  assert.equal(weeks.length, 53);
+  assert.ok(weeks.every((w) => w.length === 7 && w.every(Boolean)));
+});

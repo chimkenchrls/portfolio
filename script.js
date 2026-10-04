@@ -29,6 +29,43 @@
     .map((kind) => ({ kind, src: project && project.media ? project.media[kind] : null, label: `${project.title} on ${kind}` }))
     .filter((shot) => typeof shot.src === 'string' && SHOT_PATH.test(shot.src));
 
+  /* Chat replay (pure). A project's `chat` holds real conversations as scenes of
+     { from: 'user' | 'bot' | 'system', text }. Text may use **bold** and `code`;
+     everything else is shown literally. */
+  const chatTokens = (text) => String(text == null ? '' : text).split('\n').map((line) => {
+    const tokens = [];
+    let rest = line;
+    const pattern = /\*\*([^*]+)\*\*|`([^`]+)`/;
+    while (rest) {
+      const match = pattern.exec(rest);
+      if (!match) { tokens.push({ text: rest }); break; }
+      if (match.index > 0) tokens.push({ text: rest.slice(0, match.index) });
+      tokens.push(match[1] !== undefined ? { text: match[1], style: 'bold' } : { text: match[2], style: 'code' });
+      rest = rest.slice(match.index + match[0].length);
+    }
+    return tokens;
+  });
+
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+  // How long before a message appears, and how long the bot "types" first (ms).
+  const chatTiming = (message) => {
+    const length = String((message && message.text) || '').length;
+    if (message && message.from === 'bot') return { delay: 400, typing: clamp(600 + length * 2, 600, 2400) };
+    return { delay: message && message.from === 'system' ? 600 : 900, typing: 0 };
+  };
+
+  // Flattens scenes into ordered steps; the last step of a scene holds long
+  // enough to read what the bot said before the next scene starts.
+  const chatScript = (scenes) => (Array.isArray(scenes) ? scenes : []).flatMap((scene, sceneIndex) => {
+    const messages = (scene && scene.messages) || [];
+    const botChars = messages.filter((m) => m.from === 'bot').reduce((n, m) => n + String(m.text || '').length, 0);
+    return messages.map((message, index) => {
+      const last = index === messages.length - 1;
+      return { scene: sceneIndex, index, message, ...chatTiming(message), last, hold: last ? clamp(2500 + botChars * 25, 3000, 20000) : 0 };
+    });
+  });
+
   const safeLocalVideo = (src) => typeof src === 'string' && /^\.\/assets\/outside\/[\w.-]+\.mp4$/.test(src);
 
   const padCount = (value, width = 4) => {
@@ -499,6 +536,19 @@
     return weeks;
   };
 
+  // An empty 53-week grid ending this week: the GitHub panel draws it right
+  // away so the page doesn't jump when the real data arrives.
+  const skeletonDays = (nowMs) => {
+    const DAY = 24 * 60 * 60 * 1000;
+    const today = new Date(nowMs);
+    const end = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()) + (6 - today.getUTCDay()) * DAY;
+    return Array.from({ length: 53 * 7 }, (_, i) => ({
+      date: new Date(end - (53 * 7 - 1 - i) * DAY).toISOString().slice(0, 10),
+      count: 0,
+      level: 0,
+    }));
+  };
+
   // Month label per column, GitHub-style: a week is labeled by the month of
   // its first day. A cramped first label (< 3 weeks wide) is dropped.
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -702,6 +752,21 @@
       ['source', 'live'].forEach((k) => {
         if (links[k] !== undefined && !isOptionalUrl(links[k])) errors.push(`${p}.links.${k}: https URL or null`);
       });
+      if (pr.chat !== undefined && pr.chat !== null) {
+        const scenes = pr.chat.scenes;
+        const sceneOk = (scene) => scene && Array.isArray(scene.messages) && scene.messages.length > 0
+          && scene.messages.every((m) => m && ['user', 'bot', 'system'].includes(m.from) && isText(m.text));
+        if (!isText(pr.chat.bot) || !Array.isArray(scenes) || !scenes.length || !scenes.every(sceneOk)) {
+          errors.push(`${p}.chat: needs bot and scenes of { from: user|bot|system, text }`);
+        }
+      }
+      if (pr.diagram !== undefined && pr.diagram !== null) {
+        const nodeOk = (node) => node && isText(node.name) && (node.note === undefined || isText(node.note));
+        const { flow, store } = pr.diagram;
+        if (!Array.isArray(flow) || !flow.length || !flow.every(nodeOk) || (store !== undefined && !nodeOk(store))) {
+          errors.push(`${p}.diagram: needs flow of { name, note? } and an optional store`);
+        }
+      }
       if (pr.media !== undefined && pr.media !== null) {
         const kinds = Object.keys(pr.media);
         if (!kinds.length || kinds.some((kind) => !['desktop', 'mobile'].includes(kind))) {
@@ -740,8 +805,9 @@
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       SECTIONS, padCount, safeUrl, computeTiles, revealDelays, joinParts,
-      parseContributions, buildContributionWeeks, dotRadius, monthLabels,
+      parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
+      chatTokens, chatTiming, chatScript,
       CHIMKEN, createChimkenState, stepChimken, spawnGap,
       obstaclePool, spawnObstacle, hitsObstacle, milestone,
       chimkenView, buildSky, skyOffset, starAlpha,
@@ -800,6 +866,149 @@
     region.textContent = '';
     window.setTimeout(() => { region.textContent = message; }, 50);
   };
+
+  /* ==========================================================================
+     2b. Chat replay — plays a project's real conversation into its chat window
+     ========================================================================== */
+
+  const chatReplay = (() => {
+    const pending = [];
+    const LINE_MS = 320; // the real bot streams its replies; long ones arrive line by line
+
+    const messageEl = (message, chat) => {
+      if (message.from === 'system') return el('p', 'chat-system', message.text);
+      const isBot = message.from === 'bot';
+      const name = isBot ? chat.bot : (message.name || chat.user || 'user');
+      const row = el('div', `chat-msg ${isBot ? 'is-bot' : 'is-user'}`);
+      const avatar = el('span', 'chat-avatar', name.slice(0, 1).toUpperCase());
+      avatar.setAttribute('aria-hidden', 'true');
+      const bubble = el('div', 'chat-bubble');
+      const label = el('p', 'chat-name', name);
+      if (isBot) label.append(el('span', 'chat-app', 'APP'));
+      const text = el('div', 'chat-text');
+      chatTokens(message.text).forEach((tokens) => {
+        const line = el('p', tokens.length ? 'chat-line' : 'chat-line chat-gap');
+        tokens.forEach((token) => {
+          if (token.style === 'bold') line.append(el('strong', null, token.text));
+          else if (token.style === 'code') line.append(el('code', null, token.text));
+          else line.append(document.createTextNode(token.text));
+        });
+        text.append(line);
+      });
+      bubble.append(label, text);
+      row.append(avatar, bubble);
+      return row;
+    };
+
+    const start = (box, chat) => {
+      const log = $('.chat-log', box);
+      const toggle = $('.chat-toggle', box);
+      const sceneLabel = $('.chat-scene', box);
+      const steps = chatScript(chat.scenes);
+      if (!steps.length) return;
+
+      // Reduced motion: the whole transcript, no animation.
+      if (prefersReducedMotion()) {
+        chat.scenes.forEach((scene, i) => {
+          if (i) log.append(el('p', 'chat-divider', scene.label || ''));
+          scene.messages.forEach((message) => log.append(messageEl(message, chat)));
+        });
+        sceneLabel.textContent = 'transcript';
+        toggle.hidden = true;
+        return;
+      }
+
+      const typing = el('p', 'chat-typing', `${chat.bot} is typing`);
+      typing.append(el('span', 'chat-dots', '…'));
+      let position = 0;
+      let timer = 0;
+      let paused = false;
+      let visible = false;
+      let active = false;
+      let unfinished = null; // the message currently streaming in, if any
+
+      const wait = (fn, ms) => { timer = window.setTimeout(fn, ms); };
+      const toBottom = () => { log.scrollTop = log.scrollHeight; };
+
+      const reveal = (row, done) => {
+        const lines = $$('.chat-line', row);
+        if (lines.length < 2) { done(); return; }
+        lines.slice(1).forEach((line) => { line.hidden = true; });
+        let shown = 1;
+        const more = () => {
+          if (shown >= lines.length) { done(); return; }
+          lines[shown].hidden = false;
+          shown += 1;
+          toBottom();
+          wait(more, LINE_MS);
+        };
+        wait(more, LINE_MS);
+      };
+
+      const play = () => {
+        if (paused || !visible) { active = false; return; }
+        active = true;
+        const step = steps[position];
+        if (step.index === 0) { // start of a scene: clear the previous one
+          log.replaceChildren();
+          sceneLabel.textContent = chat.scenes[step.scene].label || '';
+        }
+        const show = () => {
+          typing.remove();
+          const row = messageEl(step.message, chat);
+          log.append(row);
+          unfinished = row;
+          toBottom();
+          const after = () => {
+            unfinished = null;
+            position = (position + 1) % steps.length;
+            wait(play, step.hold);
+          };
+          if (step.message.from === 'bot') reveal(row, after); else after();
+        };
+        wait(() => {
+          if (!step.typing) { show(); return; }
+          log.append(typing);
+          toBottom();
+          wait(show, step.typing);
+        }, step.delay);
+      };
+
+      // Stopping keeps everything already shown. Only a half-streamed message is
+      // removed, and that step starts over when the replay resumes.
+      const halt = () => {
+        window.clearTimeout(timer);
+        typing.remove();
+        if (unfinished) { unfinished.remove(); unfinished = null; }
+        active = false;
+      };
+      const resume = () => { if (!active && !paused && visible) play(); };
+
+      toggle.addEventListener('click', () => {
+        paused = !paused;
+        toggle.textContent = paused ? 'play' : 'pause';
+        toggle.setAttribute('aria-pressed', String(paused));
+        if (paused) halt(); else resume();
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) halt(); else resume();
+      });
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(([entry]) => {
+          visible = entry.isIntersecting;
+          if (visible) resume(); else halt();
+        }, { threshold: 0.3 }).observe(box);
+      } else {
+        visible = true;
+        play();
+      }
+    };
+
+    return {
+      register: (box, chat) => pending.push([box, chat]),
+      init: () => { pending.splice(0).forEach(([box, chat]) => start(box, chat)); },
+    };
+  })();
 
   /* ==========================================================================
      3. Render — builds list sections from PORTFOLIO_DATA
@@ -914,6 +1123,53 @@
       return media;
     };
 
+    // A small architecture diagram: a row of boxes joined by arrows, with an
+    // optional data store hanging under the middle box.
+    const diagramEl = (diagram) => {
+      const nodeEl = (node, extra = '') => {
+        const box = el('div', `diagram-node${extra}`);
+        box.append(el('strong', null, node.name));
+        if (node.note) box.append(el('span', null, node.note));
+        return box;
+      };
+      const wrap = el('div', 'diagram');
+      wrap.setAttribute('role', 'img');
+      const names = diagram.flow.map((node) => node.name).join(' to ');
+      wrap.setAttribute('aria-label', `Architecture: ${names}${diagram.store ? `; data stored in ${diagram.store.name}` : ''}`);
+      const flow = el('div', 'diagram-flow');
+      diagram.flow.forEach((node, i) => {
+        if (i) flow.append(el('span', 'diagram-arrow', '⇄'));
+        flow.append(nodeEl(node));
+      });
+      wrap.append(flow);
+      if (diagram.store && diagram.store.name) {
+        const store = el('div', 'diagram-store');
+        store.append(el('span', 'diagram-arrow', '⇅'), nodeEl(diagram.store, ' is-store'));
+        wrap.append(store);
+      }
+      [...wrap.children].forEach((child) => child.setAttribute('aria-hidden', 'true'));
+      return wrap;
+    };
+
+    // The chat window shell; chatReplay (below) plays the conversation into it.
+    const chatWindow = (chat) => {
+      const media = el('div', 'project-media is-chat');
+      const box = el('div', 'chat');
+      const bar = el('div', 'chat-bar');
+      const toggle = el('button', 'chat-toggle', 'pause');
+      toggle.type = 'button';
+      bar.append(el('span', 'chat-title', chat.bot), el('span', 'chat-scene'), toggle);
+      const log = el('div', 'chat-log');
+      log.setAttribute('role', 'log');
+      log.setAttribute('aria-live', 'off');
+      log.setAttribute('aria-label', `Replay of a real conversation with ${chat.bot}`);
+      log.tabIndex = 0;
+      box.append(bar, log);
+      media.append(box);
+      chatReplay.register(box, chat);
+      return media;
+    };
+
     const projects = ({ projects: items = [] }) => items.map((project) => {
       const li = el('li', 'project');
       const head = el('div', 'project-head');
@@ -946,10 +1202,17 @@
       }
       body.append(info);
 
+      if (project.diagram && Array.isArray(project.diagram.flow) && project.diagram.flow.length) {
+        info.append(diagramEl(project.diagram));
+      }
+
       const shots = projectShots(project);
       if (shots.length) {
         li.classList.add('has-media');
         body.append(deviceFrames(shots));
+      } else if (chatScript(project.chat && project.chat.scenes).length) {
+        li.classList.add('has-media', 'has-chat');
+        body.append(chatWindow(project.chat));
       }
       li.append(body);
       return li;
@@ -1819,13 +2082,15 @@
       return node;
     };
 
-    const draw = (graph, days) => {
+    // With `placeholder`, draws the empty grid shown while loading: same size
+    // as the real graph, no labels or tooltips.
+    const draw = (graph, days, placeholder = false) => {
       const weeks = buildContributionWeeks(days);
       const width = weeks.length * CELL;
       const height = 7 * CELL;
       // Scales to the panel width: the whole year always fits, never scrolls.
       const svg = svgEl('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img' });
-      svg.setAttribute('aria-label', 'GitHub contribution activity over the last year');
+      svg.setAttribute('aria-label', placeholder ? 'Loading GitHub contributions' : 'GitHub contribution activity over the last year');
       weeks.forEach((week, col) => {
         week.forEach((d, row) => {
           if (!d) return;
@@ -1836,15 +2101,17 @@
             fill: 'currentColor',
           });
           if (d.level === 0) dot.setAttribute('class', 'github-dot-empty');
-          const title = svgEl('title', {});
-          title.textContent = `${d.count} contribution${d.count === 1 ? '' : 's'} on ${d.date}`;
-          dot.append(title);
+          if (!placeholder) {
+            const title = svgEl('title', {});
+            title.textContent = `${d.count} contribution${d.count === 1 ? '' : 's'} on ${d.date}`;
+            dot.append(title);
+          }
           svg.append(dot);
         });
       });
       const months = el('div', 'github-months');
       months.setAttribute('aria-hidden', 'true');
-      monthLabels(weeks).forEach(({ col, label }) => {
+      (placeholder ? [] : monthLabels(weeks)).forEach(({ col, label }) => {
         const tag = el('span', 'github-month', label);
         tag.style.left = `${(col / weeks.length) * 100}%`;
         months.append(tag);
@@ -1860,12 +2127,12 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const parsed = parseContributions(await response.json());
         if (!parsed) throw new Error('Unusable contributions payload');
-        panel.hidden = false;
         draw($('.github-graph', panel), parsed.days);
         $('.github-total', panel).textContent =
           `${parsed.total.toLocaleString('en-US')} contribution${parsed.total === 1 ? '' : 's'} in the last year`;
       } catch {
-        panel.hidden = true;
+        // Keep the panel and its empty grid: collapsing it would shift the page.
+        $('.github-total', panel).textContent = 'contributions unavailable right now';
       } finally {
         window.clearTimeout(timer);
       }
@@ -1880,6 +2147,11 @@
       const link = $('.github-user', panel);
       link.href = `https://github.com/${encodeURIComponent(username)}`;
       link.textContent = `@${username} ↗`;
+
+      // Show the panel at its final size immediately, with an empty grid.
+      draw($('.github-graph', panel), skeletonDays(Date.now()), true);
+      $('.github-total', panel).textContent = 'loading contributions…';
+      panel.hidden = false;
 
       const section = document.getElementById('stack');
       if (!('IntersectionObserver' in window) || !section) { load(panel, username); return; }
@@ -2274,6 +2546,7 @@
     photoDeck.init(data);
     terminal.init(data);
     shotViewer.init();
+    chatReplay.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());
   };
