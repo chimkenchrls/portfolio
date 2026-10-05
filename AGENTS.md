@@ -50,7 +50,7 @@ Tokens (`:root`, dark under `[data-theme="dark"]`):
 
 Typography: Geist (body), Geist Mono (nav, labels, metadata, dates, tags; uppercase with wide letter-spacing for section labels; sidebar nav and actions in Title Case), Geist Pixel (hero name only).
 
-Layout: fixed 260px sidebar + scrolling main column (max 880px) on desktop (>1024px, collapsible to a 64px rail); 64px icon rail on tablet (640–1024px); sticky top bar + slide-in drawer on mobile (<640px).
+Layout: fixed 224px sidebar + scrolling main column (max 880px) on desktop (>1024px, collapsible to a 64px rail); 64px icon rail on tablet (640–1024px); sticky top bar + slide-in drawer on mobile (<640px).
 
 Visual Style: 1px `var(--border)` dividers; gradient-line section dividers with mono labels; content blocks sit on `.card` surfaces (`--surface`, `--radius-lg`, soft `--shadow`, lifting 2px to `--shadow-lift` on hover) — the palette stays monochrome, with green only for status dots; list rows with the title on the left and the date/status on the right in small muted mono; dashed borders mark "coming soon" content. Imagery is black-and-white.
 
