@@ -354,3 +354,15 @@ test('corn floats near the top of a tap jump, so a normal jump can grab it', () 
   assert.ok(inBand > 0.25, `a tap jump only spends ${inBand.toFixed(3)}s at corn height`);
   assert.ok(low > 0, 'still unreachable from the ground');
 });
+
+test('scoreRow: the sidebar line shows the score to beat, then your best against it', () => {
+  const { scoreRow } = require('../script.js');
+  const rival = { owner: 'ck', highScore: 3236 };
+  assert.equal(scoreRow(120, null), null, 'nothing to show without a score to beat');
+  assert.deepEqual([scoreRow(0, rival).label, scoreRow(0, rival).value], ['beat ck', '03236']);
+  assert.deepEqual(scoreRow(NaN, rival).value, '03236', 'no saved score yet');
+  assert.deepEqual([scoreRow(120.7, rival).label, scoreRow(120.7, rival).value], ['you / ck', '00120 / 03236']);
+  assert.equal(scoreRow(3236, rival).label, 'you / ck', 'a tie is not a win');
+  assert.deepEqual([scoreRow(4000, rival).label, scoreRow(4000, rival).value], ['you beat ck', '04000 / 03236']);
+  assert.match(scoreRow(120, rival).hint, /Play chimken/);
+});

@@ -14,8 +14,8 @@
   const SECTIONS = [
     { id: 'home', label: 'Home', key: '1' },
     { id: 'about', label: 'About', key: '2' },
-    { id: 'stack', label: 'Stack', key: '3' },
-    { id: 'projects', label: 'Projects', key: '4' },
+    { id: 'projects', label: 'Projects', key: '3' },
+    { id: 'stack', label: 'Stack', key: '4' },
     { id: 'certifications', label: 'Certifications', key: '5' },
     { id: 'contact', label: 'Contact', key: '6' },
   ];
@@ -132,12 +132,22 @@
   /* "Get in touch" terminal (pure). runCommand turns typed input into output
      lines plus an optional action; the DOM module only prints and performs.
      A line is { text, label?, href?, jump?, copy?, kind? } — always plain text. */
-  // chimken's 12x12 run frame — drawn by the game and by `neofetch`.
-  const CHIMKEN_SPRITE = [
-    '......X.X...', '.....XXXX...', '.....X.XXX..', '.....XXXXXXX',
-    'X....XXXXX..', 'XX..XXXXXX..', 'XXXXXXXXXX..', 'XXXXXXXXXX..',
-    '.XXXXXXXXX..', '..XXXXXXX...', '...X...X....', '..XX..XX....',
+  // chimken's 12x12 frames — drawn by the game, the hero yard and `neofetch`.
+  // K = outline, W = body, S = shaded belly, A = comb, beak and legs.
+  const CHIMKEN_BODY = [
+    '........A...', '.......KAK..', '.KK...KWWWK.', 'KWWK..KWKWAA', 'KWWWKKWWWWA.',
+    'KWWWWWWWWWK.', 'KSWWWWWWWWK.', 'KSSWWWWWWK..', '.KSSSWWWK...', '..KKKKKK....',
   ];
+  const CHIMKEN_SPRITE = [...CHIMKEN_BODY, '...A..A.....', '..AA.AA.....'];
+  const CHIMKEN_WALK_B = [...CHIMKEN_BODY, '....AA......', '...AA.AA....'];
+  const CHIMKEN_AIR = [...CHIMKEN_BODY, '..AA.AA.....', '............'];
+  // Head down, pecking (the hero yard).
+  const CHIMKEN_PECK = [
+    '............', '............', '.KK.........', 'KWWK........', 'KWWWKKKK....', 'KWWWWWWWKKA.',
+    'KSWWWWWWWWKA', 'KSSWWWWWKWWK', '.KSSSWWWWWWK', '..KKKKKKKAAK', '...A..A...A.', '..AA.AA.....',
+  ];
+  // Which colour token each sprite letter is painted with.
+  const CHIMKEN_INK = { K: '--chimken-line', W: '--chimken-body', S: '--chimken-shade', A: '--chimken-accent' };
 
   // Two pixel rows become one text row of half blocks, so the art stays square.
   const spriteToBlocks = (rows) => {
@@ -147,8 +157,8 @@
       const bottom = rows[r + 1] || '';
       let line = '';
       for (let c = 0; c < top.length; c += 1) {
-        const up = top[c] === 'X';
-        const down = bottom[c] === 'X';
+        const up = top[c] !== '.';
+        const down = c < bottom.length && bottom[c] !== '.';
         line += up && down ? '█' : up ? '▀' : down ? '▄' : ' ';
       }
       out.push(line);
@@ -431,6 +441,20 @@
     return { beat, lines };
   };
 
+  // Sidebar score row: your best against the owner's, as label + value text.
+  const scoreRow = (hi, rival) => {
+    if (!rival) return null;
+    const best = Number.isFinite(hi) && hi > 0 ? Math.floor(hi) : 0;
+    const theirs = padCount(rival.highScore, 5);
+    if (!best) return { label: `beat ${rival.owner}`, value: theirs, hint: `Play chimken. ${rival.owner}'s score to beat is ${rival.highScore}.` };
+    const beat = best > rival.highScore;
+    return {
+      label: beat ? `you beat ${rival.owner}` : `you / ${rival.owner}`,
+      value: `${padCount(best, 5)} / ${theirs}`,
+      hint: `Play chimken. Your best is ${best}; ${rival.owner}'s score is ${rival.highScore}.`,
+    };
+  };
+
   const passedRival = (previousScore, score, rival) => Boolean(rival)
     && previousScore <= rival.highScore && score > rival.highScore;
 
@@ -571,6 +595,71 @@
   const dotRadius = (level, cellSize) => {
     const clamped = Math.min(Math.max(level, 0), 4);
     return (cellSize * (0.3 + (clamped / 4) * 0.7)) / 2;
+  };
+
+  /* Hero yard (pure): chimken roams a strip under the hero — walks to a corn,
+     pecks it, rests, then heads for the next one. Units: px and seconds.
+     `x` is chimken's left edge, `cornX` the corn's centre (null once eaten). */
+  const ROAM = { size: 24, speed: 30, peck: 1.6, rest: 1.1, minWalk: 60, reach: 3 };
+
+  const placeCorn = (x, width, rand) => {
+    const lo = ROAM.size;
+    const hi = width - ROAM.size;
+    if (hi - lo < ROAM.minWalk) return null;
+    const centre = x + ROAM.size / 2;
+    const corn = lo + rand() * (hi - lo);
+    if (Math.abs(corn - centre) >= ROAM.minWalk) return corn;
+    // Too close to be a walk: drop it toward the farther end instead.
+    const far = centre < width / 2 ? hi - rand() * (hi - lo) * 0.25 : lo + rand() * (hi - lo) * 0.25;
+    return Math.abs(far - centre) >= ROAM.minWalk ? far : (centre < width / 2 ? hi : lo);
+  };
+
+  const createRoamState = (width, rand) => {
+    const x = Math.max(0, Math.min(width * 0.12, width - ROAM.size));
+    return { x, dir: 1, mode: 'walk', timer: 0, walked: 0, eaten: 0, width, cornX: placeCorn(x, width, rand) };
+  };
+
+  const roamStep = (state, dt, rand) => {
+    const step = Math.min(Math.max(dt, 0), 0.1);
+    const next = { ...state };
+    if (next.mode === 'peck') {
+      next.timer -= step;
+      if (next.timer <= 0) { next.mode = 'rest'; next.timer = ROAM.rest; next.cornX = null; next.eaten += 1; }
+      return next;
+    }
+    if (next.mode === 'rest') {
+      next.timer -= step;
+      if (next.timer <= 0) { next.mode = 'walk'; next.timer = 0; next.cornX = placeCorn(next.x, next.width, rand); }
+      return next;
+    }
+    if (next.cornX === null) { next.mode = 'rest'; next.timer = ROAM.rest; return next; }
+    next.dir = next.cornX >= next.x + ROAM.size / 2 ? 1 : -1;
+    const target = next.dir === 1 ? next.cornX - ROAM.size + ROAM.reach : next.cornX - ROAM.reach;
+    const move = ROAM.speed * step;
+    if (Math.abs(target - next.x) <= move) {
+      next.x = target;
+      next.mode = 'peck';
+      next.timer = ROAM.peck;
+    } else {
+      next.x += Math.sign(target - next.x) * move;
+      next.walked += move;
+    }
+    return next;
+  };
+
+  const roamResize = (state, width) => {
+    if (width === state.width) return state;
+    const maxX = Math.max(0, width - ROAM.size);
+    const cornFits = state.cornX !== null && state.cornX >= ROAM.size && state.cornX <= maxX;
+    const next = { ...state, width, x: Math.min(state.x, maxX), cornX: cornFits ? state.cornX : null };
+    if (!cornFits && next.mode !== 'rest') { next.mode = 'rest'; next.timer = ROAM.rest; }
+    return next;
+  };
+
+  const roamFrame = (state) => {
+    if (state.mode === 'peck') return Math.floor(state.timer * 5) % 2 ? 'peck' : 'walkA';
+    if (state.mode === 'walk') return Math.floor(state.walked / 7) % 2 ? 'walkB' : 'walkA';
+    return 'walkA';
   };
 
   /* chimken — a tiny endless runner (pure logic; drawing lives in the DOM section).
@@ -819,10 +908,12 @@
       CHIMKEN, createChimkenState, stepChimken, spawnGap,
       obstaclePool, spawnObstacle, hitsObstacle, milestone,
       chimkenView, buildSky, skyOffset, starAlpha,
-      gameOverSummary, passedRival, bragText, spawnSparks, stepSparks,
+      gameOverSummary, passedRival, bragText, scoreRow, spawnSparks, stepSparks,
       cardDepth, deckStep, cardTilt, cardStyle, gestureAction,
       TERMINAL_COMMANDS, runCommand, completeCommand, historyStep, mailtoLink,
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
+      ROAM, createRoamState, roamStep, roamResize, roamFrame, placeCorn,
+      CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_PECK, CHIMKEN_INK,
     };
   }
   if (typeof document === 'undefined') return;
@@ -1529,16 +1620,8 @@
     const PIXEL = 2;
     const SPRITES = {
       runA: CHIMKEN_SPRITE,
-      runB: [
-        '......X.X...', '.....XXXX...', '.....X.XXX..', '.....XXXXXXX',
-        'X....XXXXX..', 'XX..XXXXXX..', 'XXXXXXXXXX..', 'XXXXXXXXXX..',
-        '.XXXXXXXXX..', '..XXXXXXX...', '....X.X.....', '....XX.XX...',
-      ],
-      air: [
-        '......X.X...', '.....XXXX...', '.....X.XXX..', '.....XXXXXXX',
-        'X....XXXXX..', 'XX..XXXXXX..', 'XXXXXXXXXX..', 'XXXXXXXXXX..',
-        '.XXXXXXXXX..', '..XXXXXXX...', '...XX.XX....', '............',
-      ],
+      runB: CHIMKEN_WALK_B,
+      air: CHIMKEN_AIR,
       bugSmall: ['X.....X', '.X...X.', '..XXX..', '.XXXXX.', 'XXXXXXX', '.X.X.X.'],
       moon: [
         '..XXXX...', '.XXX.....', 'XXX......', 'XX.......', 'XX.......',
@@ -1609,13 +1692,18 @@
       ctx.setTransform(unit, 0, 0, unit, 0, 0);
     };
 
-    const drawSprite = (rows, x, bottom) => {
+    // 'X' pixels use the current fill; with `ink`, each letter gets its own colour.
+    const drawSprite = (rows, x, bottom, ink) => {
       const top = bottom - rows.length * PIXEL;
+      const fill = ctx.fillStyle;
       rows.forEach((row, r) => {
         for (let c = 0; c < row.length; c += 1) {
-          if (row[c] === 'X') ctx.fillRect(Math.round(x) + c * PIXEL, Math.round(top) + r * PIXEL, PIXEL, PIXEL);
+          if (row[c] === '.') continue;
+          if (ink) ctx.fillStyle = ink[row[c]] || fill;
+          ctx.fillRect(Math.round(x) + c * PIXEL, Math.round(top) + r * PIXEL, PIXEL, PIXEL);
         }
       });
+      ctx.fillStyle = fill;
     };
 
     // Faint plate behind a message block so stars don't twinkle through the text.
@@ -1699,10 +1787,12 @@
       let sprite = SPRITES.runA;
       if (!chimken.onGround) sprite = SPRITES.air;
       else if (state.status === 'running' && Math.floor(state.distance / 30) % 2) sprite = SPRITES.runB;
-      drawSprite(sprite, CHIMKEN.chimkenX, ground - chimken.y);
+      const ink = {};
+      Object.entries(CHIMKEN_INK).forEach(([letter, name]) => { ink[letter] = token(name); });
+      drawSprite(sprite, CHIMKEN.chimkenX, ground - chimken.y, ink);
       if (crowned) {
         const headTop = ground - chimken.y - sprite.length * PIXEL;
-        drawSprite(SPRITES.crown, CHIMKEN.chimkenX + 5 * PIXEL, headTop - 1);
+        drawSprite(SPRITES.crown, CHIMKEN.chimkenX + 6 * PIXEL, headTop - 1);
       }
 
       if (clock < cornPopUntil) {
@@ -1776,6 +1866,7 @@
       sparks = stepSparks(sparks, dt);
       if (!wasOver && state.status === 'over') {
         storage.set('localStorage', HI_KEY, String(state.hi));
+        paintScoreRow();
         crownedThisRun = newlyCrowned;
         newlyCrowned = false;
         const summary = gameOverSummary(state, rival, crownedThisRun);
@@ -1797,6 +1888,17 @@
     };
 
     const isOpen = () => Boolean(dialog && dialog.open);
+
+    // Sidebar: "you / ck" scores, kept in step with the saved best.
+    const paintScoreRow = () => {
+      const row = $('.score-row');
+      const line = scoreRow(Number(storage.get('localStorage', HI_KEY)), rival);
+      if (!row || !line) return;
+      $('.score-label', row).textContent = line.label;
+      $('.score-value', row).textContent = line.value;
+      row.setAttribute('aria-label', line.hint);
+      row.hidden = false;
+    };
 
     const open = () => {
       if (!dialog || !ctx || typeof dialog.showModal !== 'function' || isOpen()) return;
@@ -1828,12 +1930,13 @@
       if (game && typeof game.owner === 'string' && Number.isInteger(game.highScore) && game.highScore >= 0) {
         rival = { owner: game.owner, highScore: game.highScore };
       }
-      const triggers = $$('.game-trigger, .topbar-game');
+      const triggers = $$('.game-trigger, .yard-chimken, .score-row');
       if (!dialog || !ctx || typeof dialog.showModal !== 'function') {
         triggers.forEach((button) => { button.hidden = true; });
         return;
       }
       triggers.forEach((button) => button.addEventListener('click', open));
+      paintScoreRow();
       closeButton.addEventListener('click', close);
       dialog.addEventListener('click', (event) => { if (event.target === dialog) close(); });
       dialog.addEventListener('keydown', (event) => {
@@ -2047,44 +2150,6 @@
       const preload = () => { const img = new Image(); img.src = IMAGE; };
       if (document.readyState === 'complete') preload();
       else window.addEventListener('load', preload, { once: true });
-    };
-
-    return { init };
-  })();
-
-  /* ==========================================================================
-     12. Visitor counter — abacus.jasoncameron.dev, hidden on any failure
-     ========================================================================== */
-
-  const visitors = (() => {
-    const BASE = 'https://abacus.jasoncameron.dev';
-    const NAMESPACE = 'kenneth-valdez-portfolio';
-    const KEY = 'visits';
-    const TIMEOUT_MS = 3000;
-
-    const init = async () => {
-      const row = $('.visitors');
-      const out = $('.visitors-count');
-      if (!row || !out || typeof fetch !== 'function' || typeof AbortController !== 'function') return;
-
-      const counted = storage.get('sessionStorage', 'visit-counted') === 'true';
-      const url = `${BASE}/${counted ? 'get' : 'hit'}/${NAMESPACE}/${KEY}`;
-      const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), TIMEOUT_MS);
-      try {
-        const response = await fetch(url, { signal: controller.signal, cache: 'no-store' });
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const payload = await response.json();
-        const text = padCount(payload && payload.value);
-        if (text === null) throw new Error('No counter value');
-        out.textContent = text;
-        row.hidden = false;
-        if (!counted) storage.set('sessionStorage', 'visit-counted', 'true');
-      } catch {
-        row.hidden = true;
-      } finally {
-        window.clearTimeout(timer);
-      }
     };
 
     return { init };
@@ -2326,7 +2391,7 @@
           name: textOf('.hero-name'),
           title: textOf('.hero-title'),
           location: textOf('.hero-location'),
-          status: textOf('.status .nav-text'),
+          status: box.dataset.status || null,
           bio: $$('.about-bio p').map((node) => node.textContent.replace(/\s+/g, ' ').trim()),
         },
       };
@@ -2552,6 +2617,101 @@
   })();
 
   /* ==========================================================================
+     19. Hero yard — chimken roams under the hero, eats corn, opens the game
+     ========================================================================== */
+
+  const heroYard = (() => {
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const CORN = ['..X..', '.XXX.', 'XXXXX', '.XXX.', '..X..'];
+
+    // One <rect> per run of same-coloured pixels; 'X' uses the current text colour.
+    const spriteSvg = (rows) => {
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('viewBox', `0 0 ${rows[0].length} ${rows.length}`);
+      svg.setAttribute('shape-rendering', 'crispEdges');
+      svg.setAttribute('fill', 'currentColor');
+      svg.setAttribute('aria-hidden', 'true');
+      rows.forEach((row, y) => {
+        for (const run of row.matchAll(/([^.])\1*/g)) {
+          const rect = document.createElementNS(SVG_NS, 'rect');
+          rect.setAttribute('x', String(run.index));
+          rect.setAttribute('y', String(y));
+          rect.setAttribute('width', String(run[0].length));
+          rect.setAttribute('height', '1');
+          if (CHIMKEN_INK[run[1]]) rect.style.fill = `var(${CHIMKEN_INK[run[1]]})`;
+          svg.append(rect);
+        }
+      });
+      return svg;
+    };
+
+    const init = () => {
+      // The sidebar button shows the real chimken instead of the one-colour icon.
+      $$('.game-trigger .icon-chimken').forEach((icon) => {
+        const art = spriteSvg(CHIMKEN_SPRITE);
+        art.classList.add('chimken-art');
+        icon.replaceWith(art);
+      });
+      const yard = $('.hero-yard');
+      const button = $('.yard-chimken');
+      const corn = $('.yard-corn');
+      if (!yard || !button || !corn || button.hidden) return;
+      const frames = { walkA: spriteSvg(CHIMKEN_SPRITE), walkB: spriteSvg(CHIMKEN_WALK_B), peck: spriteSvg(CHIMKEN_PECK) };
+      button.append(frames.walkA, frames.walkB, frames.peck);
+      corn.append(spriteSvg(CORN));
+      yard.hidden = false;
+
+      let state = createRoamState(yard.clientWidth, Math.random);
+      let inView = !('IntersectionObserver' in window);
+      let raf = 0;
+      let last = 0;
+
+      const paint = () => {
+        const still = prefersReducedMotion();
+        const frame = still ? 'walkA' : roamFrame(state);
+        Object.entries(frames).forEach(([name, svg]) => { svg.style.display = name === frame ? '' : 'none'; });
+        button.style.translate = `${Math.round(state.x)}px 0`;
+        button.classList.toggle('is-left', state.dir === -1);
+        // The corn vanishes partway through the peck, as if swallowed.
+        const eaten = state.mode === 'peck' && state.timer < ROAM.peck * 0.35;
+        corn.hidden = still || state.cornX === null || eaten;
+        if (state.cornX !== null) corn.style.left = `${Math.round(state.cornX)}px`;
+      };
+
+      const tick = (now) => {
+        state = roamStep(state, (now - last) / 1000, Math.random);
+        last = now;
+        paint();
+        raf = requestAnimationFrame(tick);
+      };
+
+      const sync = () => {
+        const run = inView && !document.hidden && !prefersReducedMotion();
+        if (run && !raf) {
+          last = performance.now();
+          raf = requestAnimationFrame(tick);
+        } else if (!run && raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
+        paint();
+      };
+
+      const resize = () => { state = roamResize(state, yard.clientWidth); paint(); };
+      if ('ResizeObserver' in window) new ResizeObserver(resize).observe(yard);
+      else window.addEventListener('resize', resize);
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; sync(); }).observe(yard);
+      }
+      document.addEventListener('visibilitychange', sync);
+      motionQuery.addEventListener('change', sync);
+      sync();
+    };
+
+    return { init };
+  })();
+
+  /* ==========================================================================
      99. Boot
      ========================================================================== */
 
@@ -2566,12 +2726,12 @@
     clipboard.init();
     pixelPhoto.init();
     reveal.init();
-    visitors.init();
     githubGraph.init(data);
     photoDeck.init(data);
     terminal.init(data);
     shotViewer.init();
     chatReplay.init();
+    heroYard.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());
   };

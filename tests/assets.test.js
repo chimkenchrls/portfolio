@@ -56,7 +56,7 @@ test('sidebar labels are in title case, not forced lowercase', () => {
 
 test('GitHub contributions panel sits inside the Stack section', () => {
   const html = read('index.html');
-  const stack = html.slice(html.indexOf('id="stack"'), html.indexOf('id="projects"'));
+  const stack = html.slice(html.indexOf('id="stack"'), html.indexOf('id="certifications"'));
   assert.match(stack, /class="github-panel[ "]/);
 });
 
@@ -66,7 +66,8 @@ test('quick jump is replaced by the chimken game', () => {
   assert.match(html, /<dialog[^>]*class="game"/);
   assert.match(html, /<canvas[^>]*class="game-canvas"/);
   assert.match(html, /class="game-trigger"[\s\S]*?Play chimken/);
-  assert.match(html, /class="topbar-game"/, 'mobile top bar needs a game button');
+  assert.doesNotMatch(html + read('style.css') + read('script.js'), /topbar-game/, 'the top bar button was removed');
+  assert.match(html, /class="yard-chimken"/, 'on phones the hero chimken and the drawer button open the game');
   assert.match(html, /class="game-close"/, 'touch users need a close button');
   assert.ok(fs.existsSync(path.join(ROOT, 'assets', 'icons', 'chimken.svg')));
   assert.doesNotMatch(read('style.css'), /quick-jump/);
@@ -124,7 +125,7 @@ test('sidebar has no visible shortcut badges; keys live in hover tooltips', () =
   const html = read('index.html');
   const sidebar = html.slice(html.indexOf('<aside'), html.indexOf('</aside>'));
   assert.doesNotMatch(sidebar, /<kbd/, 'no kbd badges in the sidebar');
-  for (const [id, label, key] of [['home', 'Home', 1], ['about', 'About', 2], ['stack', 'Stack', 3], ['projects', 'Projects', 4], ['certifications', 'Certifications', 5], ['contact', 'Contact', 6]]) {
+  for (const [id, label, key] of [['home', 'Home', 1], ['about', 'About', 2], ['projects', 'Projects', 3], ['stack', 'Stack', 4], ['certifications', 'Certifications', 5], ['contact', 'Contact', 6]]) {
     assert.match(sidebar, new RegExp(`data-section="${id}"\\s+title="${label} \\(${key}\\)"`), `${label} tooltip`);
   }
   assert.match(sidebar, /title="Play chimken \(Alt \+ K\)"/);
@@ -193,4 +194,30 @@ test('the GitHub panel reserves its space instead of popping in', () => {
   const js = read('script.js');
   assert.match(js, /skeletonDays\(/, 'a placeholder grid is drawn before the data arrives');
   assert.doesNotMatch(js, /catch \{\s*panel\.hidden = true;/, 'a failed load must not collapse the panel');
+});
+
+test('Projects comes before Stack, in the page and in the nav', () => {
+  const html = read('index.html');
+  const order = ['home', 'about', 'projects', 'stack', 'certifications', 'outside', 'contact'];
+  const found = [...html.matchAll(/<section[^>]*\sid="([\w-]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(found, order);
+  const links = [...html.matchAll(/class="nav-link"\s+href="#([\w-]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(links, ['home', 'about', 'projects', 'stack', 'certifications', 'contact']);
+});
+
+test('sidebar footer: no status line or visitor counter; a chimken score row instead', () => {
+  const html = read('index.html');
+  const sidebar = html.slice(html.indexOf('<aside'), html.indexOf('</aside>'));
+  assert.doesNotMatch(sidebar, /Open to OJT/, 'status line removed from the sidebar');
+  assert.doesNotMatch(html + read('style.css') + read('script.js'), /visitors|abacus|status-dot|status-pulse/);
+  assert.match(sidebar, /<button\s+class="score-row"[^>]*type="button"[^>]*hidden/, 'hidden until the script fills it');
+  assert.match(read('script.js'), /\$\$\('\.game-trigger, \.yard-chimken, \.score-row'\)/, 'the score row opens the game');
+  assert.match(html, /class="terminal" data-status="Open to OJT \/ Internship"/, 'the terminal still knows the status');
+});
+
+test('"Play chimken" sits at the bottom of the sidebar, right above the footer rows', () => {
+  const html = read('index.html');
+  const trigger = html.indexOf('class="game-trigger"');
+  assert.ok(trigger > html.indexOf('</nav>') && trigger < html.indexOf('class="sidebar-bottom"'));
+  assert.match(read('style.css'), /\.game-trigger \{ margin-top: auto;/);
 });

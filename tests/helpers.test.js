@@ -10,7 +10,7 @@ const close = (actual, expected, eps = 1e-6) =>
 
 test('SECTIONS lists the six nav targets in order', () => {
   assert.deepEqual(SECTIONS.map((s) => [s.id, s.key]), [
-    ['home', '1'], ['about', '2'], ['stack', '3'], ['projects', '4'], ['certifications', '5'], ['contact', '6'],
+    ['home', '1'], ['about', '2'], ['projects', '3'], ['stack', '4'], ['certifications', '5'], ['contact', '6'],
   ]);
 });
 

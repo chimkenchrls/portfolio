@@ -57,7 +57,7 @@ test('depth comes from surfaces: cards read as raised in both themes, and text s
 });
 
 test('section headings keep the original centered divider style', () => {
-  const sections = [['about', '02 //', 'About'], ['stack', '03 //', 'Stack'], ['projects', '04 //', 'Projects'],
+  const sections = [['about', '02 //', 'About'], ['projects', '03 //', 'Projects'], ['stack', '04 //', 'Stack'],
     ['certifications', '05 //', 'Certifications'], ['outside', '06 //', 'Outside the IDE'], ['contact', '07 //', 'Get in touch']];
   for (const [id, tag, title] of sections) {
     const start = html.indexOf(`id="${id}"`);
@@ -95,4 +95,12 @@ test('the hero keeps its original size and single button', () => {
 test('new motion is switched off for reduced-motion users', () => {
   const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
   assert.match(reduced, /\.card/, 'cards do not lift');
+});
+
+test('on phones the hero fills the first screen, so About starts below the fold', () => {
+  const phone = css.slice(css.indexOf('@media (max-width: 639.98px)'));
+  const hero = /\n  \.hero \{([^}]*)\}/.exec(phone);
+  assert.ok(hero, 'a phone-only hero rule exists');
+  assert.match(hero[1], /min-height:\s*calc\(100svh - var\(--topbar-h\) - 28px\)/);
+  assert.match(hero[1], /justify-content:\s*center/);
 });

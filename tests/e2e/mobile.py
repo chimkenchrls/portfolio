@@ -3,7 +3,7 @@ from playwright.sync_api import sync_playwright
 from common import check, finish, new_page
 
 TAPPABLE = [
-    ".topbar-brand", ".topbar-game", ".menu-toggle", ".nav-link", ".game-trigger", ".copy-email",
+    ".topbar-brand", ".yard-chimken", ".menu-toggle", ".nav-link", ".game-trigger", ".copy-email",
     ".theme-toggle", ".hero-photo", ".btn-primary", ".social a", ".social-copy", ".github-user",
     ".deck", ".terminal-link", ".terminal-input", ".terminal-run", ".terminal-chip", ".game-close", ".game-canvas",
 ]
