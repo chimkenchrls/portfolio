@@ -1103,7 +1103,7 @@
     });
 
     const stack = ({ stack: groups = [] }) => groups.map((group) => {
-      const box = el('div', 'stack-group');
+      const box = el('div', 'stack-group card');
       const list = el('ul', 'stack-items');
       (group.items || []).forEach((item) => {
         const li = el('li', 'stack-item');
@@ -1191,7 +1191,7 @@
     };
 
     const projects = ({ projects: items = [] }) => items.map((project) => {
-      const li = el('li', 'project');
+      const li = el('li', 'project card');
       const head = el('div', 'project-head');
       const metaClass = project.status === 'done' ? 'project-meta' : 'badge';
       head.append(el('h3', 'project-title', project.title), el('span', metaClass, project.meta));
@@ -1972,7 +1972,7 @@
      ========================================================================== */
 
   const reveal = (() => {
-    const SINGLE = ['.github-panel', '.contact-intro', '.terminal', '.terminal-chips', '.divider', '.about-bio', '.timeline-block', '.list-head'];
+    const SINGLE = ['.github-panel', '.contact-intro', '.terminal', '.terminal-chips', '.section-head', '.about-bio', '.timeline-block'];
     const STAGGERED = ['.stack-group', '.project', '#certifications .rows > li', '.outside-text', '.deck'];
     const STAGGER_MS = 60;
     const STAGGER_CAP = 8;

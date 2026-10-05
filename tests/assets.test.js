@@ -57,7 +57,7 @@ test('sidebar labels are in title case, not forced lowercase', () => {
 test('GitHub contributions panel sits inside the Stack section', () => {
   const html = read('index.html');
   const stack = html.slice(html.indexOf('id="stack"'), html.indexOf('id="projects"'));
-  assert.match(stack, /class="github-panel"/);
+  assert.match(stack, /class="github-panel[ "]/);
 });
 
 test('quick jump is replaced by the chimken game', () => {
