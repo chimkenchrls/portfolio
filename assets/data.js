@@ -20,15 +20,6 @@ const PORTFOLIO_DATA = {
 
   experience: [
     {
-      title: "BS Computer Science",
-      org: "STI College Lucena",
-      dates: "2023 — 2027",
-      current: true,
-      bullets: [
-        "Champion in Local CodeFest Competition Tagisan ng Talino 2026.",
-      ],
-    },
-    {
       title: "OJT / Internship",
       org: "Actively Seeking",
       dates: "2026 — Present",
@@ -54,6 +45,9 @@ const PORTFOLIO_DATA = {
       degree: "Bachelor of Science in Computer Science",
       dates: "2023 — Current",
       current: true,
+      bullets: [
+        "Champion in Local CodeFest Competition Tagisan ng Talino 2026.",
+      ],
     },
     {
       school: "Sariaya Institute Inc.",

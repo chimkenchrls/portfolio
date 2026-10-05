@@ -167,3 +167,15 @@ test("a project's description uses the same feature names as its chat replay", (
     }
   }
 });
+
+test('the degree is listed once, under Education, with its achievement', () => {
+  const data = require('../assets/data.js');
+  const { validateData } = require('../script.js');
+  const degree = data.education.find((e) => e.current);
+  assert.ok(degree.bullets.length >= 1, 'the current school carries the achievement');
+  assert.ok(!data.experience.some((e) => e.org === degree.school && /^BS /.test(e.title)), 'not repeated under Experience');
+  assert.match(require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'script.js'), 'utf8'), /education[\s\S]{0,260}rowBullets\(li, item\)/, 'education rows render bullets');
+  const bad = JSON.parse(JSON.stringify(data));
+  bad.education[0].bullets = 'nope';
+  assert.ok(validateData(bad).some((e) => e.startsWith('education[0].bullets')));
+});

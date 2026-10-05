@@ -735,6 +735,7 @@
     });
     checkList('education', data.education, (e, p) => {
       if (!isText(e.school) || !isText(e.degree) || !isText(e.dates)) errors.push(`${p}: school, degree, dates required`);
+      if (e.bullets != null && !Array.isArray(e.bullets)) errors.push(`${p}.bullets: must be an array or null`);
     });
     checkList('stack', data.stack, (g, p) => {
       if (!isText(g.category)) errors.push(`${p}.category: required text`);
@@ -1084,21 +1085,25 @@
       return head;
     };
 
+    const rowBullets = (li, item) => {
+      const bullets = (item.bullets || []).filter(Boolean);
+      if (!bullets.length) return;
+      const ul = el('ul', 'row-bullets');
+      bullets.forEach((text) => ul.append(el('li', null, text)));
+      li.append(ul);
+    };
+
     const experience = ({ experience: items = [] }) => items.map((item) => {
       const li = el('li');
       li.append(rowHead(item.title, item.dates, item.current), el('p', 'row-sub', item.org));
-      const bullets = (item.bullets || []).filter(Boolean);
-      if (bullets.length) {
-        const ul = el('ul', 'row-bullets');
-        bullets.forEach((text) => ul.append(el('li', null, text)));
-        li.append(ul);
-      }
+      rowBullets(li, item);
       return li;
     });
 
     const education = ({ education: items = [] }) => items.map((item) => {
       const li = el('li');
       li.append(rowHead(item.school, item.dates, item.current), el('p', 'row-sub', item.degree));
+      rowBullets(li, item);
       return li;
     });
 
@@ -1972,7 +1977,7 @@
      ========================================================================== */
 
   const reveal = (() => {
-    const SINGLE = ['.github-panel', '.contact-intro', '.terminal', '.terminal-chips', '.section-head', '.about-bio', '.timeline-block'];
+    const SINGLE = ['.github-panel', '.contact-intro', '.terminal', '.terminal-chips', '.divider', '.about-bio', '.timeline-block'];
     const STAGGERED = ['.stack-group', '.project', '#certifications .rows > li', '.outside-text', '.deck'];
     const STAGGER_MS = 60;
     const STAGGER_CAP = 8;

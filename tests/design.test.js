@@ -56,20 +56,17 @@ test('depth comes from surfaces: cards read as raised in both themes, and text s
   assert.match(block('.nav-link.is-active'), /box-shadow:\s*inset 3px 0 0 var\(--fg\)/, 'the active nav item gets a solid marker');
 });
 
-test('every section has a real heading: a small tag above a large title', () => {
+test('section headings keep the original centered divider style', () => {
   const sections = [['about', '02 //', 'About'], ['stack', '03 //', 'Stack'], ['projects', '04 //', 'Projects'],
     ['certifications', '05 //', 'Certifications'], ['outside', '06 //', 'Outside the IDE'], ['contact', '07 //', 'Get in touch']];
   for (const [id, tag, title] of sections) {
     const start = html.indexOf(`id="${id}"`);
     const head = html.slice(start, start + 700);
-    assert.match(head, /<header class="section-head">/, `${id}: section-head`);
-    assert.match(head, new RegExp(`class="section-tag" aria-hidden="true">\\s*${tag.replace('/', '\\/')}\\s*<`), `${id}: tag`);
-    assert.match(head, new RegExp(`<h2 class="section-title" id="${id}-heading">\\s*${title}\\s*</h2>`), `${id}: title`);
+    assert.match(head, /<div class="divider">/, `${id}: divider`);
+    assert.match(head, new RegExp(`<h2 class="divider-label" id="${id}-heading">\\s*<span class="divider-index" aria-hidden="true">${tag.replace('/', '\\/')}</span>\\s*${title}\\s*</h2>`), `${id}: label`);
   }
-  assert.doesNotMatch(html, /class="divider/, 'old centered dividers are gone');
-  assert.doesNotMatch(css, /\.divider\b/);
-  const size = /font-size:\s*clamp\(([\d.]+)rem,[^,]+,\s*([\d.]+)rem\)/.exec(block('.section-title'));
-  assert.ok(size && Number(size[2]) >= 2, 'section titles are large (2rem or more)');
+  assert.doesNotMatch(html + css, /section-head|section-title|section-tag|section-rule/, 'the large pixel headings were dropped');
+  assert.match(block('.divider-label'), /font-family:\s*var\(--font-mono\)/);
 });
 
 test('content sits on soft cards instead of hairline tables', () => {
@@ -87,17 +84,15 @@ test('content sits on soft cards instead of hairline tables', () => {
   assert.match(js, /'project card'/);
 });
 
-test('the hero is a stronger first screen', () => {
-  const name = /font-size:\s*clamp\(([\d.]+)rem,[^,]+,\s*([\d.]+)rem\)/.exec(block('.hero-name'));
-  assert.ok(name && Number(name[2]) >= 5, 'the name grows to 5rem or more on desktop');
+test('the hero keeps its original size and single button', () => {
+  assert.match(block('.hero-name'), /font-size:\s*clamp\(2\.25rem, 4\.6vw, 3\.75rem\)/);
+  assert.match(block('.hero'), /min-height:\s*min\(620px, calc\(100vh - 96px\)\)/);
   const actions = html.slice(html.indexOf('class="hero-actions"'), html.indexOf('class="social"'));
   assert.match(actions, /class="btn btn-primary"[^>]*href="mailto:/);
-  assert.match(actions, /class="btn btn-secondary"\s+href="#projects"\s*>\s*View projects\s*</);
-  assert.match(html, /class="hero-scroll"[^>]*href="#about"/, 'a scroll cue points to About');
+  assert.doesNotMatch(html + css, /btn-secondary|hero-scroll|scroll-cue/);
 });
 
 test('new motion is switched off for reduced-motion users', () => {
   const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
   assert.match(reduced, /\.card/, 'cards do not lift');
-  assert.match(reduced, /\.hero-scroll/, 'the scroll cue does not bob');
 });
