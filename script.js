@@ -83,6 +83,21 @@
     return /^(https?:\/\/|mailto:)\S+$/i.test(trimmed) ? trimmed : null;
   };
 
+  // A resume is a PDF inside ./assets/ or an https link; anything else is ignored.
+  const safeResume = (value) => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (/^\.\/assets\/[\w.-]+\.pdf$/i.test(trimmed)) return trimmed;
+    return /^https:\/\/\S+$/i.test(trimmed) ? trimmed : null;
+  };
+
+  // How far down the page the reader is, 0–1 (0 when the page does not scroll).
+  const scrollProgress = (scrollY, pageHeight, viewportHeight) => {
+    const range = pageHeight - viewportHeight;
+    if (!(range > 0)) return 0;
+    return Math.min(1, Math.max(0, scrollY / range));
+  };
+
   // Slices one image across a grid×grid set of tiles while replicating
   // `object-fit: cover` (uniform scale, centred crop) for a square box.
   const computeTiles = (grid, imageWidth, imageHeight) => {
@@ -815,6 +830,7 @@
         if (!isOptionalUrl(profile[k])) errors.push(`profile.${k}: must be an https URL or null`);
       });
       if (!isOptionalText(profile.discord)) errors.push('profile.discord: text or null');
+      if (profile.resume != null && !safeResume(profile.resume)) errors.push('profile.resume: a ./assets/*.pdf path, an https URL, or null');
       if (!isOptionalText(profile.githubUsername)) errors.push('profile.githubUsername: text or null');
     }
 
@@ -901,7 +917,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, computeTiles, revealDelays, joinParts,
+      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, joinParts,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -1399,12 +1415,25 @@
       });
     };
 
+    // A "Resume" button joins "Email me" once data.js points at a PDF.
+    const applyResume = ({ profile = {} }) => {
+      const href = safeResume(profile.resume);
+      const actions = $('.hero-actions');
+      if (!href || !actions) return;
+      const link = el('a', 'btn btn-secondary', 'Resume');
+      link.href = href;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      actions.append(link);
+    };
+
     const init = (data) => {
       const containers = $$('[data-render]');
       const errors = validateData(data);
       if (errors.length) console.warn('[portfolio] data.js problems:', errors);
       if (!data) { containers.forEach(showLoadError); return; }
       applyEmail(data);
+      applyResume(data);
       containers.forEach((container) => {
         const build = renderers[container.dataset.render];
         if (!build) return;
@@ -2712,6 +2741,44 @@
   })();
 
   /* ==========================================================================
+     20. Scroll aids — reading-progress line and a back-to-top button
+     ========================================================================== */
+
+  const scrollAids = (() => {
+    const init = () => {
+      const bar = $('.scroll-progress-bar');
+      const top = $('.to-top');
+      if (!bar && !top) return;
+      let queued = false;
+
+      const paint = () => {
+        queued = false;
+        const page = document.documentElement;
+        if (bar) bar.style.transform = `scaleX(${scrollProgress(window.scrollY, page.scrollHeight, window.innerHeight)})`;
+        if (top) top.classList.toggle('is-visible', window.scrollY > window.innerHeight * 0.9);
+      };
+      const schedule = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(paint);
+      };
+
+      window.addEventListener('scroll', schedule, { passive: true });
+      window.addEventListener('resize', schedule);
+      if (top) {
+        top.addEventListener('click', () => {
+          window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+          const main = $('#main');
+          if (main) main.focus({ preventScroll: true });
+        });
+      }
+      paint();
+    };
+
+    return { init };
+  })();
+
+  /* ==========================================================================
      99. Boot
      ========================================================================== */
 
@@ -2732,6 +2799,7 @@
     shotViewer.init();
     chatReplay.init();
     heroYard.init();
+    scrollAids.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());
   };

@@ -84,12 +84,13 @@ test('content sits on soft cards instead of hairline tables', () => {
   assert.match(js, /'project card'/);
 });
 
-test('the hero keeps its original size and single button', () => {
+test('the hero keeps its original size and its one static button', () => {
   assert.match(block('.hero-name'), /font-size:\s*clamp\(2\.25rem, 4\.6vw, 3\.75rem\)/);
   assert.match(block('.hero'), /min-height:\s*min\(620px, calc\(100vh - 96px\)\)/);
   const actions = html.slice(html.indexOf('class="hero-actions"'), html.indexOf('class="social"'));
   assert.match(actions, /class="btn btn-primary"[^>]*href="mailto:/);
-  assert.doesNotMatch(html + css, /btn-secondary|hero-scroll|scroll-cue/);
+  assert.doesNotMatch(actions, /btn-secondary/, 'only "Email me" is static; a Resume button is added from data.js');
+  assert.doesNotMatch(html + css, /hero-scroll|scroll-cue/);
 });
 
 test('new motion is switched off for reduced-motion users', () => {

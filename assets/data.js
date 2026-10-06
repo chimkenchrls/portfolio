@@ -13,6 +13,9 @@ const PORTFOLIO_DATA = {
     githubUsername: "chimkenchrls",
     linkedin: "https://www.linkedin.com/in/kennethcharlesvaldez",
     discord: "de4dicated",
+    // Put the PDF in ./assets/ and set this to "./assets/resume.pdf" to show a
+    // "Resume" button next to "Email me". null hides the button.
+    resume: "./assets/resume.pdf",
   },
 
   // chimken: the site owner's high score shown as the score to beat.
@@ -135,7 +138,14 @@ const PORTFOLIO_DATA = {
       status: "in-progress",
       description:
         "A free ambient sound mixer. Layer sounds such as rain, a fireplace and a coffee shop, set each one's volume, and share the mix by link. Built as a DevOps portfolio project: the app is small, and the way it is built, shipped and run is the point.",
-      tags: ["React", "TypeScript", "Vite", "Vitest", "Docker Compose", "nginx"],
+      tags: [
+        "React",
+        "TypeScript",
+        "Vite",
+        "Vitest",
+        "Docker Compose",
+        "nginx",
+      ],
       links: { source: "https://github.com/chimkenchrls/ambiancy", live: null },
       // Screenshots live in ./assets/projects/ (desktop and/or mobile).
       media: {
@@ -214,7 +224,7 @@ const PORTFOLIO_DATA = {
               { from: "user", text: "amigo explain how CI/CD works" },
               {
                 from: "bot",
-                text: "CI/CD (Continuous Integration / Continuous Delivery) automates the process of building, testing, and releasing software so you can push updates quickly and safely.\n\n**Worked Example:**\nImagine you add a new \"Dark Mode\" button to your app on GitHub.\n1. **CI:** As soon as you push your code, an automated pipeline runs tests to make sure your new button didn't break existing features.\n2. **CD:** Once the tests pass, the pipeline automatically deploys the updated app to your live web server for users to see.\n\n**Quick Check:**\nIf a developer pushes code with a syntax error, at which stage—Continuous Integration (testing/building) or Continuous Deployment (releasing)—should the pipeline catch and stop the broken code?",
+                text: 'CI/CD (Continuous Integration / Continuous Delivery) automates the process of building, testing, and releasing software so you can push updates quickly and safely.\n\n**Worked Example:**\nImagine you add a new "Dark Mode" button to your app on GitHub.\n1. **CI:** As soon as you push your code, an automated pipeline runs tests to make sure your new button didn\'t break existing features.\n2. **CD:** Once the tests pass, the pipeline automatically deploys the updated app to your live web server for users to see.\n\n**Quick Check:**\nIf a developer pushes code with a syntax error, at which stage—Continuous Integration (testing/building) or Continuous Deployment (releasing)—should the pipeline catch and stop the broken code?',
               },
               { from: "system", text: "ck used /study" },
               { from: "bot", text: "**Study mode off** — back to normal." },

@@ -252,6 +252,32 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 }
 .main > * { max-width: 880px; margin-inline: auto; }
 
+/* Reading progress along the top edge, and a back-to-top button once you scroll. */
+.scroll-progress { position: fixed; inset: 0 0 auto 0; z-index: 45; height: 2px; pointer-events: none; }
+.scroll-progress-bar { display: block; height: 100%; background: var(--fg); transform: scaleX(0); transform-origin: left; }
+.to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 20;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  opacity: 0;
+  visibility: hidden;
+  translate: 0 6px;
+  transition: opacity var(--t) ease, translate var(--t) var(--ease), visibility var(--t), color var(--t-fast) ease;
+}
+.to-top.is-visible { opacity: 1; visibility: visible; translate: none; }
+.to-top:hover { color: var(--fg); border-color: color-mix(in srgb, var(--fg) 20%, var(--border)); }
+
 /* 7. Sidebar ============================================================== */
 /* Full desktop sidebar shows the name; the rail shows a KC mark; the mobile
    drawer shows neither (the top bar already has the name). */
@@ -429,6 +455,8 @@ body.is-rail .sidebar-controls { flex-direction: column; }
 }
 .btn-primary { color: var(--accent-fg); background: var(--accent); border-color: var(--accent); }
 .btn-primary:hover { opacity: 0.88; }
+.btn-secondary { color: var(--fg); background: var(--bg); border-color: var(--fg); }
+.btn-secondary:hover { color: var(--bg); background: var(--fg); }
 
 .social { padding-top: 10px; font-family: var(--font-mono); font-size: 13px; color: var(--fg-muted); }
 .social a,
@@ -1133,6 +1161,7 @@ body.is-rail .sidebar-controls { flex-direction: column; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .to-top { translate: none; transition: none; }
   .pixel-tile { transition: none; }
   .card { transition: none; }
   .card:hover { translate: none; }
@@ -1228,6 +1257,7 @@ body.is-rail .sidebar-controls { flex-direction: column; }
     min-height: calc(100svh - var(--topbar-h) - 28px);
   }
   .hero-yard { bottom: 12px; }
+  .to-top { right: 16px; bottom: 16px; }
   .hero-photo { width: 224px; }
   .stack-grid { grid-template-columns: 1fr; }
   .terminal-screen { height: 260px; }

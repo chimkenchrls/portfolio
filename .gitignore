@@ -1,0 +1,35 @@
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# Secrets (the site has none; this keeps one from slipping in)
+.env
+.env.*
+*.pem
+*.key
+
+# Tooling output — the site has no build step, CI builds _site/ itself
+node_modules/
+_site/
+__pycache__/
+*.pyc
+test-results/
+playwright-report/
+
+# Local AI-assistant state
+.superpowers/
+.claude/
+CLAUDE.local.md
+
+# Raw originals: only web-sized, metadata-stripped copies belong in assets/
+*.heic
+*.HEIC
+*.mov
+*.MOV
+*.psd
+*.zip
