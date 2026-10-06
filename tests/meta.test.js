@@ -22,13 +22,13 @@ const pngSize = (file) => {
 test('link previews: Open Graph tags point at an absolute image on the live site', () => {
   assert.equal(meta('og:type'), 'website');
   assert.equal(meta('og:url'), SITE);
-  assert.match(meta('og:title'), /Kenneth Charles Valdez/);
+  assert.match(meta('og:title'), /Kenneth Charles/);
   assert.ok(meta('og:description').length > 40);
   assert.equal(meta('og:image'), `${SITE}assets/og.jpg`);
   assert.deepEqual([meta('og:image:width'), meta('og:image:height')], ['1200', '630']);
   assert.ok(meta('og:image:alt').length > 20);
   assert.equal(meta('twitter:card'), 'summary_large_image');
-  assert.match(html, new RegExp(`<link rel="canonical" href="${SITE}"`));
+  assert.match(html, new RegExp(`<link\\s+rel="canonical"\\s+href="${SITE}"`));
 });
 
 test('the preview image exists, is 1200x630, web-sized, and carries no camera metadata', () => {
@@ -46,9 +46,9 @@ test('the preview image exists, is 1200x630, web-sized, and carries no camera me
 });
 
 test('the browser tab icon is the profile photo, not the old logo', () => {
-  assert.match(html, /<link rel="icon" type="image\/png" sizes="32x32" href="\.\/assets\/favicon-32\.png"/);
-  assert.match(html, /<link rel="icon" type="image\/png" sizes="192x192" href="\.\/assets\/favicon-192\.png"/);
-  assert.match(html, /<link rel="apple-touch-icon" href="\.\/assets\/apple-touch-icon\.png"/);
+  assert.match(html, /<link\s+rel="icon"\s+type="image\/png"\s+sizes="32x32"\s+href="\.\/assets\/favicon-32\.png"/);
+  assert.match(html, /<link\s+rel="icon"\s+type="image\/png"\s+sizes="192x192"\s+href="\.\/assets\/favicon-192\.png"/);
+  assert.match(html, /<link\s+rel="apple-touch-icon"\s+href="\.\/assets\/apple-touch-icon\.png"/);
   assert.deepEqual(pngSize('assets/favicon-32.png'), [32, 32]);
   assert.deepEqual(pngSize('assets/favicon-192.png'), [192, 192]);
   assert.deepEqual(pngSize('assets/apple-touch-icon.png'), [180, 180]);

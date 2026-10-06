@@ -279,7 +279,7 @@ h1, h2, h3, p, dl, dd { margin: 0; }
 .to-top:hover { color: var(--fg); border-color: color-mix(in srgb, var(--fg) 20%, var(--border)); }
 
 /* 7. Sidebar ============================================================== */
-/* Full desktop sidebar shows the name; the rail shows a KC mark; the mobile
+/* Full desktop sidebar shows the name; the rail shows a CK mark; the mobile
    drawer shows neither (the top bar already has the name). */
 .brand { display: block; }
 .brand-mark { display: none; font-family: var(--font-pixel); font-size: 20px; line-height: 1; }

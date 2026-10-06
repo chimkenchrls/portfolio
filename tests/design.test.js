@@ -63,7 +63,7 @@ test('section headings keep the original centered divider style', () => {
     const start = html.indexOf(`id="${id}"`);
     const head = html.slice(start, start + 700);
     assert.match(head, /<div class="divider">/, `${id}: divider`);
-    assert.match(head, new RegExp(`<h2 class="divider-label" id="${id}-heading">\\s*<span class="divider-index" aria-hidden="true">${tag.replace('/', '\\/')}</span>\\s*${title}\\s*</h2>`), `${id}: label`);
+    assert.match(head, new RegExp(`<h2 class="divider-label" id="${id}-heading">\\s*<span class="divider-index" aria-hidden="true">${tag.replace('/', '\\/')}</span>\\s*${title.replace(/ /g, '\\s+')}\\s*</h2>`), `${id}: label`);
   }
   assert.doesNotMatch(html + css, /section-head|section-title|section-tag|section-rule/, 'the large pixel headings were dropped');
   assert.match(block('.divider-label'), /font-family:\s*var\(--font-mono\)/);

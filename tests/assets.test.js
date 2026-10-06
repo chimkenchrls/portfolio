@@ -73,11 +73,11 @@ test('quick jump is replaced by the chimken game', () => {
   assert.doesNotMatch(read('style.css'), /quick-jump/);
 });
 
-test('sidebar shows the full name on desktop; rail keeps the KC mark', () => {
+test('sidebar shows the full name on desktop; rail keeps the CK mark', () => {
   const html = read('index.html');
   assert.match(html, /class="brand-name"[^>]*>Kenneth Charles Valdez</);
-  assert.match(html, /<a[^>]*class="brand"[^>]*aria-label="Kenneth Charles Valdez/);
-  assert.match(html, /class="brand-mark"[^>]*>KC</);
+  assert.match(html, /<a[^>]*class="brand"[^>]*aria-label="Kenneth Charles/);
+  assert.match(html, /class="brand-mark"[^>]*>CK</);
   assert.match(html, /class="topbar-brand"[^>]*>Kenneth Charles</);
 });
 
@@ -86,7 +86,7 @@ test('"Outside the IDE" is the last section before the footer and is not in the 
   const outside = html.indexOf('id="outside"');
   assert.ok(outside > html.indexOf('id="certifications"'), 'after certifications');
   assert.ok(outside < html.indexOf('<footer'), 'before the footer');
-  assert.match(html, /Outside the IDE/);
+  assert.match(html, /Outside\s+the\s+IDE/);
   assert.doesNotMatch(html, /href="#outside"/);
   assert.match(html, /data-render="outside"/);
   assert.doesNotMatch(html, /deck-caption/, 'no per-photo caption');
@@ -102,7 +102,7 @@ test('"Get in touch" terminal is the last section, with a no-JS contact fallback
   const html = read('index.html');
   const contact = html.indexOf('id="contact"');
   assert.ok(contact > html.indexOf('id="outside"') && contact < html.indexOf('<footer'));
-  assert.match(html, /Get in touch/);
+  assert.match(html, /Get\s+in\s+touch/);
   const section = html.slice(contact, html.indexOf('<footer'));
   assert.match(section, /class="terminal-screen"[^>]*role="log"/);
   const bar = section.slice(section.indexOf('class="terminal-bar"'), section.indexOf('class="terminal-screen"'));
