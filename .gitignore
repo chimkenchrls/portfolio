@@ -21,11 +21,6 @@ __pycache__/
 test-results/
 playwright-report/
 
-# Local AI-assistant state
-.superpowers/
-.claude/
-CLAUDE.local.md
-
 # Raw originals: only web-sized, metadata-stripped copies belong in assets/
 *.heic
 *.HEIC
