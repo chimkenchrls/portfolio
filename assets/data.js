@@ -146,7 +146,10 @@ const PORTFOLIO_DATA = {
         "Docker Compose",
         "nginx",
       ],
-      links: { source: "https://github.com/chimkenchrls/ambiancy", live: null },
+      links: {
+        source: "https://github.com/chimkenchrls/ambiancy",
+        live: "https://ambiancy.vercel.app",
+      },
       // Screenshots live in ./assets/projects/ (desktop and/or mobile).
       media: {
         desktop: "./assets/projects/ambiancy-desktop.jpg",
