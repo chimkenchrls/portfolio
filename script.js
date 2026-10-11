@@ -3289,21 +3289,19 @@
   })();
 
   /* ==========================================================================
-     20. Scroll aids — reading-progress line and a back-to-top button
+     20. Scroll aids — reading-progress line
      ========================================================================== */
 
   const scrollAids = (() => {
     const init = () => {
       const bar = $('.scroll-progress-bar');
-      const top = $('.to-top');
-      if (!bar && !top) return;
+      if (!bar) return;
       let queued = false;
 
       const paint = () => {
         queued = false;
         const page = document.documentElement;
-        if (bar) bar.style.transform = `scaleX(${scrollProgress(window.scrollY, page.scrollHeight, window.innerHeight)})`;
-        if (top) top.classList.toggle('is-visible', window.scrollY > window.innerHeight * 0.9);
+        bar.style.transform = `scaleX(${scrollProgress(window.scrollY, page.scrollHeight, window.innerHeight)})`;
       };
       const schedule = () => {
         if (queued) return;
@@ -3313,13 +3311,6 @@
 
       window.addEventListener('scroll', schedule, { passive: true });
       window.addEventListener('resize', schedule);
-      if (top) {
-        top.addEventListener('click', () => {
-          window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
-          const main = $('#main');
-          if (main) main.focus({ preventScroll: true });
-        });
-      }
       paint();
     };
 

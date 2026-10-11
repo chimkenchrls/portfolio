@@ -89,17 +89,12 @@ test('scrollProgress runs 0 to 1 and never leaves that range', () => {
   assert.equal(scrollProgress(0, 800, 1000), 0, 'a page that does not scroll');
 });
 
-test('scroll aids: a progress line and a back-to-top button, calm under reduced motion', () => {
+test('scroll aids: a reading-progress line and no back-to-top button', () => {
   const css = read('style.css');
   const js = read('script.js');
   assert.match(html, /<div class="scroll-progress" aria-hidden="true">\s*<span class="scroll-progress-bar"><\/span>/);
-  assert.match(html, /<button class="to-top" type="button">[\s\S]*?Back to <\/span>top\s*<\/button>/);
+  assert.doesNotMatch(html + css + js, /to-top/, 'the back-to-top button was removed');
   assert.match(css, /\.scroll-progress \{[^}]*position:\s*fixed/);
-  assert.match(css, /\.to-top \{[^}]*visibility:\s*hidden/, 'hidden (and unfocusable) until you scroll');
-  assert.match(css, /\.to-top\.is-visible \{[^}]*visibility:\s*visible/);
-  const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
-  assert.match(reduced, /\.to-top \{[^}]*transition:\s*none/);
   const aids = js.slice(js.indexOf('const scrollAids'), js.indexOf('99. Boot'));
   assert.match(aids, /passive:\s*true/);
-  assert.match(aids, /prefersReducedMotion\(\) \? 'auto' : 'smooth'/);
 });

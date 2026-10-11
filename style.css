@@ -341,7 +341,7 @@ dd {
   margin-inline: auto;
 }
 
-/* Reading progress along the top edge, and a back-to-top button once you scroll. */
+/* Reading progress along the top edge. */
 .scroll-progress {
   position: fixed;
   inset: 0 0 auto 0;
@@ -355,39 +355,6 @@ dd {
   background: var(--fg);
   transform: scaleX(0);
   transform-origin: left;
-}
-.to-top {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 20;
-  padding: 8px 12px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  opacity: 0;
-  visibility: hidden;
-  translate: 0 6px;
-  transition:
-    opacity var(--t) ease,
-    translate var(--t) var(--ease),
-    visibility var(--t),
-    color var(--t-fast) ease;
-}
-.to-top.is-visible {
-  opacity: 1;
-  visibility: visible;
-  translate: none;
-}
-.to-top:hover {
-  color: var(--fg);
-  border-color: color-mix(in srgb, var(--fg) 20%, var(--border));
 }
 
 /* 7. Sidebar ============================================================== */
@@ -2233,7 +2200,6 @@ body.is-rail .sidebar-controls {
 }
 .assistant-sprite.is-reacting { background-image: url("./assets/mascot/mini-ck-reactions.webp"); }
 .assistant-launcher > .assistant-sprite { width: 88px; height: 88px; }
-body.has-assistant .to-top { bottom: 118px; }
 body.assistant-open { overflow: hidden; }
 body.assistant-open .assistant-launcher,
 body.drawer-open .assistant-launcher { visibility: hidden; }
@@ -2381,10 +2347,6 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .to-top {
-    translate: none;
-    transition: none;
-  }
   .pixel-tile {
     transition: none;
   }
@@ -2586,10 +2548,6 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   .hero-yard {
     bottom: 12px;
   }
-  .to-top {
-    right: 16px;
-    bottom: 16px;
-  }
   .hero-photo {
     width: 224px;
   }
@@ -2619,7 +2577,6 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   .assistant-launcher { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
   .assistant-launcher > .assistant-sprite { width: 72px; height: 72px; }
   .assistant-bubble { font-size: 10px; padding: 9px 12px; }
-  body.has-assistant .to-top { bottom: 100px; }
   .assistant-dialog {
     top: auto;
     bottom: var(--assistant-bottom, 0px);
