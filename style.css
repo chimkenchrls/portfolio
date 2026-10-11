@@ -2491,6 +2491,8 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
     inset: var(--topbar-h) auto 0 0;
     width: min(300px, 85vw);
     padding-top: 18px;
+    /* Flush to the edge under the top bar, so it shares the bar's colour. */
+    background: var(--bg);
     border-right: 1px solid var(--border);
     border-radius: 0;
     box-shadow: none;
