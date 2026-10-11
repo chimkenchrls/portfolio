@@ -31,7 +31,8 @@ const PORTFOLIO_DATA = {
     name: "CK",
     launcher: "Chat with me",
     title: "Chat with me",
-    greeting: "Hey, I’m CK. Ask me about my projects, my stack, or what I’m looking for.",
+    greeting:
+      "Hey, I’m CK. Ask me about my projects, my stack, or what I’m looking for.",
     suggestions: [
       "What have you built?",
       "What’s your tech stack?",
@@ -96,17 +97,17 @@ const PORTFOLIO_DATA = {
     {
       category: "DevOps & Cloud",
       items: [
+        { name: "GitHub Actions", icon: "githubactions", color: "#2088FF" },
         { name: "Docker + Compose", icon: "docker", color: "#2496ED" },
         { name: "Azure", icon: "microsoftazure", color: "#0078D4" },
         { name: "Caddy 2", icon: "caddy", color: "#1F88C0" },
-        { name: "GitHub Actions", icon: "githubactions", color: "#2088FF" },
       ],
     },
     {
       category: "Security & Identity",
       items: [
         { name: "Tailscale", icon: "tailscale", color: null },
-        { name: "WireGuard (wg-easy)", icon: "wireguard", color: "#88171A" },
+        { name: "WireGuard", icon: "wireguard", color: "#88171A" },
       ],
     },
     {
@@ -117,9 +118,7 @@ const PORTFOLIO_DATA = {
         { name: "Python", icon: "python", color: "#3776AB" },
         { name: "PHP", icon: "php", color: "#777BB4" },
         { name: "Express 5", icon: "express", color: null },
-        { name: "MySQL 8 (mysql2)", icon: "mysql", color: "#4479A1" },
-        { name: "JWT", icon: "jsonwebtokens", color: null },
-        { name: "Axios", icon: "axios", color: "#5A29E4" },
+        { name: "MySQL 8", icon: "mysql", color: "#4479A1" },
       ],
     },
     {
@@ -128,7 +127,7 @@ const PORTFOLIO_DATA = {
         { name: "HTML", icon: "html5", color: "#E34F26" },
         { name: "TypeScript", icon: "typescript", color: "#3178C6" },
         { name: "Tailwind CSS 3", icon: "tailwindcss", color: "#06B6D4" },
-        { name: "Next.js 16 (App Router)", icon: "nextdotjs", color: null },
+        { name: "Next.js 16", icon: "nextdotjs", color: null },
         { name: "React 18.3", icon: "react", color: "#61DAFB" },
         { name: "Bootstrap", icon: "bootstrap", color: "#7952B3" },
         { name: "Vite", icon: "vite", color: "#9135FF" },
