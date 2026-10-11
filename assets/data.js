@@ -202,6 +202,7 @@ const PORTFOLIO_DATA = {
         live: "https://owlsetph.vercel.app",
       },
       media: {
+        desktop: "./assets/projects/owlset-desktop.jpg",
         mobile: "./assets/projects/owlset-mobile.jpg",
       },
     },
