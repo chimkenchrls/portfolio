@@ -18,14 +18,11 @@ test('small pointer movements near a direction boundary do not make the head fli
   assert.equal(mascotDirection(...point(-Math.PI + 0.02), 3), 3, 'the left sector wraps continuously');
 });
 
-test('idle work includes brief blinks and a bounded coffee break, then returns to typing', () => {
-  assert.equal(mascotIdle(0).mode, 'typing');
+test('the standalone character blinks briefly and rests facing the visitor', () => {
+  assert.deepEqual(mascotIdle(0), { direction: 4, reaction: null });
   assert.equal(mascotIdle(5799).reaction, null);
   assert.equal(mascotIdle(5900).reaction, 0);
   assert.equal(mascotIdle(6000).reaction, null);
-  assert.equal(mascotIdle(27600).mode, 'coffee');
-  assert.equal(mascotIdle(29999).mode, 'coffee');
-  assert.equal(mascotIdle(30000).mode, 'typing');
   assert.deepEqual(mascotIdle(-100), mascotIdle(0));
   assert.deepEqual(mascotIdle(Infinity), mascotIdle(0));
 });

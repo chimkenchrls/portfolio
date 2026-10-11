@@ -277,21 +277,6 @@
             >
           </p>
         </div>
-        <div class="hero-studio" data-mode="typing">
-          <button class="studio-character" type="button" aria-label="Wave to pixel Kenneth" title="Click or tap for a wave" disabled>
-            <span class="studio-sprite" aria-hidden="true"></span>
-          </button>
-          <div class="studio-workstation" aria-hidden="true">
-            <span class="studio-chair"></span>
-            <span class="studio-arm studio-arm-left"><span></span></span>
-            <span class="studio-arm studio-arm-right"><span></span></span>
-            <span class="studio-monitor"><span class="studio-code"></span></span>
-            <span class="studio-keyboard"></span>
-            <span class="studio-mug"></span>
-            <span class="studio-desk"></span>
-          </div>
-          <button class="studio-pause" type="button" aria-label="Pause character animation" hidden>Pause</button>
-        </div>
         <div class="hero-yard" hidden>
           <button
             class="yard-chimken"
@@ -530,6 +515,46 @@
         <span class="visually-hidden">Back to </span>top
       </button>
     </main>
+
+    <button class="assistant-launcher" type="button" aria-label="Chat with CK, Ken’s AI stand-in" aria-haspopup="dialog" aria-controls="assistant-dialog" hidden>
+      <span class="assistant-bubble"></span>
+      <span class="assistant-sprite" aria-hidden="true"></span>
+    </button>
+
+    <dialog class="assistant-dialog" id="assistant-dialog" aria-labelledby="assistant-title">
+      <div class="assistant-header">
+        <h2 id="assistant-title">Chat with me</h2>
+        <button class="assistant-close" type="button" aria-label="Close chat" autofocus>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        </button>
+      </div>
+      <div class="assistant-scene" role="group" aria-label="Conversation" tabindex="0">
+        <div class="assistant-log" role="log" aria-label="Earlier messages" aria-live="off"></div>
+        <div class="assistant-stage">
+          <button class="assistant-character" type="button" aria-label="Say hi to CK" title="Say hi">
+            <span class="assistant-sprite" aria-hidden="true"></span>
+          </button>
+          <div class="assistant-speech">
+            <span class="assistant-speaker"></span>
+            <p class="assistant-say"></p>
+            <span class="assistant-dots" aria-hidden="true" hidden><span></span><span></span><span></span></span>
+            <div class="assistant-recovery" hidden>
+              <button class="assistant-retry" type="button">Try again</button>
+              <a class="assistant-email">Email me</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="assistant-status visually-hidden" role="status" aria-live="polite"></p>
+      <form class="assistant-form">
+        <label class="visually-hidden" for="assistant-input">Your question</label>
+        <textarea id="assistant-input" rows="1" maxlength="2000" placeholder="Ask me anything…" enterkeyhint="send" required></textarea>
+        <button class="assistant-send" type="submit" aria-label="Send message" disabled>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" /></svg>
+        </button>
+      </form>
+      <div class="assistant-suggestions" role="group" aria-label="Suggested questions"></div>
+    </dialog>
 
     <dialog class="game" aria-labelledby="game-title">
       <div class="game-head">

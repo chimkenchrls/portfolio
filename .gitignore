@@ -10,6 +10,7 @@ desktop.ini
 # Secrets (the site has none; this keeps one from slipping in)
 .env
 .env.*
+!.env.example
 *.pem
 *.key
 

@@ -16,6 +16,7 @@ A static site written in plain HTML, CSS, and vanilla JavaScript. It has no fram
 - Light and dark themes that follow the system setting
 - Project showcase with desktop and mobile screenshots
 - Live GitHub contribution calendar
+- Floating pixel character with a Gemini portfolio chat (optional private Node server)
 - Interactive terminal for contact details
 - A small endless-runner game, chimken (press Alt + K)
 - Motion that respects the reduced-motion setting, and full keyboard navigation
@@ -30,6 +31,8 @@ assets/data.js    All editable content
 assets/           Images, icons, fonts, resume
 tests/            Unit tests (node:test)
 tests/e2e/        Browser checks (Playwright, run locally)
+server.js         Optional local site + Gemini server (Node.js 22+)
+server/chat.js    Portfolio grounding, input validation, and provider requests
 .github/          CI/CD workflow
 ```
 
@@ -40,6 +43,8 @@ python3 -m http.server 8000
 ```
 
 Then open http://localhost:8000.
+
+For live AI chat, copy `.env.example` to `.env`, add `GEMINI_API_KEY`, and run `node --env-file=.env server.js`. Open http://localhost:8787. The API key stays on the server. See [assistant setup and hosting](./docs/assistant.md).
 
 ## Updating content
 

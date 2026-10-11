@@ -9,6 +9,10 @@
    ========================================================================== */
 const PORTFOLIO_DATA = {
   profile: {
+    name: "Kenneth Charles Valdez",
+    title: "Aspiring DevOps Engineer",
+    location: "Sariaya, Quezon, Philippines",
+    bio: "A 4th-year BS Computer Science student at STI College Lucena, building side projects and learning how to make deployments smooth and scalable.",
     email: "charleskenneth129@gmail.com",
     github: "https://github.com/chimkenchrls",
     githubUsername: "chimkenchrls",
@@ -17,6 +21,22 @@ const PORTFOLIO_DATA = {
     // Put the PDF in ./assets/ and set this to "./assets/resume.pdf" to show a
     // "Resume" button next to "Email me". null hides the button.
     resume: "./assets/resume.pdf",
+  },
+
+  assistant: {
+    // Public endpoint only. Keep the Gemini API key in the server's environment.
+    // For GitHub Pages, replace this with your deployed server's HTTPS chat URL.
+    endpoint: "./api/chat",
+    // The pixel character speaks as Ken in the first person; "name" is his speaker tag.
+    name: "CK",
+    launcher: "Chat with me",
+    title: "Chat with me",
+    greeting: "Hey, I’m CK. Ask me about my projects, my stack, or what I’m looking for.",
+    suggestions: [
+      "What have you built?",
+      "What’s your tech stack?",
+      "Are you looking for an internship?",
+    ],
   },
 
   // chimken: the site owner's high score shown as the score to beat.

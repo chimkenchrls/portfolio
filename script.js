@@ -622,10 +622,57 @@
     return MASCOT_CLOCKWISE[(Math.round(angle / sector) + 8) % 8];
   };
 
+  const assistantEndpoint = (value, base) => {
+    if (typeof value !== 'string' || !value.trim()) return null;
+    try {
+      const url = new URL(value, base);
+      const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+      if (url.username || url.password || url.hash || url.search) return null;
+      return url.protocol === 'https:' || (local && url.protocol === 'http:') ? url.href : null;
+    } catch { return null; }
+  };
+  const assistantHistory = (history, question) => {
+    const messages = history.slice(-10).map(({ role, text }) => ({ role, text }));
+    const newest = { role: 'user', text: question };
+    const requestBytes = () => new TextEncoder().encode(JSON.stringify({ messages: [...messages, newest] })).byteLength;
+    while (messages.length && messages[0].role !== 'user') messages.shift();
+    while (messages.length && (messages.reduce((n, m) => n + m.text.length, question.length) > 18000 || requestBytes() > 32000)) messages.splice(0, 2);
+    return [...messages, newest];
+  };
+
+  // Cells of the reactions atlas (3×3, left to right, top to bottom).
+  const MASCOT_REACTION = { blink: 0, smile: 1, surprised: 3, wink: 4, grin: 5, sleepy: 6, doubt: 7, delighted: 8 };
+  // What CK's face does for a moment in the conversation; null once the moment has
+  // passed and he goes back to idling. `still` (reduced motion) holds one frame.
+  const assistantPose = (mood, elapsed, still = false) => {
+    const time = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
+    const react = (name) => ({ direction: 4, reaction: MASCOT_REACTION[name] });
+    switch (mood) {
+      case 'hello': return !still && time < 1600 ? react('delighted') : null;
+      case 'asked':
+        if (!still && time < 500) return react('surprised');
+        // Thinking: eyes wander along the floor.
+        return { direction: still ? 7 : [6, 7, 8, 7][Math.floor((time - 500) / 700) % 4], reaction: null };
+      case 'talking': return react(!still && Math.floor(time / 200) % 2 ? 'surprised' : 'smile');
+      case 'done': return still || time < 2600 ? react('grin') : null;
+      case 'error': return react('doubt');
+      case 'wink': return !still && time < 1200 ? react('wink') : null;
+      default: return null;
+    }
+  };
+  // How many characters of a reply are written out after `elapsed` ms. Long replies
+  // speed up so none takes more than 4.5 s.
+  const assistantTyped = (length, elapsed) => {
+    const total = Math.max(0, Math.floor(length) || 0);
+    if (!total) return 0;
+    if (!Number.isFinite(elapsed)) return total;
+    const duration = Math.min(4500, Math.max(350, total * 18));
+    return Math.min(total, Math.floor((Math.max(0, elapsed) / duration) * total));
+  };
+
   const mascotIdle = (elapsed) => {
     const clock = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
-    if (clock % 30000 >= 27600) return { mode: 'coffee', direction: 4, reaction: 1 };
-    return { mode: 'typing', direction: 7, reaction: clock % 6000 >= 5800 ? 0 : null };
+    return { direction: 4, reaction: clock % 6000 >= 5800 ? 0 : null };
   };
 
   // Dot radius for an activity level (0–4), scaled like react-github-calendar.
@@ -964,7 +1011,8 @@
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       ROAM, createRoamState, roamStep, roamResize, roamFrame, placeCorn,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_PECK, CHIMKEN_INK,
-      mascotDirection, mascotIdle,
+      mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
+      MASCOT_REACTION, assistantPose, assistantTyped,
     };
   }
   if (typeof document === 'undefined') return;
@@ -2730,109 +2778,288 @@
   })();
 
   /* ==========================================================================
-     19. Hero studio — pixel Kenneth works, looks around and waves
+     19. Portfolio assistant — floating character, private Gemini connection
      ========================================================================== */
-
-  const heroStudio = (() => {
-    const init = () => {
-      const scene = $('.hero-studio');
-      if (!scene) return;
-      const button = $('.studio-character', scene);
-      const sprite = $('.studio-sprite', scene);
-      const pause = $('.studio-pause', scene);
-      if (!button || !sprite || !pause) return;
-      button.disabled = false;
-
-      // Warm the second atlas before the first blink or click swaps to it.
+  const portfolioAssistant = (() => {
+    const init = (data) => {
+      const config = data && data.assistant;
+      const launcher = $('.assistant-launcher');
+      const dialog = $('.assistant-dialog');
+      if (!config || !launcher || !dialog || typeof dialog.showModal !== 'function') return;
+      const form = $('.assistant-form', dialog);
+      const input = $('#assistant-input', dialog);
+      const sendButton = $('.assistant-send', dialog);
+      const scene = $('.assistant-scene', dialog);
+      const log = $('.assistant-log', dialog);
+      const speech = $('.assistant-speech', dialog);
+      const say = $('.assistant-say', dialog);
+      const dots = $('.assistant-dots', dialog);
+      const status = $('.assistant-status', dialog);
+      const suggestions = $('.assistant-suggestions', dialog);
+      const recovery = $('.assistant-recovery', dialog);
+      const character = $('.assistant-character', dialog);
+      const pointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+      const sprites = [$('.assistant-sprite', launcher), $('.assistant-sprite', character)];
       const reactions = new Image();
       reactions.src = './assets/mascot/mini-ck-reactions.webp';
-      const pointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
-      let inView = !('IntersectionObserver' in window);
-      let paused = false;
-      let running = false;
+      let history = [];
+      let busy = false;
+      let lastQuestion = null;
+      let controller = null;
+      let requestId = 0;
       let timer = 0;
       let pointerFrame = 0;
-      let pointer = null;
       let direction = 4;
       let pointerAt = -Infinity;
-      let waveUntil = 0;
-      let clock = 0;
-      let last = 0;
+      let activeAt = 0;
+      let mood = { name: 'idle', at: 0 };
+      let spoken = config.greeting; // the full text of the speech bubble
+      let spokenIsReply = true; // errors are said, but never kept in the transcript
+      let typing = null;
+      let greeted = false;
 
-      const show = (mode, cell, reacting) => {
-        scene.dataset.mode = mode;
-        sprite.classList.toggle('is-reacting', reacting);
+      $('.assistant-bubble', launcher).textContent = config.launcher;
+      $('#assistant-title', dialog).textContent = config.title;
+      $('.assistant-speaker', dialog).textContent = config.name;
+      $('.assistant-email', dialog).href = `mailto:${data.profile.email}`;
+      say.textContent = spoken;
+      launcher.hidden = false;
+      document.body.classList.add('has-assistant');
+
+      const still = () => prefersReducedMotion();
+      const paint = () => {
+        const now = performance.now();
+        let pose = dialog.open ? assistantPose(mood.name, now - mood.at, still()) : null;
+        if (!pose) {
+          if (still()) pose = { direction: 4, reaction: null };
+          else if (now - pointerAt < 1800) pose = { direction, reaction: null };
+          else if (dialog.open && now - activeAt > 40000) pose = { direction: 4, reaction: MASCOT_REACTION.sleepy };
+          else pose = mascotIdle(now);
+        }
+        const cell = pose.reaction === null ? pose.direction : pose.reaction;
+        const sprite = sprites[dialog.open ? 1 : 0];
+        sprite.classList.toggle('is-reacting', pose.reaction !== null);
         sprite.style.backgroundPosition = `${(cell % 3) * 50}% ${Math.floor(cell / 3) * 50}%`;
       };
-      const paint = (now) => {
-        if (!running) { show('still', 4, false); return; }
-        if (now < waveUntil) { show('wave', 8, true); return; }
-        if (now - pointerAt < 1800) { show('watching', direction, false); return; }
-        const idle = mascotIdle(clock);
-        show(idle.mode, idle.reaction === null ? idle.direction : idle.reaction, idle.reaction !== null);
+      const setMood = (name) => {
+        mood = { name, at: performance.now() };
+        activeAt = mood.at;
+        paint();
       };
-      const tick = () => {
-        const now = performance.now();
-        clock += Math.min(250, Math.max(0, now - last));
-        last = now;
-        paint(now);
-      };
-      const sync = () => {
-        running = inView && !document.hidden && !paused && !prefersReducedMotion();
-        scene.classList.toggle('is-running', running);
-        pause.hidden = prefersReducedMotion();
-        pause.textContent = paused ? 'Play' : 'Pause';
-        pause.setAttribute('aria-label', paused ? 'Resume character animation' : 'Pause character animation');
-        if (running && !timer) {
-          last = performance.now();
-          timer = window.setInterval(tick, 100);
-        } else if (!running) {
-          window.clearInterval(timer);
-          timer = 0;
-          cancelAnimationFrame(pointerFrame);
-          pointerFrame = 0;
-          pointer = null;
-          pointerAt = -Infinity;
-          direction = 4;
-          waveUntil = 0;
-        }
-        paint(performance.now());
-      };
-      const aim = () => {
+      const syncMotion = () => {
+        clearInterval(timer);
+        timer = 0;
+        cancelAnimationFrame(pointerFrame);
         pointerFrame = 0;
-        if (!running || !pointer || !pointerQuery.matches) return;
-        const box = button.getBoundingClientRect();
-        direction = mascotDirection(pointer.x - box.left - box.width / 2, pointer.y - box.top - box.height * 0.4, direction);
-        pointerAt = performance.now();
-        paint(pointerAt);
+        if (!still() && !document.hidden) timer = window.setInterval(paint, 200);
+        paint();
       };
-      window.addEventListener('pointermove', (event) => {
-        if (!running || !pointerQuery.matches || event.pointerType === 'touch') return;
-        pointer = { x: event.clientX, y: event.clientY };
-        if (!pointerFrame) pointerFrame = requestAnimationFrame(aim);
-      }, { passive: true });
-      window.addEventListener('pointerout', (event) => {
-        if (event.relatedTarget !== null) return;
-        pointer = null;
-        pointerAt = -Infinity;
-        paint(performance.now());
-      }, { passive: true });
-      button.addEventListener('click', () => {
-        if (!running) { show('still', 8, true); return; }
-        waveUntil = performance.now() + 1600;
-        // Repeated taps restart the short wave instead of stacking animations.
-        scene.dataset.mode = 'still';
-        void scene.offsetWidth;
-        paint(performance.now());
+
+      // Earlier turns scroll up above the speech bubble as a quieter transcript.
+      const archive = (role, text) => {
+        const item = document.createElement('div');
+        item.className = `assistant-message${role === 'user' ? ' is-user' : ''}`;
+        const label = document.createElement('span');
+        label.className = role === 'user' ? 'visually-hidden' : 'assistant-message-label';
+        label.textContent = role === 'user' ? 'You: ' : config.name;
+        const content = document.createElement('span');
+        content.textContent = text;
+        item.append(label, content);
+        log.append(item);
+      };
+      const toBottom = () => { scene.scrollTop = scene.scrollHeight; };
+      const finishTyping = () => {
+        if (!typing) return;
+        cancelAnimationFrame(typing.frame);
+        typing = null;
+        say.textContent = spoken;
+        say.classList.remove('is-typing');
+        setMood('done');
+        toBottom();
+      };
+      // CK says `text` in the bubble; `type` writes it out unless motion is off.
+      const speak = (text, type = false) => {
+        finishTyping();
+        spoken = text;
+        dots.hidden = true;
+        say.hidden = false;
+        if (!type || still()) {
+          say.textContent = text;
+          toBottom();
+          return false;
+        }
+        const chars = Array.from(text);
+        typing = { at: performance.now(), frame: 0 };
+        say.classList.add('is-typing');
+        const step = () => {
+          if (!typing) return;
+          const count = assistantTyped(chars.length, performance.now() - typing.at);
+          const pinned = scene.scrollHeight - scene.scrollTop - scene.clientHeight < 48;
+          say.textContent = chars.slice(0, count).join('');
+          if (pinned) toBottom();
+          if (count >= chars.length) finishTyping();
+          else typing.frame = requestAnimationFrame(step);
+        };
+        step();
+        return true;
+      };
+
+      const updateInput = () => {
+        sendButton.disabled = busy || !input.value.trim();
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(112, input.scrollHeight)}px`;
+      };
+      const setBusy = (value) => {
+        busy = value;
+        form.setAttribute('aria-busy', String(value));
+        $$('.assistant-suggestion', suggestions).forEach((button) => { button.disabled = value; });
+        $('.assistant-retry', dialog).disabled = value;
+        updateInput();
+      };
+      const showError = (text) => {
+        spokenIsReply = false;
+        speak(text);
+        status.textContent = text;
+        recovery.hidden = false;
+        setMood('error');
+        toBottom();
+      };
+      const submit = async (question, retry = false) => {
+        const text = String(question).trim();
+        if (busy || !text || text.length > 2000) return;
+        finishTyping();
+        lastQuestion = text;
+        if (!retry) {
+          if (spokenIsReply) archive('assistant', spoken);
+          archive('user', text);
+          input.value = '';
+        }
+        suggestions.hidden = true;
+        recovery.hidden = true;
+        say.hidden = true;
+        dots.hidden = false;
+        status.textContent = 'Thinking…';
+        setBusy(true);
+        setMood('asked');
+        toBottom();
+        const id = ++requestId;
+        controller = new AbortController();
+        const timeout = window.setTimeout(() => controller && controller.abort(), 30000);
+        try {
+          const endpoint = assistantEndpoint(config.endpoint, window.location.href);
+          if (!endpoint) throw new Error('unavailable');
+          const response = await fetch(endpoint, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: assistantHistory(history, text) }),
+            credentials: 'omit', signal: controller.signal,
+          });
+          const body = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
+          if (id !== requestId) return;
+          if (!response.ok) {
+            if (body && body.code === 'NOT_CONFIGURED') throw new Error('not-configured');
+            if (response.status === 429) throw new Error('busy');
+            throw new Error('unavailable');
+          }
+          if (!body || typeof body.reply !== 'string' || !body.reply.trim() || body.reply.length > 6000) throw new Error('unavailable');
+          history = [...assistantHistory(history, text), { role: 'assistant', text: body.reply }];
+          spokenIsReply = true;
+          status.textContent = body.reply;
+          setMood(speak(body.reply, true) ? 'talking' : 'done');
+        } catch (error) {
+          if (id !== requestId) return;
+          showError(error.name === 'AbortError' ? 'That took me too long. Try again?'
+            : error.message === 'not-configured' ? 'My chat isn’t connected yet. You can still look around, or email me.'
+            : error.message === 'busy' ? 'I’m getting a lot of questions right now. Try again in a minute.'
+            : 'I couldn’t get that answer through. Try again, or email me.');
+        } finally {
+          clearTimeout(timeout);
+          if (id === requestId) { controller = null; setBusy(false); }
+        }
+      };
+      config.suggestions.forEach((question) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'assistant-suggestion';
+        button.textContent = question;
+        button.addEventListener('click', () => submit(question));
+        suggestions.append(button);
       });
-      pause.addEventListener('click', () => { paused = !paused; sync(); });
-      document.addEventListener('visibilitychange', sync);
-      motionQuery.addEventListener('change', sync);
-      pointerQuery.addEventListener('change', () => { pointerAt = -Infinity; direction = 4; paint(performance.now()); });
-      if ('IntersectionObserver' in window) {
-        new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; sync(); }).observe(scene);
-      }
-      sync();
+      form.addEventListener('submit', (event) => { event.preventDefault(); submit(input.value); });
+      input.addEventListener('input', updateInput);
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+          event.preventDefault();
+          form.requestSubmit();
+        }
+      });
+      $('.assistant-retry', dialog).addEventListener('click', () => { if (lastQuestion) submit(lastQuestion, true); });
+      // A tap on the bubble skips the typing and shows the whole answer.
+      speech.addEventListener('click', finishTyping);
+      const fitViewport = () => {
+        if (!dialog.open || !window.visualViewport) return;
+        dialog.style.setProperty('--assistant-height', `${window.visualViewport.height}px`);
+        // Phones: the sheet sits on the bottom of what is visible, so above the keyboard.
+        dialog.style.setProperty('--assistant-bottom', `${Math.max(0, window.innerHeight - window.visualViewport.offsetTop - window.visualViewport.height)}px`);
+        dialog.classList.toggle('is-compact', window.visualViewport.height < 540);
+      };
+      launcher.addEventListener('click', () => {
+        layout.closeDrawer({ restoreFocus: false });
+        launcher.classList.add('has-opened');
+        document.body.classList.add('assistant-open');
+        dialog.showModal();
+        fitViewport();
+        syncMotion();
+        if (!greeted) {
+          greeted = true;
+          setMood(speak(config.greeting, true) ? 'talking' : 'hello');
+        } else {
+          setMood('hello');
+        }
+        toBottom();
+        // Keep the phone keyboard closed until the visitor chooses to type.
+        if (pointerQuery.matches) input.focus({ preventScroll: true });
+      });
+      $('.assistant-close', dialog).addEventListener('click', () => dialog.close());
+      dialog.addEventListener('click', (event) => {
+        if (event.target !== dialog) return;
+        const box = dialog.getBoundingClientRect();
+        if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dialog.close();
+      });
+      // Native dialog handles Escape and focus trapping; suppress page shortcuts.
+      dialog.addEventListener('keydown', (event) => { activeAt = performance.now(); event.stopPropagation(); });
+      dialog.addEventListener('close', () => {
+        finishTyping();
+        if (controller) {
+          requestId += 1;
+          controller.abort();
+          controller = null;
+          setBusy(false);
+          showError('I stopped that reply when you closed the chat. Ask again when you’re ready.');
+        }
+        document.body.classList.remove('assistant-open');
+        direction = 4;
+        pointerAt = -Infinity;
+        syncMotion();
+        launcher.focus({ preventScroll: true });
+      });
+      character.addEventListener('click', () => { if (!busy && !typing) setMood('wink'); });
+      window.addEventListener('pointermove', (event) => {
+        if (still() || document.hidden || !pointerQuery.matches || event.pointerType === 'touch') return;
+        cancelAnimationFrame(pointerFrame);
+        pointerFrame = requestAnimationFrame(() => {
+          pointerFrame = 0;
+          const box = (dialog.open ? character : launcher.lastElementChild).getBoundingClientRect();
+          direction = mascotDirection(event.clientX - box.left - box.width / 2, event.clientY - box.top - box.height * 0.4, direction);
+          pointerAt = performance.now();
+          activeAt = pointerAt;
+          paint();
+        });
+      }, { passive: true });
+      document.addEventListener('visibilitychange', syncMotion);
+      motionQuery.addEventListener('change', () => { finishTyping(); syncMotion(); });
+      window.visualViewport?.addEventListener('resize', fitViewport);
+      window.visualViewport?.addEventListener('scroll', fitViewport);
+      syncMotion();
     };
     return { init };
   })();
@@ -2990,7 +3217,7 @@
     terminal.init(data);
     shotViewer.init();
     chatReplay.init();
-    heroStudio.init();
+    portfolioAssistant.init(data);
     heroYard.init();
     scrollAids.init();
     const year = $('.footer-year');
