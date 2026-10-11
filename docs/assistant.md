@@ -26,6 +26,40 @@ Edit the launcher label, greeting, suggested questions, and public chat endpoint
 
 The system instruction has CK speak as Ken himself in the first person (he says he is an AI only if a visitor sincerely asks), preserves in-progress statuses, asks for concise plain text, and directs missing information to Ken's email. The model has no tools, browsing, account access, or ability to send messages. Grounding instructions reduce fabrication; they do not guarantee perfect answers. Responses are rendered as text, never HTML.
 
+## Deploy the API on Cloudflare Workers (free)
+
+GitHub Pages keeps serving the site; a Cloudflare Worker serves the two things a static site cannot: the chat (`POST /api/chat`) and the shared poke counter (`GET` / `POST /api/pokes`). The Worker is `worker/index.mjs`. It imports `server/chat.js` and `assets/data.js`, so prompts, grounding and validation are the same code the Node server runs. Counters live in a D1 database.
+
+One-time setup, from the repository root (Node.js 22+, a free Cloudflare account):
+
+```bash
+npx wrangler login                       # opens the browser once
+npx wrangler d1 create portfolio         # prints a database_id
+```
+
+Paste that `database_id` into `wrangler.toml`, then:
+
+```bash
+npx wrangler d1 execute portfolio --remote --file worker/schema.sql
+npx wrangler secret put GEMINI_API_KEY   # paste the key when asked; it is never written to a file
+npx wrangler deploy                      # prints https://kenchrls-api.<your-subdomain>.workers.dev
+```
+
+Then point the site at it in `assets/data.js` and publish as usual:
+
+- `assistant.endpoint`: `https://kenchrls-api.<your-subdomain>.workers.dev/api/chat`
+- `pokes.endpoint`: `https://kenchrls-api.<your-subdomain>.workers.dev/api/pokes`
+
+`ALLOWED_ORIGINS` in `wrangler.toml` lists the exact site origins that may call the API (no trailing slash). Add a custom domain there, comma-separated, and run `npx wrangler deploy` again. After editing facts in `assets/data.js`, redeploy the Worker too, since it bundles that file.
+
+Limits: 8 chat requests per visitor per minute, `DAILY_CHAT_LIMIT` (default 100) Gemini requests per day across everyone, stored in D1 so it survives restarts; up to 20 pokes per request and 40 poke requests per visitor per minute. The page batches quick taps into one request. While `pokes.endpoint` is `null`, each visitor only sees their own count ("Your pokes"); once it is set the sidebar shows the shared total ("Pokes").
+
+To try the Worker locally: `npx wrangler d1 execute portfolio --local --file worker/schema.sql`, then `npx wrangler dev`. Local runs read `GEMINI_API_KEY` from `.env` or `.dev.vars` (both ignored by Git).
+
+## Hosting the Node server instead
+
+The Node server (`server.js`) is an alternative to the Worker for the chat only; it has no poke counter.
+
 ## Hosting alongside GitHub Pages
 
 GitHub Pages continues to publish only the static portfolio. The Node server must be hosted separately on a service that runs Node.js and provides HTTPS, or it can serve both the site and chat itself.
@@ -48,7 +82,7 @@ Only `index.html`, `style.css`, `script.js`, and supported files inside `assets/
 node --test tests/*.test.js
 ```
 
-`tests/assistant.test.js` exercises history truncation, endpoint validation, trusted context, provider failures, hidden reasoning filtering, rate limits, CORS, request bounds, and static-file isolation. Route tests invoke the real HTTP handler with streams without opening network sockets. They use mocked Gemini responses and never consume a real key.
+`tests/worker.test.js` calls the Worker's real handler with a stand-in database: origins, bad requests, the daily budget, and the poke counter. `tests/assistant.test.js` exercises history truncation, endpoint validation, trusted context, provider failures, hidden reasoning filtering, rate limits, CORS, request bounds, and static-file isolation. Route tests invoke the real HTTP handler with streams without opening network sockets. They use mocked Gemini responses and never consume a real key.
 
 For the browser suite on a machine with Docker, serve the site, then run:
 

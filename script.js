@@ -668,6 +668,8 @@
     const n = Math.floor(Number(stored));
     return Number.isFinite(n) && n > 0 ? Math.min(n, 9999999) : 0;
   };
+  // The shared total as the server reports it; null when it is missing or nonsense.
+  const pokeTotal = (value) => (Number.isSafeInteger(value) && value >= 0 ? value : null);
   // How many characters of a reply are written out after `elapsed` ms. Long replies
   // speed up so none takes more than 4.5 s.
   const assistantTyped = (length, elapsed) => {
@@ -1020,7 +1022,7 @@
       ROAM, createRoamState, roamStep, roamResize, roamFrame, placeCorn,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_PECK, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal,
     };
   }
   if (typeof document === 'undefined') return;
@@ -2819,6 +2821,7 @@
       const pokeValue = $('.poke-value');
       const pokeSprite = pokeButton && $('.assistant-sprite', pokeButton);
       let opener = launcher;
+      let openedOnce = false;
       let pokes = pokeCount(storage.get('localStorage', 'ck-pokes'));
       let pokeFace = null;
       let pokeUntil = 0;
@@ -2863,10 +2866,11 @@
           else if (dialog.open && now - activeAt > 40000) pose = { direction: 4, reaction: MASCOT_REACTION.sleepy };
           else pose = mascotIdle(now);
         }
-        show(sprites[dialog.open ? 1 : 0], pose);
+        const poked = now < pokeUntil ? { direction: 4, reaction: pokeFace } : null;
+        show(sprites[dialog.open ? 1 : 0], (!dialog.open && poked) || pose);
         // The sidebar CK idles like the launcher, rests while the chat is open,
         // and pulls a face for a moment after each poke.
-        if (pokeSprite) show(pokeSprite, now < pokeUntil ? { direction: 4, reaction: pokeFace } : dialog.open ? { direction: 4, reaction: null } : pose);
+        if (pokeSprite) show(pokeSprite, poked || (dialog.open ? { direction: 4, reaction: null } : pose));
       };
       const setMood = (name) => {
         mood = { name, at: performance.now() };
@@ -3033,6 +3037,11 @@
         opener = from;
         layout.closeDrawer({ restoreFocus: false });
         launcher.classList.add('has-opened');
+        // From now on the floating CK is for poking; the sidebar's "Chat with me" reopens the chat.
+        openedOnce = true;
+        launcher.setAttribute('aria-label', 'Poke CK');
+        launcher.removeAttribute('aria-haspopup');
+        launcher.removeAttribute('aria-controls');
         document.body.classList.add('assistant-open');
         dialog.showModal();
         fitViewport();
@@ -3047,27 +3056,84 @@
         // Keep the phone keyboard closed until the visitor chooses to type.
         if (pointerQuery.matches) input.focus({ preventScroll: true });
       };
-      launcher.addEventListener('click', () => open(launcher));
+      const bump = [{ scale: 1.16 }, { scale: 1 }];
+      const spring = { duration: 320, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' };
+      // With a server the number is everyone's pokes; without one it is this visitor's own.
+      const pokeEndpoint = assistantEndpoint(data.pokes && data.pokes.endpoint, window.location.href);
+      const pokeLabel = $('.poke-label');
+      let total = null;
+      let unsent = 0;
+      let flushTimer = 0;
+      const shownPokes = () => (total === null ? pokes : total).toLocaleString('en-US');
+      const showPokes = () => {
+        if (pokeValue) pokeValue.textContent = shownPokes();
+        if (pokeLabel) pokeLabel.textContent = total === null ? 'Your pokes' : 'Pokes';
+      };
+      const pokeRequest = (options) => fetch(pokeEndpoint, { credentials: 'omit', ...options })
+        .then((response) => (response.ok ? response.json() : null))
+        .then((body) => pokeTotal(body && body.total))
+        .catch(() => null);
+      // Taps are sent in small batches, so a burst of pokes is one request.
+      const flushPokes = (keepalive = false) => {
+        clearTimeout(flushTimer);
+        flushTimer = 0;
+        if (!pokeEndpoint || !unsent) return;
+        const count = Math.min(unsent, 20);
+        unsent -= count;
+        pokeRequest({ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count }), keepalive }).then((latest) => {
+          if (latest === null) return;
+          total = latest + unsent;
+          showPokes();
+          if (unsent) flushTimer = window.setTimeout(flushPokes, 1200);
+        });
+      };
+      if (pokeEndpoint) {
+        pokeRequest({}).then((latest) => {
+          if (latest === null) return;
+          total = latest + unsent;
+          showPokes();
+        });
+        window.addEventListener('pagehide', () => flushPokes(true));
+      }
+      // One more poke: count it, save it, and have every visible CK pull the next face.
+      const pokeOnce = (sprite) => {
+        pokes = pokeCount(pokes + 1);
+        storage.set('localStorage', 'ck-pokes', String(pokes));
+        if (total !== null) total += 1;
+        if (pokeEndpoint) {
+          unsent += 1;
+          if (!flushTimer) flushTimer = window.setTimeout(flushPokes, 1200);
+        }
+        showPokes();
+        pokeFace = pokeReaction(pokes);
+        pokeUntil = performance.now() + 1100;
+        paint();
+        window.setTimeout(paint, 1120);
+        // WAAPI, so a quick second poke restarts the bump cleanly.
+        if (!still() && typeof sprite.animate === 'function') sprite.animate(bump, spring);
+      };
+      launcher.addEventListener('click', () => {
+        if (!openedOnce) { open(launcher); return; }
+        pokeOnce(sprites[0]);
+        $$('.assistant-pop', launcher).forEach((old) => old.remove());
+        const pop = document.createElement('span');
+        pop.className = 'assistant-pop';
+        pop.setAttribute('aria-hidden', 'true');
+        pop.textContent = shownPokes();
+        launcher.append(pop);
+        if (still() || typeof pop.animate !== 'function') { window.setTimeout(() => pop.remove(), 900); return; }
+        pop.animate([{ opacity: 0, translate: '0 6px' }, { opacity: 1, translate: '0 -6px', offset: 0.25 }, { opacity: 1, translate: '0 -10px', offset: 0.75 }, { opacity: 0, translate: '0 -16px' }], { duration: 900, easing: 'ease-out' }).onfinish = () => pop.remove();
+      });
       if (chatButton) {
         chatButton.hidden = false;
         chatButton.addEventListener('click', () => open(chatButton));
       }
       if (poke && pokeSprite) {
-        const showPokes = () => { pokeValue.textContent = pokes.toLocaleString('en-US'); };
         showPokes();
         poke.hidden = false;
         pokeButton.addEventListener('click', () => {
-          pokes = pokeCount(pokes + 1);
-          storage.set('localStorage', 'ck-pokes', String(pokes));
-          showPokes();
-          pokeFace = pokeReaction(pokes);
-          pokeUntil = performance.now() + 1100;
-          paint();
-          window.setTimeout(paint, 1120);
-          if (still() || typeof pokeSprite.animate !== 'function') return;
-          // WAAPI, so a quick second poke restarts the bump cleanly.
-          pokeSprite.animate([{ scale: 1.16 }, { scale: 1 }], { duration: 320, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
-          pokeValue.animate([{ opacity: 0.4, translate: '0 4px' }, { opacity: 1, translate: '0 0' }], { duration: 220, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+          pokeOnce(pokeSprite);
+          if (!still() && typeof pokeValue.animate === 'function') pokeValue.animate([{ opacity: 0.4, translate: '0 4px' }, { opacity: 1, translate: '0 0' }], { duration: 220, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
         });
       }
       $('.assistant-close', dialog).addEventListener('click', () => dialog.close());
@@ -3091,22 +3157,32 @@
         direction = 4;
         pointerAt = -Infinity;
         syncMotion();
-        opener.focus({ preventScroll: true });
+        // The drawer closes when the chat opens, so its button may be out of reach.
+        (opener.getClientRects().length ? opener : launcher).focus({ preventScroll: true });
       });
       character.addEventListener('click', () => { if (!busy && !typing) setMood('wink'); });
-      window.addEventListener('pointermove', (event) => {
-        if (still() || document.hidden || !pointerQuery.matches || event.pointerType === 'touch') return;
+      // He looks at the cursor, and on touch screens at every tap and drag.
+      const lookAt = (x, y) => {
+        if (still() || document.hidden) return;
         cancelAnimationFrame(pointerFrame);
         pointerFrame = requestAnimationFrame(() => {
           pointerFrame = 0;
           // On desktop the launcher is hidden and the sidebar CK does the looking.
           const watcher = dialog.open ? character : launcher.getClientRects().length || !pokeButton ? launcher.lastElementChild : pokeButton;
           const box = watcher.getBoundingClientRect();
-          direction = mascotDirection(event.clientX - box.left - box.width / 2, event.clientY - box.top - box.height * 0.4, direction);
+          direction = mascotDirection(x - box.left - box.width / 2, y - box.top - box.height * 0.4, direction);
           pointerAt = performance.now();
           activeAt = pointerAt;
           paint();
         });
+      };
+      const lookAtPointer = (event) => lookAt(event.clientX, event.clientY);
+      window.addEventListener('pointermove', lookAtPointer, { passive: true });
+      window.addEventListener('pointerdown', lookAtPointer, { passive: true });
+      // A scrolling finger stops sending pointer events, but still sends touch moves.
+      window.addEventListener('touchmove', (event) => {
+        const touch = event.touches[0];
+        if (touch) lookAt(touch.clientX, touch.clientY);
       }, { passive: true });
       document.addEventListener('visibilitychange', syncMotion);
       motionQuery.addEventListener('change', () => { finishTyping(); syncMotion(); });

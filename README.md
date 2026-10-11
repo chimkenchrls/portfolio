@@ -33,6 +33,8 @@ tests/            Unit tests (node:test)
 tests/e2e/        Browser checks (Playwright, run locally)
 server.js         Optional local site + Gemini server (Node.js 22+)
 server/chat.js    Portfolio grounding, input validation, and provider requests
+worker/           Cloudflare Worker: chat + shared poke counter (free hosting)
+wrangler.toml     Worker configuration (no secrets)
 .github/          CI/CD workflow
 ```
 

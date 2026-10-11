@@ -4,7 +4,7 @@ Chat requests are intercepted, so no Gemini key or Node server is needed."""
 import json
 import os
 from playwright.sync_api import sync_playwright
-from common import URL, check, finish
+from common import URL, check, finish, offline_api
 
 SHOTS = os.environ.get("SHOTS")
 calls = []
@@ -22,6 +22,7 @@ def answer(route):
 
 def open_page(b, width=1280, height=900, **opts):
     ctx = b.new_context(viewport={"width": width, "height": height}, **opts)
+    offline_api(ctx)
     ctx.route("**/api/chat", answer)
     ctx.route("**/github-contributions-api.jogruber.de/**", lambda r: r.abort())
     p = ctx.new_page(); errors = []
@@ -89,7 +90,7 @@ with sync_playwright() as pw:
     p.click(".assistant-suggestion >> nth=0")
     p.wait_for_selector(".assistant-dots:not([hidden])")
     check("he looks surprised, then thinks while the reply loads", face(p) == "r0% 50%", face(p))
-    p.wait_for_timeout(650)
+    p.wait_for_function("!document.querySelector('.assistant-character .assistant-sprite').classList.contains('is-reacting')", timeout=3000)
     check("thinking: eyes down, three dots in the bubble", face(p).startswith("d") and face(p).endswith("100%"), face(p))
     if SHOTS: p.screenshot(path=f"{SHOTS}/assistant-desktop-thinking.png")
     p.wait_for_function(settled)
@@ -163,8 +164,42 @@ with sync_playwright() as pw:
     check("no console errors with the rail", not errors, "; ".join(errors))
     ctx.close()
     ctx, p, errors = open_page(b, 820, 1000)
-    check("tablet keeps the floating CK and has no sidebar chat button", p.is_visible(".assistant-launcher") and not p.is_visible(".sidebar-chat") and box(p, ".sidebar")["w"] == 56)
+    check("tablet keeps the floating CK and has the chat button in its rail", p.is_visible(".assistant-launcher") and p.is_visible(".sidebar-chat") and box(p, ".sidebar")["w"] == 56)
     if SHOTS: p.screenshot(path=f"{SHOTS}/sidebar-tablet.png")
+    ctx.close()
+
+    # Shared poke counter ---------------------------------------------------------
+    # data.js is served with the counter switched on; the API itself is intercepted.
+    server = {"total": 1000, "posts": []}
+    def pokes_api(route):
+        if route.request.method == "POST":
+            count = json.loads(route.request.post_data)["count"]
+            server["posts"].append(count); server["total"] += count
+        route.fulfill(status=200, content_type="application/json", body=json.dumps({"total": server["total"]}))
+    ctx = b.new_context(viewport={"width": 1280, "height": 900})
+    offline_api(ctx)
+    src = open("/site/assets/data.js").read()
+    import re
+    patched = re.sub(r'pokes: \{ endpoint: [^}]+\}', 'pokes: { endpoint: "http://localhost:8000/api/pokes" }', src)
+    assert 'localhost:8000/api/pokes' in patched, "pokes setting not found in data.js"
+    ctx.route("**/assets/data.js*", lambda r: r.fulfill(status=200, content_type="text/javascript", body=patched))
+    ctx.route("**/api/pokes", pokes_api)
+    ctx.route("**/github-contributions-api.jogruber.de/**", lambda r: r.abort())
+    p = ctx.new_page(); errors = []
+    p.on("pageerror", lambda e: errors.append(str(e)))
+    p.goto(URL); p.wait_for_load_state("networkidle")
+    p.wait_for_function("document.querySelector('.poke-label').textContent === 'Pokes'")
+    check("with a server the sidebar shows everyone's total", p.inner_text(".poke-value").strip() == "1,000")
+    for _ in range(3): p.click(".poke-button")
+    check("a poke shows at once, before the server answers", p.inner_text(".poke-value").strip() == "1,003" and server["posts"] == [])
+    p.wait_for_function("document.querySelector('.poke-value').textContent.trim() === '1,003'")
+    p.wait_for_timeout(1600)
+    check("three quick pokes are sent as one request", server["posts"] == [3] and p.inner_text(".poke-value").strip() == "1,003", str(server))
+    server["total"] += 50  # other visitors poke meanwhile
+    p.click(".poke-button")
+    p.wait_for_timeout(1600)
+    check("the total picks up other visitors' pokes", server["posts"] == [3, 1] and p.inner_text(".poke-value").strip() == "1,054", p.inner_text(".poke-value"))
+    check("no errors with the shared counter", not errors, "; ".join(errors))
     ctx.close()
 
     # Dark theme ---------------------------------------------------------------
@@ -186,10 +221,19 @@ with sync_playwright() as pw:
     sprite = p.eval_on_selector(".assistant-launcher .assistant-sprite", "n => getComputedStyle(n).backgroundImage")
     check("launcher draws the character sprite", "mini-ck" in sprite, sprite)
     if SHOTS: p.screenshot(path=f"{SHOTS}/assistant-phone-launcher.png")
+    look = lambda: p.eval_on_selector(".assistant-launcher .assistant-sprite", "n => (n.classList.contains('is-reacting') ? 'r' : 'd') + n.style.backgroundPosition")
+    p.touchscreen.tap(20, 300)
+    p.wait_for_timeout(150)
+    check("on phones CK looks at where you touch (up and left)", look() == "d0% 0%", look())
+    p.touchscreen.tap(360, 300)
+    p.wait_for_timeout(150)
+    check("and follows the next touch (straight up)", look() == "d50% 0%", look())
+    p.wait_for_timeout(2100)
+    check("then looks back at the visitor", look() in ("d50% 50%", "r0% 0%"), look())
     p.tap(".menu-toggle")
     p.wait_for_timeout(350)
     drawer = box(p, ".sidebar")
-    check("the phone drawer is flush to the edge, not a floating card", drawer["x"] == 0 and abs(drawer["b"] - 812) <= 1 and p.is_visible(".poke-button") and not p.is_visible(".sidebar-chat"), str(drawer))
+    check("the phone drawer is flush to the edge, not a floating card", drawer["x"] == 0 and abs(drawer["b"] - 812) <= 1 and p.is_visible(".poke-button") and p.is_visible(".sidebar-chat"), str(drawer))
     if SHOTS: p.screenshot(path=f"{SHOTS}/sidebar-drawer.png")
     p.tap(".menu-toggle")
     p.wait_for_timeout(350)
@@ -225,6 +269,26 @@ with sync_playwright() as pw:
     p.wait_for_function("!document.body.classList.contains('assistant-open')")
     p.wait_for_timeout(350)
     check("the close button works on phones", not p.is_visible(".assistant-dialog"))
+    # After the first open, tapping the floating CK pokes him instead of reopening the chat.
+    check("after the first open the bubble label is gone and he is a poke button", not p.is_visible(".assistant-bubble") and p.get_attribute(".assistant-launcher", "aria-label") == "Poke CK")
+    p.tap(".assistant-launcher")
+    p.wait_for_timeout(120)
+    check("a tap on him is now a poke: no chat, a reaction, and a count", not p.is_visible(".assistant-dialog") and look() == "r0% 50%" and p.inner_text(".assistant-pop").strip() == "1" and p.evaluate("localStorage.getItem('ck-pokes')") == "1", look())
+    p.tap(".assistant-launcher")
+    p.wait_for_timeout(120)
+    check("the next poke counts up with a new face", look() == "r50% 50%" and p.inner_text(".assistant-pop").strip() == "2", look())
+    if SHOTS: p.screenshot(path=f"{SHOTS}/assistant-phone-poke.png")
+    p.wait_for_timeout(1300)
+    check("the count floats away and he settles", p.locator(".assistant-pop").count() == 0 and not look().startswith("r50% 50%"), look())
+    p.tap(".menu-toggle")
+    p.wait_for_timeout(350)
+    check("the drawer shows the same count", p.inner_text(".poke-value").strip() == "2")
+    p.tap(".sidebar-chat")
+    p.wait_for_selector(".assistant-dialog[open]")
+    check("Chat with me in the drawer reopens the chat, with the conversation kept", messages(p) >= 2 and not p.evaluate("document.body.classList.contains('drawer-open')"))
+    p.tap(".assistant-close")
+    p.wait_for_function("!document.body.classList.contains('assistant-open')")
+    p.wait_for_timeout(350)
     check("no console errors on phones", not errors, "; ".join(errors))
     ctx.close()
 

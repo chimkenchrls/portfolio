@@ -2,7 +2,7 @@
 import os
 import re
 from playwright.sync_api import sync_playwright
-from common import URL, check, finish, new_page
+from common import URL, check, finish, new_page, offline_api
 
 SHOTS = os.environ.get("SHOTS")  # optional: directory for screenshots
 score = lambda p: p.inner_text(".game-score")
@@ -45,6 +45,7 @@ with sync_playwright() as pw:
     for name, opts in [("desktop", {}), ("phone", {"has_touch": True, "is_mobile": True})]:
         width, height = (1280, 900) if name == "desktop" else (375, 812)
         context = b.new_context(viewport={"width": width, "height": height}, color_scheme="dark", **opts)
+        offline_api(context)
         context.route("**/script.js*", lambda r: r.fulfill(status=200, content_type="text/javascript", body=patched))
         p = context.new_page(); errs = []
         p.on("pageerror", lambda e: errs.append(str(e)))

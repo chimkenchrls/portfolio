@@ -2208,6 +2208,20 @@ body.is-rail .sidebar-controls {
 .assistant-launcher > .assistant-sprite { transition: scale 160ms ease-out; }
 .assistant-launcher:active > .assistant-sprite { scale: 0.95; }
 .assistant-launcher.has-opened .assistant-bubble { display: none; }
+/* The running count floats up from his head after a poke. */
+.assistant-pop {
+  position: absolute;
+  top: -4px;
+  right: 26px;
+  padding: 2px 7px;
+  color: var(--bg);
+  background: var(--fg);
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
 .assistant-sprite {
   display: block;
   width: 100%;
@@ -2407,8 +2421,7 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
 }
 
 @media (max-width: 1024px) {
-  .collapse-toggle,
-  .sidebar-chat {
+  .collapse-toggle {
     display: none;
   }
   .main {

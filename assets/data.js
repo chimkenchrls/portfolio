@@ -25,8 +25,8 @@ const PORTFOLIO_DATA = {
 
   assistant: {
     // Public endpoint only. Keep the Gemini API key in the server's environment.
-    // For GitHub Pages, replace this with your deployed server's HTTPS chat URL.
-    endpoint: "./api/chat",
+    // The Cloudflare Worker (worker/index.mjs). For the local Node server use "./api/chat".
+    endpoint: "https://kenchrls-api.kenchrls.workers.dev/api/chat",
     // The pixel character speaks as Ken in the first person; "name" is his speaker tag.
     name: "CK",
     launcher: "Chat with me",
@@ -38,6 +38,10 @@ const PORTFOLIO_DATA = {
       "Are you looking for an internship?",
     ],
   },
+
+  // The shared poke counter. null keeps pokes private to each visitor's browser;
+  // set it to the deployed Worker's HTTPS URL (…/api/pokes) to count every device.
+  pokes: { endpoint: "https://kenchrls-api.kenchrls.workers.dev/api/pokes" },
 
   // chimken: the site owner's high score shown as the score to beat.
   game: { owner: "ck", highScore: 3236 },

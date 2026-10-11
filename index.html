@@ -235,10 +235,15 @@
         </button>
         <div class="poke" hidden>
           <p class="poke-count" aria-live="polite">
-            <span class="poke-label">Your pokes</span>
+            <span class="poke-label">Total pokes</span>
             <span class="poke-value">0</span>
           </p>
-          <button class="poke-button" type="button" aria-label="Poke CK" title="Poke me">
+          <button
+            class="poke-button"
+            type="button"
+            aria-label="Poke CK"
+            title="Poke me"
+          >
             <span class="assistant-sprite" aria-hidden="true"></span>
           </button>
         </div>
@@ -560,28 +565,71 @@
       </button>
     </main>
 
-    <button class="assistant-launcher" type="button" aria-label="Chat with CK, Ken’s AI stand-in" aria-haspopup="dialog" aria-controls="assistant-dialog" hidden>
+    <button
+      class="assistant-launcher"
+      type="button"
+      aria-label="Chat with CK, Ken’s AI stand-in"
+      aria-haspopup="dialog"
+      aria-controls="assistant-dialog"
+      hidden
+    >
       <span class="assistant-bubble"></span>
       <span class="assistant-sprite" aria-hidden="true"></span>
     </button>
 
-    <dialog class="assistant-dialog" id="assistant-dialog" aria-labelledby="assistant-title">
+    <dialog
+      class="assistant-dialog"
+      id="assistant-dialog"
+      aria-labelledby="assistant-title"
+    >
       <div class="assistant-header">
         <h2 id="assistant-title">Chat with me</h2>
-        <button class="assistant-close" type="button" aria-label="Close chat" autofocus>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg>
+        <button
+          class="assistant-close"
+          type="button"
+          aria-label="Close chat"
+          autofocus
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
         </button>
       </div>
-      <div class="assistant-scene" role="group" aria-label="Conversation" tabindex="0">
-        <div class="assistant-log" role="log" aria-label="Earlier messages" aria-live="off"></div>
+      <div
+        class="assistant-scene"
+        role="group"
+        aria-label="Conversation"
+        tabindex="0"
+      >
+        <div
+          class="assistant-log"
+          role="log"
+          aria-label="Earlier messages"
+          aria-live="off"
+        ></div>
         <div class="assistant-stage">
-          <button class="assistant-character" type="button" aria-label="Say hi to CK" title="Say hi">
+          <button
+            class="assistant-character"
+            type="button"
+            aria-label="Say hi to CK"
+            title="Say hi"
+          >
             <span class="assistant-sprite" aria-hidden="true"></span>
           </button>
           <div class="assistant-speech">
             <span class="assistant-speaker"></span>
             <p class="assistant-say"></p>
-            <span class="assistant-dots" aria-hidden="true" hidden><span></span><span></span><span></span></span>
+            <span class="assistant-dots" aria-hidden="true" hidden
+              ><span></span><span></span><span></span
+            ></span>
             <div class="assistant-recovery" hidden>
               <button class="assistant-retry" type="button">Try again</button>
               <a class="assistant-email">Email me</a>
@@ -589,15 +637,47 @@
           </div>
         </div>
       </div>
-      <p class="assistant-status visually-hidden" role="status" aria-live="polite"></p>
+      <p
+        class="assistant-status visually-hidden"
+        role="status"
+        aria-live="polite"
+      ></p>
       <form class="assistant-form">
-        <label class="visually-hidden" for="assistant-input">Your question</label>
-        <textarea id="assistant-input" rows="1" maxlength="2000" placeholder="Ask me anything…" enterkeyhint="send" required></textarea>
-        <button class="assistant-send" type="submit" aria-label="Send message" disabled>
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 19V5m-6 6 6-6 6 6" /></svg>
+        <label class="visually-hidden" for="assistant-input"
+          >Your question</label
+        >
+        <textarea
+          id="assistant-input"
+          rows="1"
+          maxlength="2000"
+          placeholder="Ask me anything…"
+          enterkeyhint="send"
+          required
+        ></textarea>
+        <button
+          class="assistant-send"
+          type="submit"
+          aria-label="Send message"
+          disabled
+        >
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            aria-hidden="true"
+          >
+            <path d="M12 19V5m-6 6 6-6 6 6" />
+          </svg>
         </button>
       </form>
-      <div class="assistant-suggestions" role="group" aria-label="Suggested questions"></div>
+      <div
+        class="assistant-suggestions"
+        role="group"
+        aria-label="Suggested questions"
+      ></div>
     </dialog>
 
     <dialog class="game" aria-labelledby="game-title">

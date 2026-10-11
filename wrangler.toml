@@ -1,0 +1,19 @@
+# Cloudflare Worker for the portfolio API (chat + shared poke counter).
+# Deploy steps are in docs/assistant.md. Nothing here is secret: the Gemini key is
+# stored with `npx wrangler secret put GEMINI_API_KEY`, never in this file.
+name = "kenchrls-api"
+main = "worker/index.mjs"
+compatibility_date = "2026-01-01"
+
+[vars]
+GEMINI_MODEL = "gemini-3.5-flash-lite"
+# Exact site origins allowed to call the API, separated by commas (no trailing slash).
+ALLOWED_ORIGINS = "https://chimkenchrls.github.io"
+# Gemini requests allowed per day across all visitors.
+DAILY_CHAT_LIMIT = "100"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "portfolio"
+# Paste the id printed by `npx wrangler d1 create portfolio`.
+database_id = "b486a580-2b84-421c-9980-38deb926e31b"

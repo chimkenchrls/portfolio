@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { Readable, Writable } = require('node:stream');
 const { finished } = require('node:stream/promises');
 const data = require('../assets/data.js');
-const { assistantEndpoint, assistantHistory, assistantPose, assistantTyped, MASCOT_REACTION, pokeReaction, pokeCount } = require('../script.js');
+const { assistantEndpoint, assistantHistory, assistantPose, assistantTyped, MASCOT_REACTION, pokeReaction, pokeCount, pokeTotal } = require('../script.js');
 const { ChatError, validateMessages, portfolioContext, generateReply, createLimiter } = require('../server/chat.js');
 const { createPortfolioServer } = require('../server.js');
 
@@ -221,4 +221,12 @@ test('on desktop the chat opens from the sidebar and the floating CK is hidden',
   assert.ok(sidebar.indexOf('class="sidebar-chat"') < sidebar.indexOf('class="poke"'), '"Chat with me" sits above the poke row');
   assert.match(sidebar, /class="poke-button"[^>]*aria-label="Poke CK"/);
   assert.match(sidebar, /Your pokes/, 'the counter is labelled as the visitor’s own, not a site-wide total');
+});
+
+test('the shared poke total is only trusted when the server sends a real count', () => {
+  assert.equal(pokeTotal(0), 0);
+  assert.equal(pokeTotal(1269215), 1269215);
+  for (const junk of [null, undefined, '12', -1, 1.5, NaN, Infinity, {}]) assert.equal(pokeTotal(junk), null);
+  assert.ok(data.pokes && 'endpoint' in data.pokes, 'data.js says where the shared counter lives (null = private counts)');
+  assert.ok(data.pokes.endpoint === null || assistantEndpoint(data.pokes.endpoint, 'https://example.com/') !== null, 'a set endpoint must be HTTPS');
 });

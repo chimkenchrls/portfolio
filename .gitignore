@@ -29,3 +29,7 @@ playwright-report/
 *.MOV
 *.psd
 *.zip
+
+# Cloudflare Worker: local state and local secrets
+.wrangler/
+.dev.vars

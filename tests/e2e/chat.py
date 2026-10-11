@@ -1,7 +1,7 @@
 """AmIgo chat replay + diagram: real conversation plays, pauses, loops scenes; static with reduced motion."""
 import os
 from playwright.sync_api import sync_playwright
-from common import URL, check, finish
+from common import URL, check, finish, offline_api
 
 SHOTS = os.environ.get("SHOTS")
 norm = lambda s: " ".join(s.split())
@@ -14,6 +14,7 @@ SPEED = 10  # the test serves a copy of script.js whose replay timers run 10x fa
 
 def open_page(b, width=1280, height=900, fast=True, **opts):
     ctx = b.new_context(viewport={"width": width, "height": height}, **opts)
+    offline_api(ctx)
     if fast:
         src = open("/site/script.js").read()
         patched = src.replace("const wait = (fn, ms) => { timer = window.setTimeout(fn, ms); };",
@@ -135,6 +136,7 @@ with sync_playwright() as pw:
 
     # --- typed text can never become markup ----------------------------------
     ctx = b.new_context(viewport={"width": 1280, "height": 900}, reduced_motion="reduce")
+    offline_api(ctx)
     src = open("/site/assets/data.js").read().replace('{ from: "user", text: "hello amigo" }', '{ from: "user", text: "<img src=x onerror=alert(1)> **b** <b>x</b>" }')
     ctx.route("**/assets/data.js*", lambda r: r.fulfill(status=200, content_type="text/javascript", body=src))
     p = ctx.new_page(); fired = []

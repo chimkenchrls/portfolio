@@ -3,7 +3,7 @@ import json
 import time
 from datetime import date, timedelta
 from playwright.sync_api import sync_playwright
-from common import URL, check, finish
+from common import URL, check, finish, offline_api
 
 API = "**/github-contributions-api.jogruber.de/**"
 days = [{"date": (date(2026, 10, 4) - timedelta(days=367 - i)).isoformat(), "count": (i * 7) % 5, "level": (i * 7) % 5} for i in range(368)]
@@ -16,6 +16,7 @@ MEASURE = """() => { const p = document.querySelector('.github-panel'), pr = doc
 
 def page_with(b, handler, width=1280, height=900, **opts):
     ctx = b.new_context(viewport={"width": width, "height": height}, reduced_motion="reduce", **opts)
+    offline_api(ctx)
     ctx.route(API, handler)
     p = ctx.new_page(); errors = []
     p.on("pageerror", lambda e: errors.append(str(e)))
@@ -59,6 +60,7 @@ with sync_playwright() as pw:
         ctx.close()
 
     ctx = b.new_context(viewport={"width": 1280, "height": 900}, java_script_enabled=False)
+    offline_api(ctx)
     p = ctx.new_page(); p.goto(URL)
     check("without JavaScript the empty panel stays hidden", p.eval_on_selector(".github-panel", "n => n.hidden"))
     ctx.close()

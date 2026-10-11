@@ -1,6 +1,6 @@
 """'Get in touch' terminal: contact on load, chips, typing, history, completion, nav key 6."""
 from playwright.sync_api import sync_playwright
-from common import check, finish, new_page
+from common import check, finish, new_page, offline_api
 
 EMAIL = "charleskenneth129@gmail.com"
 screen = lambda p: p.inner_text(".terminal-screen")
@@ -187,6 +187,7 @@ with sync_playwright() as pw:
     ctx.close()
 
     ctx = b.new_context(viewport={"width": 1280, "height": 900}, java_script_enabled=False)
+    offline_api(ctx)
     p = ctx.new_page(); p.goto("http://localhost:8000/")
     out = p.inner_text(".terminal-screen")
     check("without JavaScript the contact details are still readable", EMAIL in out and "github.com/chimkenchrls" in out and "de4dicated" in out, out)
