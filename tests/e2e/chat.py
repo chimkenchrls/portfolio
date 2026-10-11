@@ -75,7 +75,7 @@ with sync_playwright() as pw:
     check("the reply is word for word, with formatting", plain(scene1[1]) in log_text(p) and p.locator(".chat-msg.is-bot strong").first.inner_text() == "Study mode on." and p.locator(".chat-msg.is-bot code").first.inner_text() == "@mention", log_text(p))
     check("the bot is labelled as an app", p.inner_text(".chat-msg.is-bot .chat-app") == "APP")
     av = p.evaluate("(() => { const b = document.querySelector('.chat-msg.is-bot .chat-avatar img'); return { src: b && b.getAttribute('src'), loaded: !!b && b.complete && b.naturalWidth > 0, gray: !!b && getComputedStyle(b).filter.includes('grayscale(1)'), round: getComputedStyle(document.querySelector('.chat-avatar')).borderRadius }; })()")
-    check("AmIgo's chat head is its picture, black-and-white and round", av["src"] == "./assets/projects/amigo-avatar.jpg" and av["loaded"] and av["gray"] and av["round"] == "50%", str(av))
+    check("AmIgo's chat head is its picture, black-and-white and round", av["src"] == "./assets/projects/amigo-avatar.png" and av["loaded"] and av["gray"] and av["round"] == "50%", str(av))
     check("no book emoji in the replay", "📚" not in log_text(p) and "📕" not in log_text(p))
 
     p.click(".chat-toggle"); p.wait_for_timeout(100); count = rows(p)

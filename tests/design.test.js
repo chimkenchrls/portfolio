@@ -69,19 +69,21 @@ test('section headings keep the original centered divider style', () => {
   assert.match(block('.divider-label'), /font-family:\s*var\(--font-mono\)/);
 });
 
-test('content sits on soft cards instead of hairline tables', () => {
-  for (const name of ['--surface', '--shadow', '--shadow-lift', '--radius-lg']) token(light, name);
+test('cards are kept for projects and certifications; the other sections are ruled rows', () => {
+  for (const name of ['--surface', '--shadow', '--radius-lg']) token(light, name);
   token(dark, '--surface'); token(dark, '--shadow');
-  const card = block('.card');
-  assert.match(card, /background:\s*var\(--surface\)/);
-  assert.match(card, /border-radius:\s*var\(--radius-lg\)/);
-  assert.match(card, /box-shadow:\s*var\(--shadow\)/);
-  assert.match(css, /\.card:hover\s*\{[^}]*box-shadow:\s*var\(--shadow-lift\)/, 'cards lift on hover');
-  assert.doesNotMatch(block('.stack-grid'), /background:\s*var\(--border\)/, 'stack is no longer one bordered table');
-  for (const cls of ['timeline-block card', 'github-panel card']) assert.ok(html.includes(`class="${cls}"`), `${cls} in the markup`);
   const js = read('script.js');
-  assert.match(js, /'stack-group card'/);
-  assert.match(block('.project-list'), /background:\s*var\(--surface\)/, 'projects are rows inside one raised list');
+  assert.doesNotMatch(css, /\.card\b/, 'no generic card utility: each card styles itself');
+  assert.doesNotMatch(html, /class="[^"]*\bcard\b/, 'no card classes in the markup');
+  for (const name of ['.project-list', '.certification']) {
+    assert.match(block(name), /background:\s*var\(--surface\)/, `${name} is a raised card`);
+    assert.match(block(name), /box-shadow:\s*var\(--shadow\)/, `${name} has the soft shadow`);
+    assert.match(block(name), /border-radius:\s*var\(--radius-lg\)/);
+  }
+  for (const name of ['.stack-group', '.timeline-block', '.github-panel']) {
+    assert.doesNotMatch(block(name), /box-shadow|background:\s*var\(--surface\)/, `${name} is flat`);
+  }
+  assert.match(block('.sidebar'), /background:\s*var\(--surface\)/, 'the sidebar is still a surface');
   assert.match(js, /el\('li', 'project'\)/);
 });
 
@@ -96,7 +98,8 @@ test('the hero keeps its original size and its one static button', () => {
 
 test('new motion is switched off for reduced-motion users', () => {
   const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
-  assert.match(reduced, /\.card/, 'cards do not lift');
+  assert.doesNotMatch(css, /\.card:hover/, 'nothing lifts on hover any more');
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{[^@]*\.btn:active[^}]*\{\s*scale: none;/, 'press feedback is off too');
 });
 
 test('on phones the hero fills the first screen, so About starts below the fold', () => {

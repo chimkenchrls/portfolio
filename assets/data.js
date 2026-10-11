@@ -261,7 +261,7 @@ const PORTFOLIO_DATA = {
       chat: {
         bot: "AmIgo",
         user: "ck",
-        botAvatar: "./assets/projects/amigo-avatar.jpg", // the bot's picture
+        botAvatar: "./assets/projects/amigo-avatar.png", // the bot's picture
         userIcon: "chimken", // an icon from ./assets/icons/ for my messages
         scenes: [
           {

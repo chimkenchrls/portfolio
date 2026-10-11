@@ -82,7 +82,7 @@ test('chat avatars: AmIgo has its picture, ck uses the chimken icon', () => {
   const fs = require('node:fs');
   const path = require('node:path');
   const amigo = data.projects.find((p) => p.title === 'AmIgo');
-  assert.equal(amigo.chat.botAvatar, './assets/projects/amigo-avatar.jpg');
+  assert.equal(amigo.chat.botAvatar, './assets/projects/amigo-avatar.png');
   const bytes = fs.readFileSync(path.join(__dirname, '..', amigo.chat.botAvatar));
   assert.ok(bytes.length < 20 * 1024, `avatar is ${Math.round(bytes.length / 1024)} KB`);
   assert.equal(bytes.indexOf(Buffer.from('Exif\0\0')), -1);

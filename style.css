@@ -223,24 +223,6 @@ dd {
   text-decoration-color: var(--fg);
 }
 
-/* Card: the raised surface used for content blocks. `translate` (not
-   `transform`) so the hover lift never fights the scroll-reveal transform. */
-.card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  transition:
-    translate var(--t) var(--ease),
-    box-shadow var(--t) var(--ease),
-    border-color var(--t) ease;
-}
-.card:hover {
-  translate: 0 -2px;
-  border-color: color-mix(in srgb, var(--fg) 20%, var(--border));
-  box-shadow: var(--shadow-lift);
-}
-
 .noscript-note {
   margin-bottom: 32px;
   padding: 12px 14px;
@@ -727,7 +709,7 @@ body.is-rail .sidebar-controls {
 
 /* 9. Hero ================================================================= */
 .section {
-  padding-bottom: 64px;
+  padding-bottom: 88px;
   scroll-margin-top: 24px;
 }
 
@@ -847,7 +829,11 @@ body.is-rail .sidebar-controls {
   transition:
     opacity var(--t-fast) ease,
     background-color var(--t-fast) ease,
-    color var(--t-fast) ease;
+    color var(--t-fast) ease,
+    scale 160ms ease-out;
+}
+.btn:active {
+  scale: 0.97;
 }
 .btn-primary {
   color: var(--accent-fg);
@@ -982,10 +968,10 @@ body.is-rail .sidebar-controls {
 .about-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 24px 56px;
 }
 .timeline-block {
-  padding: 22px 22px 8px;
+  min-width: 0;
 }
 
 .rows > li {
@@ -1043,16 +1029,19 @@ body.is-rail .sidebar-controls {
 }
 
 /* 14. Stack =============================================================== */
+/* One ruled row per category: label on the left, tools on the right. */
 .stack-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
+  border-bottom: 1px solid var(--border);
 }
 .stack-group {
-  padding: 20px;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 10px 24px;
+  align-items: baseline;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
 }
 .stack-group-title {
-  margin-bottom: 14px;
   font-family: var(--font-mono);
   font-size: 10px;
   font-weight: 500;
@@ -1063,7 +1052,7 @@ body.is-rail .sidebar-controls {
 .stack-items {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px 24px;
 }
 .stack-brand {
   background-color: var(--brand-color, currentColor);
@@ -1072,22 +1061,12 @@ body.is-rail .sidebar-controls {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 5px 10px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  transition: border-color var(--t-fast) ease;
-}
-.stack-item:hover {
-  border-color: var(--fg);
+  font-size: 14px;
 }
 
 /* GitHub contributions (inside the Stack section) */
 .github-panel {
-  margin-top: 16px;
-  padding: 20px;
+  padding-top: 28px;
 }
 .github-head {
   display: flex;
@@ -1144,7 +1123,7 @@ body.is-rail .sidebar-controls {
 
 /* 15. Projects ============================================================ */
 /* A compact list: thumbnail, title, one line of description. A row opens to its
-   full write-up and screenshots; rows past the first few fold behind "+ N more". */
+   full write-up and screenshots. */
 .project-list {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1190,6 +1169,9 @@ body.is-rail .sidebar-controls {
   height: 100%;
   object-fit: cover;
   object-position: top;
+}
+.project-thumb.is-avatar img {
+  object-position: center;
 }
 .project-main {
   min-width: 0;
@@ -1277,48 +1259,12 @@ body.is-rail .sidebar-controls {
   border: 1px dashed var(--fg-muted);
   border-radius: 999px;
 }
-/* Folded: the next row shows through as a fading peek under the button. */
-.project.is-peek {
-  max-height: 60px;
-  overflow: hidden;
-  pointer-events: none;
-  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 88%);
-  mask-image: linear-gradient(to bottom, #000, transparent 88%);
-}
-.project-more {
-  position: relative;
-  z-index: 1;
-  display: block;
-  min-height: 40px;
-  margin: 14px auto 0;
-  padding: 0 20px;
-  font-size: 13px;
-  font-weight: 500;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  box-shadow: var(--shadow);
-  transition:
-    background-color var(--t-fast) ease,
-    border-color var(--t-fast) ease,
-    scale 160ms ease-out;
-}
-.project-list.is-folded + .project-more {
-  margin-top: -22px;
-}
-.project-more:active {
-  scale: 0.97;
-}
 @media (hover: hover) and (pointer: fine) {
   .project-head:hover {
     background: var(--bg-alt);
   }
   .project-head:hover .project-title::before {
     color: var(--fg);
-  }
-  .project-more:hover {
-    background: var(--bg-alt);
-    border-color: color-mix(in srgb, var(--fg) 18%, var(--border));
   }
 }
 @media (prefers-reduced-motion: no-preference) {
@@ -1336,7 +1282,7 @@ body.is-rail .sidebar-controls {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .project-more:active {
+  .btn:active {
     scale: none;
   }
 }
@@ -1713,6 +1659,7 @@ body.is-rail .sidebar-controls {
 }
 
 /* Certifications — three centered cards, stacked on phones */
+/* Three certificate cards, each with an inner frame like a printed certificate. */
 .certification-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1729,6 +1676,10 @@ body.is-rail .sidebar-controls {
   min-width: 0;
   padding: 24px 18px 14px;
   text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
 }
 .certification::before {
   content: "";
@@ -1798,9 +1749,6 @@ body.is-rail .sidebar-controls {
   color: var(--fg-muted);
   transition: color var(--t-fast) ease;
 }
-.certification-action:hover {
-  color: var(--fg);
-}
 .certification-action::before,
 .certification-action::after {
   content: "";
@@ -1808,6 +1756,21 @@ body.is-rail .sidebar-controls {
   height: 8px;
   border: solid var(--fg-muted);
   opacity: 0.6;
+}
+.certification-action::before {
+  margin-right: 10px;
+  border-width: 0 0 1px 1px;
+  transform: rotate(25deg);
+}
+.certification-action::after {
+  margin-left: 10px;
+  border-width: 0 1px 1px 0;
+  transform: rotate(-25deg);
+}
+@media (hover: hover) and (pointer: fine) {
+  .certification-action:hover {
+    color: var(--fg);
+  }
 }
 .certification-action::before {
   margin-right: 10px;
@@ -2497,12 +2460,6 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   .pixel-tile {
     transition: none;
   }
-  .card {
-    transition: none;
-  }
-  .card:hover {
-    translate: none;
-  }
 }
 
 ::view-transition-old(root) {
@@ -2709,8 +2666,9 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   .hero-photo {
     width: 224px;
   }
-  .stack-grid {
+  .stack-group {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   .terminal-screen {
     height: 260px;
@@ -2744,16 +2702,6 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   }
   .project-body {
     padding: 2px 16px 22px;
-  }
-  .project.is-peek {
-    max-height: 52px;
-  }
-  .timeline-block {
-    padding: 18px 16px 6px;
-  }
-  .stack-group,
-  .github-panel {
-    padding: 16px;
   }
   /* Portfolio assistant: a fixed sheet on the bottom edge. The bubble takes the full
      width so answers read at a normal line length; CK stands under its tail. */

@@ -228,11 +228,3 @@ test('skeletonDays is a full, empty 53-week grid ending this week (placeholder f
   assert.equal(weeks.length, 53);
   assert.ok(weeks.every((w) => w.length === 7 && w.every(Boolean)));
 });
-
-test('projectFold: long project lists show two rows, a faded peek, and "+ N more"', () => {
-  const { projectFold } = require('../script.js');
-  assert.deepEqual(projectFold(5), { peek: 2, hidden: 3 });
-  assert.deepEqual(projectFold(4), { peek: 2, hidden: 2 });
-  for (const short of [0, 1, 2, 3, NaN]) assert.deepEqual(projectFold(short), { peek: -1, hidden: 0 }, 'short lists are shown whole');
-  assert.deepEqual(projectFold(6, 3), { peek: 3, hidden: 3 });
-});

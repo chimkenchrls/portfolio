@@ -1,4 +1,4 @@
-"""Projects list: compact rows, a faded peek and "+ N more"; a row opens to its full write-up."""
+"""Projects list: every project as a compact row; a row opens to its full write-up."""
 import os
 from playwright.sync_api import sync_playwright
 from common import check, finish, new_page
@@ -12,14 +12,12 @@ with sync_playwright() as pw:
         ctx, p, errors = new_page(b, width, height, reduced_motion="reduce", **opts)
         total = p.evaluate("PORTFOLIO_DATA.projects.length")
         p.evaluate("document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(800)
-        check(f"{name}: two rows and a peek are shown", visible(p) == 3 and p.locator(".project.is-peek").count() == 1)
-        check(f"{name}: the button counts the rest", p.inner_text(".project-more").strip() == f"+ {total - 2} more")
-        check(f"{name}: the peek cannot be focused or clicked", p.evaluate("document.querySelector('.project.is-peek').inert"))
+        check(f"{name}: every project is listed, with no fold button", visible(p) == total and p.locator(".project-more, .project.is-peek").count() == 0)
         check(f"{name}: details start closed", p.locator(".project-body:visible").count() == 0)
         thumbs = p.evaluate("[...document.querySelectorAll('.project:not([hidden]) .project-thumb img')].every(i => i.complete && i.naturalWidth > 0)")
         check(f"{name}: thumbnails load", thumbs)
         folded = p.eval_on_selector("#projects", "n => n.getBoundingClientRect().height")
-        check(f"{name}: the folded section is compact", folded < 420, str(folded))
+        check(f"{name}: with every row closed the section stays compact", folded < (560 if name == "desktop" else 700), str(folded))
         if SHOTS: p.locator("#projects").screenshot(path=f"{SHOTS}/projects-{name}-folded.png")
         p.click(".project-toggle >> nth=0")
         check(f"{name}: a row opens to its write-up, tags and screenshots", p.locator(".project.is-open .project-desc").is_visible() and p.locator(".project.is-open .device").count() >= 1 and p.get_attribute(".project-toggle >> nth=0", "aria-expanded") == "true")
@@ -29,11 +27,6 @@ with sync_playwright() as pw:
         if SHOTS: p.locator("#projects").screenshot(path=f"{SHOTS}/projects-{name}-open.png")
         p.click(".project-toggle >> nth=0")
         check(f"{name}: and closes again", p.locator(".project-body:visible").count() == 0)
-        p.click(".project-more")
-        check(f"{name}: + more shows every project", visible(p) == total and p.locator(".project.is-peek").count() == 0 and p.inner_text(".project-more").strip() == "Show less")
-        if SHOTS: p.locator("#projects").screenshot(path=f"{SHOTS}/projects-{name}-all.png")
-        p.click(".project-more")
-        check(f"{name}: Show less folds it back", visible(p) == 3)
         check(f"{name}: no console errors", not errors, "; ".join(errors))
         ctx.close()
     ctx, p, errors = new_page(b, 1280, 900, color_scheme="dark")

@@ -660,12 +660,6 @@
       default: return null;
     }
   };
-  // The projects list shows `visible` rows in full, the next as a faded peek, and
-  // folds the rest behind "+ N more". Short lists are not folded at all.
-  const projectFold = (count, visible = 2) => {
-    const total = Math.max(0, Math.floor(count) || 0);
-    return total > visible + 1 ? { peek: visible, hidden: total - visible } : { peek: -1, hidden: 0 };
-  };
   // Each poke gets a different face; the order loops.
   const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
   const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
@@ -1026,7 +1020,7 @@
       ROAM, createRoamState, roamStep, roamResize, roamFrame, placeCorn,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_PECK, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, projectFold,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount,
     };
   }
   if (typeof document === 'undefined') return;
@@ -1319,7 +1313,7 @@
     });
 
     const stack = ({ stack: groups = [] }) => groups.map((group) => {
-      const box = el('div', 'stack-group card');
+      const box = el('div', 'stack-group');
       const list = el('ul', 'stack-items');
       (group.items || []).forEach((item) => {
         const li = el('li', 'stack-item');
@@ -1419,6 +1413,8 @@
       const picture = shots.length ? (shots.find((shot) => shot.kind === 'desktop') || shots[0]).src
         : hasChat && SHOT_PATH.test(String(project.chat.botAvatar)) ? project.chat.botAvatar : null;
       if (picture) {
+        // A bot's avatar is centred; screenshots show their top edge.
+        thumb.classList.toggle('is-avatar', !shots.length);
         const img = document.createElement('img');
         img.src = picture;
         img.alt = '';
@@ -1493,7 +1489,7 @@
       if (!items.length) return [pendingEl('li', certificationsPending || 'Coming soon.')];
       return items.map((cert) => {
         const inProgress = cert.status === 'in-progress';
-        const li = el('li', `certification card${inProgress ? ' is-in-progress' : ''}`);
+        const li = el('li', `certification${inProgress ? ' is-in-progress' : ''}`);
         const logo = el('span', 'certification-logo');
         logo.setAttribute('aria-hidden', 'true');
         if (typeof cert.logo === 'string' && CERTIFICATE_LOGO_PATH.test(cert.logo)) {
@@ -2832,42 +2828,6 @@
   })();
 
   /* ==========================================================================
-     18b. Projects list — folds long lists behind a "+ N more" button
-     ========================================================================== */
-  const projectList = (() => {
-    const init = () => {
-      const list = $('.project-list');
-      if (!list) return;
-      const rows = [...list.children];
-      const fold = projectFold(rows.length);
-      if (!fold.hidden) return;
-      const more = el('button', 'project-more');
-      more.type = 'button';
-      list.after(more);
-      let open = false;
-      const sync = () => {
-        rows.forEach((row, index) => {
-          const peek = !open && index === fold.peek;
-          row.hidden = !open && index > fold.peek;
-          row.classList.toggle('is-peek', peek);
-          row.inert = peek;
-        });
-        list.classList.toggle('is-folded', !open);
-        more.textContent = open ? 'Show less' : `+ ${fold.hidden} more`;
-        more.setAttribute('aria-expanded', String(open));
-      };
-      more.addEventListener('click', () => {
-        open = !open;
-        sync();
-        // Folding from far down the list would leave the visitor below it.
-        if (!open && list.getBoundingClientRect().top < 0) list.scrollIntoView({ block: 'start' });
-      });
-      sync();
-    };
-    return { init };
-  })();
-
-  /* ==========================================================================
      19. Portfolio assistant — floating character, private Gemini connection
      ========================================================================== */
   const portfolioAssistant = (() => {
@@ -3341,7 +3301,6 @@
     keyboard.init();
     clipboard.init();
     pixelPhoto.init();
-    projectList.init();
     reveal.init();
     githubGraph.init(data);
     photoDeck.init(data);
