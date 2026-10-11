@@ -26,6 +26,7 @@ def open_page(b, width=1280, height=900, fast=True, **opts):
     p.on("pageerror", lambda e: errors.append(str(e)))
     p.on("console", lambda m: errors.append(m.text) if m.type == "error" and "ERR_FAILED" not in m.text else None)
     p.goto(URL); p.wait_for_load_state("networkidle")
+    p.evaluate("document.querySelectorAll('.project-more[aria-expanded=false], .project-toggle[aria-expanded=false]').forEach(b => b.click()); 0")
     # No scroll-reveal slide in this suite: Playwright re-scrolls the page when it
     # clicks an element that is still moving, which would push the chat off screen.
     p.add_style_tag(content=".reveal { opacity: 1 !important; transform: none !important; transition: none !important; }")

@@ -15,7 +15,7 @@ with sync_playwright() as pw:
     b = pw.chromium.launch()
     for name, width, height, opts in [("desktop", 1280, 900, {}), ("phone", 375, 812, {"has_touch": True, "is_mobile": True})]:
         ctx, p, errors = new_page(b, width, height, reduced_motion="reduce", **opts)
-        p.evaluate("document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(1500)
+        p.evaluate("document.querySelectorAll('.project-more[aria-expanded=false], .project-toggle[aria-expanded=false]').forEach(b => b.click()); document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(1500)
         expected = p.evaluate("PORTFOLIO_DATA.projects.filter(x => x.media).map(x => x.title)")
         plain = p.evaluate("PORTFOLIO_DATA.projects.filter(x => !x.media).length")
         rows = p.evaluate(GEO)
@@ -50,13 +50,13 @@ with sync_playwright() as pw:
         p.click(".shot-viewer-close"); p.wait_for_timeout(200)
         check(f"{name}: the close button closes it", not p.eval_on_selector(".shot-viewer", "d => d.open"))
         if SHOTS:
-            p.evaluate("document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(300)
+            p.evaluate("document.querySelectorAll('.project-more[aria-expanded=false], .project-toggle[aria-expanded=false]').forEach(b => b.click()); document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(300)
             p.locator("#projects").screenshot(path=f"{SHOTS}/projects-{name}.png")
         check(f"{name}: no console errors", not errors, "; ".join(errors))
         ctx.close()
 
     ctx, p, errors = new_page(b, 1280, 900)
-    p.evaluate("document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(1200)
+    p.evaluate("document.querySelectorAll('.project-more[aria-expanded=false], .project-toggle[aria-expanded=false]').forEach(b => b.click()); document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(1200)
     p.hover(".device-desktop"); p.wait_for_timeout(400)
     check("hover shows the screenshot in color", p.eval_on_selector(".device-desktop img", "i => getComputedStyle(i).filter") == "none")
     ctx.close()

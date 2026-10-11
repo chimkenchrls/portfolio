@@ -41,7 +41,7 @@ test('the palette stays monochrome: no accent colour, only the green status dot'
     const [r, g, b] = [0, 2, 4].map((k) => parseInt(hex.slice(k, k + 2), 16));
     if (Math.max(r, g, b) - Math.min(r, g, b) > 24) hues.add(`#${hex.toLowerCase()}`);
   }
-  assert.deepEqual([...hues].sort(), ['#16a34a', '#22c55e'], 'the status greens are the only non-grey colours');
+  assert.deepEqual([...hues].sort(), ['#2f9e5b', '#5fd08a'], 'the status greens are the only non-grey colours');
 });
 
 test('depth comes from surfaces: cards read as raised in both themes, and text stays readable on them', () => {
@@ -81,7 +81,8 @@ test('content sits on soft cards instead of hairline tables', () => {
   for (const cls of ['timeline-block card', 'github-panel card']) assert.ok(html.includes(`class="${cls}"`), `${cls} in the markup`);
   const js = read('script.js');
   assert.match(js, /'stack-group card'/);
-  assert.match(js, /'project card'/);
+  assert.match(block('.project-list'), /background:\s*var\(--surface\)/, 'projects are rows inside one raised list');
+  assert.match(js, /el\('li', 'project'\)/);
 });
 
 test('the hero keeps its original size and its one static button', () => {

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { Readable, Writable } = require('node:stream');
 const { finished } = require('node:stream/promises');
 const data = require('../assets/data.js');
-const { assistantEndpoint, assistantHistory, assistantPose, assistantTyped, MASCOT_REACTION } = require('../script.js');
+const { assistantEndpoint, assistantHistory, assistantPose, assistantTyped, MASCOT_REACTION, pokeReaction, pokeCount } = require('../script.js');
 const { ChatError, validateMessages, portfolioContext, generateReply, createLimiter } = require('../server/chat.js');
 const { createPortfolioServer } = require('../server.js');
 
@@ -194,4 +194,31 @@ test('static serving exposes the site but not secrets, server code, or traversal
   const chat = await request(server);
   assert.equal(chat.status, 503);
   assert.equal(JSON.parse(chat.text).code, 'NOT_CONFIGURED');
+});
+
+test('every poke gets a face, and the faces loop', () => {
+  const faces = [1, 2, 3, 4, 5].map(pokeReaction);
+  assert.deepEqual(faces, ['surprised', 'wink', 'delighted', 'doubt', 'grin'].map((name) => MASCOT_REACTION[name]));
+  assert.equal(pokeReaction(6), faces[0]);
+  assert.equal(pokeReaction(0), faces[0]);
+  assert.equal(pokeReaction(NaN), faces[0]);
+});
+
+test('the saved poke count survives whatever storage hands back', () => {
+  assert.equal(pokeCount('12'), 12);
+  assert.equal(pokeCount(12.9), 12);
+  for (const junk of [null, undefined, '', 'abc', '-4', NaN, Infinity]) assert.equal(pokeCount(junk), 0);
+  assert.equal(pokeCount(1e12), 9999999, 'capped so the label never overflows the sidebar');
+});
+
+test('on desktop the chat opens from the sidebar and the floating CK is hidden', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const css = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  assert.match(css, /@media \(min-width: 1024\.02px\) \{[^}]*\.assistant-launcher \{\s*display: none;/);
+  const sidebar = html.slice(html.indexOf('<aside'), html.indexOf('</aside>'));
+  assert.ok(sidebar.indexOf('class="sidebar-chat"') < sidebar.indexOf('class="poke"'), '"Chat with me" sits above the poke row');
+  assert.match(sidebar, /class="poke-button"[^>]*aria-label="Poke CK"/);
+  assert.match(sidebar, /Your pokes/, 'the counter is labelled as the visitor’s own, not a site-wide total');
 });

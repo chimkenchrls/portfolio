@@ -660,6 +660,20 @@
       default: return null;
     }
   };
+  // The projects list shows `visible` rows in full, the next as a faded peek, and
+  // folds the rest behind "+ N more". Short lists are not folded at all.
+  const projectFold = (count, visible = 2) => {
+    const total = Math.max(0, Math.floor(count) || 0);
+    return total > visible + 1 ? { peek: visible, hidden: total - visible } : { peek: -1, hidden: 0 };
+  };
+  // Each poke gets a different face; the order loops.
+  const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
+  const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
+  // The saved poke count, however storage hands it back.
+  const pokeCount = (stored) => {
+    const n = Math.floor(Number(stored));
+    return Number.isFinite(n) && n > 0 ? Math.min(n, 9999999) : 0;
+  };
   // How many characters of a reply are written out after `elapsed` ms. Long replies
   // speed up so none takes more than 4.5 s.
   const assistantTyped = (length, elapsed) => {
@@ -1012,7 +1026,7 @@
       ROAM, createRoamState, roamStep, roamResize, roamFrame, placeCorn,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_PECK, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, projectFold,
     };
   }
   if (typeof document === 'undefined') return;
@@ -1230,6 +1244,12 @@
     const pendingEl = (tag, text) => el(tag, 'pending', text);
 
     const social = ({ profile = {} }) => {
+      // The sidebar's icon links point at the same profiles.
+      $$('[data-profile-link]').forEach((link) => {
+        const url = safeUrl(profile[link.dataset.profileLink]);
+        if (url) link.href = url;
+        else link.hidden = true;
+      });
       const parts = [];
       const github = safeUrl(profile.github);
       if (github) parts.push(externalLink(github, 'github', ''));
@@ -1386,20 +1406,56 @@
       return media;
     };
 
-    const projects = ({ projects: items = [] }) => items.map((project) => {
-      const li = el('li', 'project card');
+    const projects = ({ projects: items = [] }) => items.map((project, index) => {
+      const li = el('li', 'project');
+      const shots = projectShots(project);
+      const hasChat = !shots.length && chatScript(project.chat && project.chat.scenes).length > 0;
+      const tags = (project.tags || []).filter(Boolean);
+
+      // The compact row: thumbnail, title + status, one line of description.
       const head = el('div', 'project-head');
-      const metaClass = project.status === 'done' ? 'project-meta' : 'badge';
-      head.append(el('h3', 'project-title', project.title), el('span', metaClass, project.meta));
+      const thumb = el('span', 'project-thumb');
+      thumb.setAttribute('aria-hidden', 'true');
+      const picture = shots.length ? (shots.find((shot) => shot.kind === 'desktop') || shots[0]).src
+        : hasChat && SHOT_PATH.test(String(project.chat.botAvatar)) ? project.chat.botAvatar : null;
+      if (picture) {
+        const img = document.createElement('img');
+        img.src = picture;
+        img.alt = '';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        thumb.append(img);
+      } else {
+        thumb.textContent = String(project.title || '').slice(0, 1);
+      }
+      const bodyId = `project-details-${index}`;
+      const toggle = el('button', 'project-toggle', project.title);
+      toggle.type = 'button';
+      toggle.setAttribute('aria-expanded', 'false');
+      toggle.setAttribute('aria-controls', bodyId);
+      const title = el('h3', 'project-title');
+      title.append(toggle);
+      const line = el('div', 'project-line');
+      line.append(title, el('span', project.status === 'done' ? 'project-meta' : 'badge', project.meta));
+      const main = el('div', 'project-main');
+      main.append(line, el('p', 'project-summary', project.description || 'Details coming soon.'));
+      head.append(thumb, main);
+      if (tags.length) head.append(el('span', 'project-kind', tags[0]));
       li.append(head);
 
       const body = el('div', 'project-body');
+      body.id = bodyId;
+      body.hidden = true;
+      toggle.addEventListener('click', () => {
+        const open = li.classList.toggle('is-open');
+        toggle.setAttribute('aria-expanded', String(open));
+        body.hidden = !open;
+      });
       const info = el('div', 'project-info');
       info.append(project.description
         ? el('p', 'project-desc', project.description)
         : pendingEl('p', 'Details coming soon.'));
 
-      const tags = (project.tags || []).filter(Boolean);
       if (tags.length) {
         const ul = el('ul', 'tags');
         ul.setAttribute('aria-label', 'Technologies');
@@ -1422,11 +1478,10 @@
         info.append(diagramEl(project.diagram));
       }
 
-      const shots = projectShots(project);
       if (shots.length) {
         li.classList.add('has-media');
         body.append(deviceFrames(shots));
-      } else if (chatScript(project.chat && project.chat.scenes).length) {
+      } else if (hasChat) {
         li.classList.add('has-media', 'has-chat');
         body.append(chatWindow(project.chat));
       }
@@ -1629,7 +1684,6 @@
     const updateRail = () => {
       body.classList.toggle('is-rail', tabletQuery.matches || (!mobileQuery.matches && collapsed));
       if (!collapseToggle) return;
-      collapseToggle.textContent = collapsed ? '[>>]' : '[<<]';
       collapseToggle.setAttribute('aria-expanded', String(!collapsed));
       collapseToggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
     };
@@ -2778,6 +2832,42 @@
   })();
 
   /* ==========================================================================
+     18b. Projects list — folds long lists behind a "+ N more" button
+     ========================================================================== */
+  const projectList = (() => {
+    const init = () => {
+      const list = $('.project-list');
+      if (!list) return;
+      const rows = [...list.children];
+      const fold = projectFold(rows.length);
+      if (!fold.hidden) return;
+      const more = el('button', 'project-more');
+      more.type = 'button';
+      list.after(more);
+      let open = false;
+      const sync = () => {
+        rows.forEach((row, index) => {
+          const peek = !open && index === fold.peek;
+          row.hidden = !open && index > fold.peek;
+          row.classList.toggle('is-peek', peek);
+          row.inert = peek;
+        });
+        list.classList.toggle('is-folded', !open);
+        more.textContent = open ? 'Show less' : `+ ${fold.hidden} more`;
+        more.setAttribute('aria-expanded', String(open));
+      };
+      more.addEventListener('click', () => {
+        open = !open;
+        sync();
+        // Folding from far down the list would leave the visitor below it.
+        if (!open && list.getBoundingClientRect().top < 0) list.scrollIntoView({ block: 'start' });
+      });
+      sync();
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      19. Portfolio assistant — floating character, private Gemini connection
      ========================================================================== */
   const portfolioAssistant = (() => {
@@ -2800,6 +2890,15 @@
       const character = $('.assistant-character', dialog);
       const pointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
       const sprites = [$('.assistant-sprite', launcher), $('.assistant-sprite', character)];
+      const chatButton = $('.sidebar-chat');
+      const poke = $('.poke');
+      const pokeButton = $('.poke-button');
+      const pokeValue = $('.poke-value');
+      const pokeSprite = pokeButton && $('.assistant-sprite', pokeButton);
+      let opener = launcher;
+      let pokes = pokeCount(storage.get('localStorage', 'ck-pokes'));
+      let pokeFace = null;
+      let pokeUntil = 0;
       const reactions = new Image();
       reactions.src = './assets/mascot/mini-ck-reactions.webp';
       let history = [];
@@ -2827,6 +2926,11 @@
       document.body.classList.add('has-assistant');
 
       const still = () => prefersReducedMotion();
+      const show = (sprite, pose) => {
+        const cell = pose.reaction === null ? pose.direction : pose.reaction;
+        sprite.classList.toggle('is-reacting', pose.reaction !== null);
+        sprite.style.backgroundPosition = `${(cell % 3) * 50}% ${Math.floor(cell / 3) * 50}%`;
+      };
       const paint = () => {
         const now = performance.now();
         let pose = dialog.open ? assistantPose(mood.name, now - mood.at, still()) : null;
@@ -2836,10 +2940,10 @@
           else if (dialog.open && now - activeAt > 40000) pose = { direction: 4, reaction: MASCOT_REACTION.sleepy };
           else pose = mascotIdle(now);
         }
-        const cell = pose.reaction === null ? pose.direction : pose.reaction;
-        const sprite = sprites[dialog.open ? 1 : 0];
-        sprite.classList.toggle('is-reacting', pose.reaction !== null);
-        sprite.style.backgroundPosition = `${(cell % 3) * 50}% ${Math.floor(cell / 3) * 50}%`;
+        show(sprites[dialog.open ? 1 : 0], pose);
+        // The sidebar CK idles like the launcher, rests while the chat is open,
+        // and pulls a face for a moment after each poke.
+        if (pokeSprite) show(pokeSprite, now < pokeUntil ? { direction: 4, reaction: pokeFace } : dialog.open ? { direction: 4, reaction: null } : pose);
       };
       const setMood = (name) => {
         mood = { name, at: performance.now() };
@@ -3002,7 +3106,8 @@
         dialog.style.setProperty('--assistant-bottom', `${Math.max(0, window.innerHeight - window.visualViewport.offsetTop - window.visualViewport.height)}px`);
         dialog.classList.toggle('is-compact', window.visualViewport.height < 540);
       };
-      launcher.addEventListener('click', () => {
+      const open = (from) => {
+        opener = from;
         layout.closeDrawer({ restoreFocus: false });
         launcher.classList.add('has-opened');
         document.body.classList.add('assistant-open');
@@ -3018,7 +3123,30 @@
         toBottom();
         // Keep the phone keyboard closed until the visitor chooses to type.
         if (pointerQuery.matches) input.focus({ preventScroll: true });
-      });
+      };
+      launcher.addEventListener('click', () => open(launcher));
+      if (chatButton) {
+        chatButton.hidden = false;
+        chatButton.addEventListener('click', () => open(chatButton));
+      }
+      if (poke && pokeSprite) {
+        const showPokes = () => { pokeValue.textContent = pokes.toLocaleString('en-US'); };
+        showPokes();
+        poke.hidden = false;
+        pokeButton.addEventListener('click', () => {
+          pokes = pokeCount(pokes + 1);
+          storage.set('localStorage', 'ck-pokes', String(pokes));
+          showPokes();
+          pokeFace = pokeReaction(pokes);
+          pokeUntil = performance.now() + 1100;
+          paint();
+          window.setTimeout(paint, 1120);
+          if (still() || typeof pokeSprite.animate !== 'function') return;
+          // WAAPI, so a quick second poke restarts the bump cleanly.
+          pokeSprite.animate([{ scale: 1.16 }, { scale: 1 }], { duration: 320, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+          pokeValue.animate([{ opacity: 0.4, translate: '0 4px' }, { opacity: 1, translate: '0 0' }], { duration: 220, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+        });
+      }
       $('.assistant-close', dialog).addEventListener('click', () => dialog.close());
       dialog.addEventListener('click', (event) => {
         if (event.target !== dialog) return;
@@ -3040,7 +3168,7 @@
         direction = 4;
         pointerAt = -Infinity;
         syncMotion();
-        launcher.focus({ preventScroll: true });
+        opener.focus({ preventScroll: true });
       });
       character.addEventListener('click', () => { if (!busy && !typing) setMood('wink'); });
       window.addEventListener('pointermove', (event) => {
@@ -3048,7 +3176,9 @@
         cancelAnimationFrame(pointerFrame);
         pointerFrame = requestAnimationFrame(() => {
           pointerFrame = 0;
-          const box = (dialog.open ? character : launcher.lastElementChild).getBoundingClientRect();
+          // On desktop the launcher is hidden and the sidebar CK does the looking.
+          const watcher = dialog.open ? character : launcher.getClientRects().length || !pokeButton ? launcher.lastElementChild : pokeButton;
+          const box = watcher.getBoundingClientRect();
           direction = mascotDirection(event.clientX - box.left - box.width / 2, event.clientY - box.top - box.height * 0.4, direction);
           pointerAt = performance.now();
           activeAt = pointerAt;
@@ -3211,6 +3341,7 @@
     keyboard.init();
     clipboard.init();
     pixelPhoto.init();
+    projectList.init();
     reveal.init();
     githubGraph.init(data);
     photoDeck.init(data);

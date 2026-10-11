@@ -104,15 +104,40 @@
     <div class="backdrop" hidden></div>
 
     <aside class="sidebar" id="sidebar" aria-label="Sidebar">
-      <a class="brand" href="#home" aria-label="Kenneth Charles — home">
-        <span class="brand-mark" aria-hidden="true">CK</span>
-        <span class="brand-name" aria-hidden="true"
-          >Kenneth Charles Valdez</span
+      <div class="sidebar-head">
+        <a class="brand" href="#home" aria-label="Kenneth Charles — home">
+          <span class="brand-mark" aria-hidden="true">CK</span>
+          <span class="brand-name" aria-hidden="true"
+            >Kenneth Charles Valdez</span
+          >
+        </a>
+        <button
+          class="collapse-toggle"
+          type="button"
+          aria-controls="sidebar"
+          aria-expanded="true"
+          aria-label="Collapse sidebar"
         >
-      </a>
+          <span class="icon icon-panel" aria-hidden="true"></span>
+        </button>
+      </div>
+
+      <button
+        class="copy-email"
+        type="button"
+        data-email
+        data-copy="charleskenneth129@gmail.com"
+        aria-label="Copy email address charleskenneth129@gmail.com"
+        title="Copy email"
+      >
+        <span class="icon icon-copy" aria-hidden="true"></span
+        ><span class="nav-text" data-copy-label
+          >charleskenneth129@gmail.com</span
+        >
+      </button>
 
       <nav class="nav" aria-label="Sections">
-        <p class="nav-label">menu</p>
+        <p class="nav-label">Menu</p>
         <ul class="nav-list">
           <li>
             <a
@@ -186,31 +211,39 @@
         <span class="icon icon-chimken" aria-hidden="true"></span
         ><span class="nav-text">Play chimken</span>
       </button>
+      <button
+        class="score-row"
+        type="button"
+        aria-haspopup="dialog"
+        title="Play chimken (Alt + K)"
+        hidden
+      >
+        <span class="meta-label score-label">beat ck</span
+        ><span class="score-value">00000</span>
+      </button>
       <div class="sidebar-bottom">
         <button
-          class="copy-email"
-          type="button"
-          data-email
-          data-copy="charleskenneth129@gmail.com"
-          aria-label="Copy email address charleskenneth129@gmail.com"
-          title="Copy email"
-        >
-          <span class="icon icon-sm icon-copy" aria-hidden="true"></span
-          ><span class="nav-text" data-copy-label
-            >charleskenneth129@gmail.com</span
-          >
-        </button>
-        <button
-          class="score-row"
+          class="sidebar-chat"
           type="button"
           aria-haspopup="dialog"
-          title="Play chimken (Alt + K)"
+          aria-controls="assistant-dialog"
+          title="Chat with me"
           hidden
         >
-          <span class="meta-label score-label">beat ck</span
-          ><span class="score-value">00000</span>
+          <span class="icon icon-chat" aria-hidden="true"></span
+          ><span class="nav-text">Chat with me</span>
         </button>
+        <div class="poke" hidden>
+          <p class="poke-count" aria-live="polite">
+            <span class="poke-label">Your pokes</span>
+            <span class="poke-value">0</span>
+          </p>
+          <button class="poke-button" type="button" aria-label="Poke CK" title="Poke me">
+            <span class="assistant-sprite" aria-hidden="true"></span>
+          </button>
+        </div>
         <div class="sidebar-controls">
+          <span class="sidebar-zone">GMT+8</span>
           <button
             class="theme-toggle"
             type="button"
@@ -221,17 +254,28 @@
               class="icon icon-sm icon-sun theme-icon"
               aria-hidden="true"
             ></span
-            ><span class="theme-label">[MODE: LIGHT]</span>
+            ><span class="theme-label visually-hidden">[MODE: LIGHT]</span>
           </button>
-          <button
-            class="collapse-toggle"
-            type="button"
-            aria-controls="sidebar"
-            aria-expanded="true"
-            aria-label="Collapse sidebar"
-          >
-            [&lt;&lt;]
-          </button>
+          <a
+            class="sidebar-icon"
+            data-profile-link="github"
+            href="https://github.com/chimkenchrls"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="GitHub"
+            title="GitHub"
+            ><span class="icon icon-sm icon-github" aria-hidden="true"></span
+          ></a>
+          <a
+            class="sidebar-icon"
+            data-profile-link="linkedin"
+            href="https://www.linkedin.com/in/kennethcharlesvaldez"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="LinkedIn"
+            title="LinkedIn"
+            ><span class="icon icon-sm icon-linkedin" aria-hidden="true"></span
+          ></a>
         </div>
       </div>
     </aside>
