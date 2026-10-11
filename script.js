@@ -610,6 +610,24 @@
     return labels;
   };
 
+  /* Pixel Kenneth: eight look directions with a quiet centre and stable sector edges. */
+  const MASCOT_CLOCKWISE = [5, 8, 7, 6, 3, 0, 1, 2];
+  const mascotDirection = (dx, dy, previous = 4) => {
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || Math.hypot(dx, dy) < 44) return 4;
+    const angle = Math.atan2(dy, dx);
+    const sector = Math.PI / 4;
+    const old = MASCOT_CLOCKWISE.indexOf(previous);
+    const distance = old < 0 ? Infinity : Math.abs(Math.atan2(Math.sin(angle - old * sector), Math.cos(angle - old * sector)));
+    if (distance < sector / 2 + 0.12) return previous;
+    return MASCOT_CLOCKWISE[(Math.round(angle / sector) + 8) % 8];
+  };
+
+  const mascotIdle = (elapsed) => {
+    const clock = Number.isFinite(elapsed) ? Math.max(0, elapsed) : 0;
+    if (clock % 30000 >= 27600) return { mode: 'coffee', direction: 4, reaction: 1 };
+    return { mode: 'typing', direction: 7, reaction: clock % 6000 >= 5800 ? 0 : null };
+  };
+
   // Dot radius for an activity level (0–4), scaled like react-github-calendar.
   const dotRadius = (level, cellSize) => {
     const clamped = Math.min(Math.max(level, 0), 4);
@@ -946,6 +964,7 @@
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       ROAM, createRoamState, roamStep, roamResize, roamFrame, placeCorn,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_PECK, CHIMKEN_INK,
+      mascotDirection, mascotIdle,
     };
   }
   if (typeof document === 'undefined') return;
@@ -2711,7 +2730,115 @@
   })();
 
   /* ==========================================================================
-     19. Hero yard — chimken roams under the hero, eats corn, opens the game
+     19. Hero studio — pixel Kenneth works, looks around and waves
+     ========================================================================== */
+
+  const heroStudio = (() => {
+    const init = () => {
+      const scene = $('.hero-studio');
+      if (!scene) return;
+      const button = $('.studio-character', scene);
+      const sprite = $('.studio-sprite', scene);
+      const pause = $('.studio-pause', scene);
+      if (!button || !sprite || !pause) return;
+      button.disabled = false;
+
+      // Warm the second atlas before the first blink or click swaps to it.
+      const reactions = new Image();
+      reactions.src = './assets/mascot/mini-ck-reactions.webp';
+      const pointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
+      let inView = !('IntersectionObserver' in window);
+      let paused = false;
+      let running = false;
+      let timer = 0;
+      let pointerFrame = 0;
+      let pointer = null;
+      let direction = 4;
+      let pointerAt = -Infinity;
+      let waveUntil = 0;
+      let clock = 0;
+      let last = 0;
+
+      const show = (mode, cell, reacting) => {
+        scene.dataset.mode = mode;
+        sprite.classList.toggle('is-reacting', reacting);
+        sprite.style.backgroundPosition = `${(cell % 3) * 50}% ${Math.floor(cell / 3) * 50}%`;
+      };
+      const paint = (now) => {
+        if (!running) { show('still', 4, false); return; }
+        if (now < waveUntil) { show('wave', 8, true); return; }
+        if (now - pointerAt < 1800) { show('watching', direction, false); return; }
+        const idle = mascotIdle(clock);
+        show(idle.mode, idle.reaction === null ? idle.direction : idle.reaction, idle.reaction !== null);
+      };
+      const tick = () => {
+        const now = performance.now();
+        clock += Math.min(250, Math.max(0, now - last));
+        last = now;
+        paint(now);
+      };
+      const sync = () => {
+        running = inView && !document.hidden && !paused && !prefersReducedMotion();
+        scene.classList.toggle('is-running', running);
+        pause.hidden = prefersReducedMotion();
+        pause.textContent = paused ? 'Play' : 'Pause';
+        pause.setAttribute('aria-label', paused ? 'Resume character animation' : 'Pause character animation');
+        if (running && !timer) {
+          last = performance.now();
+          timer = window.setInterval(tick, 100);
+        } else if (!running) {
+          window.clearInterval(timer);
+          timer = 0;
+          cancelAnimationFrame(pointerFrame);
+          pointerFrame = 0;
+          pointer = null;
+          pointerAt = -Infinity;
+          direction = 4;
+          waveUntil = 0;
+        }
+        paint(performance.now());
+      };
+      const aim = () => {
+        pointerFrame = 0;
+        if (!running || !pointer || !pointerQuery.matches) return;
+        const box = button.getBoundingClientRect();
+        direction = mascotDirection(pointer.x - box.left - box.width / 2, pointer.y - box.top - box.height * 0.4, direction);
+        pointerAt = performance.now();
+        paint(pointerAt);
+      };
+      window.addEventListener('pointermove', (event) => {
+        if (!running || !pointerQuery.matches || event.pointerType === 'touch') return;
+        pointer = { x: event.clientX, y: event.clientY };
+        if (!pointerFrame) pointerFrame = requestAnimationFrame(aim);
+      }, { passive: true });
+      window.addEventListener('pointerout', (event) => {
+        if (event.relatedTarget !== null) return;
+        pointer = null;
+        pointerAt = -Infinity;
+        paint(performance.now());
+      }, { passive: true });
+      button.addEventListener('click', () => {
+        if (!running) { show('still', 8, true); return; }
+        waveUntil = performance.now() + 1600;
+        // Repeated taps restart the short wave instead of stacking animations.
+        scene.dataset.mode = 'still';
+        void scene.offsetWidth;
+        paint(performance.now());
+      });
+      pause.addEventListener('click', () => { paused = !paused; sync(); });
+      document.addEventListener('visibilitychange', sync);
+      motionQuery.addEventListener('change', sync);
+      pointerQuery.addEventListener('change', () => { pointerAt = -Infinity; direction = 4; paint(performance.now()); });
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; sync(); }).observe(scene);
+      }
+      sync();
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
+     19b. Hero yard — chimken roams under the hero, eats corn, opens the game
      ========================================================================== */
 
   const heroYard = (() => {
@@ -2863,6 +2990,7 @@
     terminal.init(data);
     shotViewer.init();
     chatReplay.init();
+    heroStudio.init();
     heroYard.init();
     scrollAids.init();
     const year = $('.footer-year');
