@@ -3067,7 +3067,7 @@
       const shownPokes = () => (total === null ? pokes : total).toLocaleString('en-US');
       const showPokes = () => {
         if (pokeValue) pokeValue.textContent = shownPokes();
-        if (pokeLabel) pokeLabel.textContent = total === null ? 'Your pokes' : 'Pokes';
+        if (pokeLabel) pokeLabel.textContent = total === null ? 'Your pokes' : 'Total pokes';
       };
       const pokeRequest = (options) => fetch(pokeEndpoint, { credentials: 'omit', ...options })
         .then((response) => (response.ok ? response.json() : null))

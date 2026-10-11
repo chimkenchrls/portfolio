@@ -188,7 +188,7 @@ with sync_playwright() as pw:
     p = ctx.new_page(); errors = []
     p.on("pageerror", lambda e: errors.append(str(e)))
     p.goto(URL); p.wait_for_load_state("networkidle")
-    p.wait_for_function("document.querySelector('.poke-label').textContent === 'Pokes'")
+    p.wait_for_function("document.querySelector('.poke-label').textContent === 'Total pokes'")
     check("with a server the sidebar shows everyone's total", p.inner_text(".poke-value").strip() == "1,000")
     for _ in range(3): p.click(".poke-button")
     check("a poke shows at once, before the server answers", p.inner_text(".poke-value").strip() == "1,003" and server["posts"] == [])
