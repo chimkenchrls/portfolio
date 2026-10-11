@@ -1400,58 +1400,20 @@
       return media;
     };
 
-    const projects = ({ projects: items = [] }) => items.map((project, index) => {
+    const projects = ({ projects: items = [] }) => items.map((project) => {
       const li = el('li', 'project');
-      const shots = projectShots(project);
-      const hasChat = !shots.length && chatScript(project.chat && project.chat.scenes).length > 0;
-      const tags = (project.tags || []).filter(Boolean);
-
-      // The compact row: thumbnail, title + status, one line of description.
       const head = el('div', 'project-head');
-      const thumb = el('span', 'project-thumb');
-      thumb.setAttribute('aria-hidden', 'true');
-      const picture = shots.length ? (shots.find((shot) => shot.kind === 'desktop') || shots[0]).src
-        : hasChat && SHOT_PATH.test(String(project.chat.botAvatar)) ? project.chat.botAvatar : null;
-      if (picture) {
-        // A bot's avatar is centred; screenshots show their top edge.
-        thumb.classList.toggle('is-avatar', !shots.length);
-        const img = document.createElement('img');
-        img.src = picture;
-        img.alt = '';
-        img.loading = 'lazy';
-        img.decoding = 'async';
-        thumb.append(img);
-      } else {
-        thumb.textContent = String(project.title || '').slice(0, 1);
-      }
-      const bodyId = `project-details-${index}`;
-      const toggle = el('button', 'project-toggle', project.title);
-      toggle.type = 'button';
-      toggle.setAttribute('aria-expanded', 'false');
-      toggle.setAttribute('aria-controls', bodyId);
-      const title = el('h3', 'project-title');
-      title.append(toggle);
-      const line = el('div', 'project-line');
-      line.append(title, el('span', project.status === 'done' ? 'project-meta' : 'badge', project.meta));
-      const main = el('div', 'project-main');
-      main.append(line, el('p', 'project-summary', project.description || 'Details coming soon.'));
-      head.append(thumb, main);
-      if (tags.length) head.append(el('span', 'project-kind', tags[0]));
+      const metaClass = project.status === 'done' ? 'project-meta' : 'badge';
+      head.append(el('h3', 'project-title', project.title), el('span', metaClass, project.meta));
       li.append(head);
 
       const body = el('div', 'project-body');
-      body.id = bodyId;
-      body.hidden = true;
-      toggle.addEventListener('click', () => {
-        const open = li.classList.toggle('is-open');
-        toggle.setAttribute('aria-expanded', String(open));
-        body.hidden = !open;
-      });
       const info = el('div', 'project-info');
       info.append(project.description
         ? el('p', 'project-desc', project.description)
         : pendingEl('p', 'Details coming soon.'));
 
+      const tags = (project.tags || []).filter(Boolean);
       if (tags.length) {
         const ul = el('ul', 'tags');
         ul.setAttribute('aria-label', 'Technologies');
@@ -1474,10 +1436,11 @@
         info.append(diagramEl(project.diagram));
       }
 
+      const shots = projectShots(project);
       if (shots.length) {
         li.classList.add('has-media');
         body.append(deviceFrames(shots));
-      } else if (hasChat) {
+      } else if (chatScript(project.chat && project.chat.scenes).length) {
         li.classList.add('has-media', 'has-chat');
         body.append(chatWindow(project.chat));
       }

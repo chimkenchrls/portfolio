@@ -835,6 +835,11 @@ body.is-rail .sidebar-controls {
 .btn:active {
   scale: 0.97;
 }
+@media (prefers-reduced-motion: reduce) {
+  .btn:active {
+    scale: none;
+  }
+}
 .btn-primary {
   color: var(--accent-fg);
   background: var(--accent);
@@ -1122,124 +1127,63 @@ body.is-rail .sidebar-controls {
 }
 
 /* 15. Projects ============================================================ */
-/* A compact list: thumbnail, title, one line of description. A row opens to its
-   full write-up and screenshots. */
 .project-list {
+  display: grid;
+  gap: 16px;
+}
+.project {
+  padding: 24px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
+  transition:
+    translate var(--t) var(--ease),
+    box-shadow var(--t) var(--ease),
+    border-color var(--t) ease;
 }
-.project + .project {
-  border-top: 1px solid var(--border);
+@media (hover: hover) and (pointer: fine) {
+  .project:hover {
+    translate: 0 -2px;
+    border-color: color-mix(in srgb, var(--fg) 20%, var(--border));
+    box-shadow: var(--shadow-lift);
+  }
 }
-.project[hidden] {
-  display: none;
+@media (prefers-reduced-motion: reduce) {
+  .project {
+    transition: none;
+  }
+  .project:hover {
+    translate: none;
+  }
 }
 .project-head {
-  position: relative;
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr) auto;
-  gap: 18px;
-  align-items: center;
-  padding: 16px 20px;
-  transition: background-color var(--t-fast) ease;
-}
-.project:first-child .project-head {
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-}
-.project:last-child:not(.is-open) .project-head {
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-}
-.project-thumb {
-  display: grid;
-  place-items: center;
-  width: 72px;
-  height: 48px;
-  overflow: hidden;
-  font-family: var(--font-pixel);
-  font-size: 18px;
-  color: var(--fg-muted);
-  background: var(--bg-alt);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-.project-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top;
-}
-.project-thumb.is-avatar img {
-  object-position: center;
-}
-.project-main {
-  min-width: 0;
-}
-.project-line {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 10px;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 16px;
 }
 .project-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
+  gap: 10px;
+  font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
 .project-title::before {
   content: ">";
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg-muted);
   transition:
-    rotate var(--t) var(--ease),
+    transform var(--t-fast) ease,
     color var(--t-fast) ease;
 }
-.project.is-open .project-title::before {
+.project:hover .project-title::before {
   color: var(--fg);
-  rotate: 90deg;
-}
-/* The whole row is the button's hit area. */
-.project-toggle {
-  font: inherit;
-  letter-spacing: inherit;
-  text-align: left;
-}
-.project-toggle::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-}
-.project-toggle:focus-visible {
-  outline: none;
-}
-.project-head:has(.project-toggle:focus-visible) {
-  outline: 2px solid var(--fg);
-  outline-offset: -2px;
-}
-.project-summary {
-  display: -webkit-box;
-  margin-top: 2px;
-  overflow: hidden;
-  font-size: 13.5px;
-  color: var(--fg-muted);
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
-}
-.project.is-open .project-summary {
-  display: none;
-}
-.project-kind {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--fg-muted);
-  white-space: nowrap;
+  transform: translateX(3px);
 }
 .project-meta {
   font-family: var(--font-mono);
@@ -1258,33 +1202,6 @@ body.is-rail .sidebar-controls {
   white-space: nowrap;
   border: 1px dashed var(--fg-muted);
   border-radius: 999px;
-}
-@media (hover: hover) and (pointer: fine) {
-  .project-head:hover {
-    background: var(--bg-alt);
-  }
-  .project-head:hover .project-title::before {
-    color: var(--fg);
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  /* An opened row's details ease in under it. */
-  .project-body {
-    transition:
-      opacity 220ms ease-out,
-      translate 220ms cubic-bezier(0.23, 1, 0.32, 1);
-  }
-  @starting-style {
-    .project-body {
-      opacity: 0;
-      translate: 0 -6px;
-    }
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .btn:active {
-    scale: none;
-  }
 }
 .project-desc {
   max-width: 68ch;
@@ -1315,10 +1232,7 @@ body.is-rail .sidebar-controls {
 
 /* Project screenshots: a browser frame with a phone overlapping its corner */
 .project-body {
-  padding: 2px 20px 26px 110px; /* in line with the row's text column */
-}
-.project-body[hidden] {
-  display: none;
+  margin-top: 8px;
 }
 .project.has-media .project-body {
   display: grid;
@@ -2684,24 +2598,8 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   .github-month:nth-child(even) {
     display: none;
   } /* every other month on phones */
-  .project-head {
-    grid-template-columns: 56px minmax(0, 1fr);
-    gap: 14px;
-    padding: 14px 16px;
-  }
-  .project-thumb {
-    width: 56px;
-    height: 40px;
-  }
-  .project-summary {
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-  }
-  .project-kind {
-    display: none;
-  }
-  .project-body {
-    padding: 2px 16px 22px;
+  .project {
+    padding: 18px 16px;
   }
   /* Portfolio assistant: a fixed sheet on the bottom edge. The bubble takes the full
      width so answers read at a normal line length; CK stands under its tail. */

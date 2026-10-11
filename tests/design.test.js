@@ -75,7 +75,7 @@ test('cards are kept for projects and certifications; the other sections are rul
   const js = read('script.js');
   assert.doesNotMatch(css, /\.card\b/, 'no generic card utility: each card styles itself');
   assert.doesNotMatch(html, /class="[^"]*\bcard\b/, 'no card classes in the markup');
-  for (const name of ['.project-list', '.certification']) {
+  for (const name of ['.project', '.certification']) {
     assert.match(block(name), /background:\s*var\(--surface\)/, `${name} is a raised card`);
     assert.match(block(name), /box-shadow:\s*var\(--shadow\)/, `${name} has the soft shadow`);
     assert.match(block(name), /border-radius:\s*var\(--radius-lg\)/);
