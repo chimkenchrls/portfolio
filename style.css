@@ -459,7 +459,6 @@ dd {
   font-weight: 600;
   background: var(--bg-alt);
   border-color: var(--border);
-  box-shadow: inset 3px 0 0 var(--fg);
 }
 /* Sits at the bottom of the sidebar, just above the footer rows. */
 .game-trigger {

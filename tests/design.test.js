@@ -53,7 +53,7 @@ test('depth comes from surfaces: cards read as raised in both themes, and text s
   }
   const noJs = css.slice(css.indexOf(':root:not([data-theme])'));
   assert.match(noJs.slice(0, noJs.indexOf('}')), /--surface:/, 'the no-JS dark fallback has the surface too');
-  assert.match(block('.nav-link.is-active'), /box-shadow:\s*inset 3px 0 0 var\(--fg\)/, 'the active nav item gets a solid marker');
+  assert.match(block('.nav-link.is-active'), /background:\s*var\(--bg-alt\)/, 'the active nav item has a distinct background');
 });
 
 test('section headings keep the original centered divider style', () => {
