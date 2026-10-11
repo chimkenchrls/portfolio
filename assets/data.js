@@ -3,7 +3,8 @@
    - Use null (never "") for anything you don't have yet; the page shows a
      "coming soon" state instead.
    - URLs must start with https://.
-   - Stack icons are slugs of files in ./assets/icons/stack/ (simple-icons).
+   - Stack icons are local simple-icons SVGs; color is the brand hex or null
+     for a monochrome mark that follows the theme.
    - After editing, run: node --test tests/*.test.js
    ========================================================================== */
 const PORTFOLIO_DATA = {
@@ -73,60 +74,63 @@ const PORTFOLIO_DATA = {
   ],
 
   stack: [
+    // Brand colors: https://github.com/simple-icons/simple-icons/blob/master/data/simple-icons.json
     {
       category: "DevOps & Cloud",
       items: [
-        { name: "Docker + Compose", icon: "docker" },
-        { name: "Azure", icon: null },
-        { name: "Caddy 2", icon: "caddy" },
-        { name: "GitHub Actions", icon: "githubactions" },
-        { name: "Let's Encrypt (Lego ACME client)", icon: "letsencrypt" },
+        { name: "Docker + Compose", icon: "docker", color: "#2496ED" },
+        { name: "Azure", icon: "microsoftazure", color: "#0078D4" },
+        { name: "Caddy 2", icon: "caddy", color: "#1F88C0" },
+        { name: "GitHub Actions", icon: "githubactions", color: "#2088FF" },
       ],
     },
     {
       category: "Security & Identity",
       items: [
-        { name: "Tailscale", icon: "tailscale" },
-        { name: "WireGuard (wg-easy)", icon: "wireguard" },
+        { name: "Tailscale", icon: "tailscale", color: null },
+        { name: "WireGuard (wg-easy)", icon: "wireguard", color: "#88171A" },
       ],
     },
     {
       category: "Backend",
       items: [
-        { name: "Node.js 20 (Alpine)", icon: "nodedotjs" },
-        { name: "Java", icon: "openjdk" },
-        { name: "Python", icon: "python" },
-        { name: "PHP", icon: "php" },
-        { name: "Express 5", icon: "express" },
-        { name: "MySQL 8 (mysql2)", icon: "mysql" },
-        { name: "JWT", icon: "jsonwebtokens" },
-        { name: "Axios", icon: "axios" },
+        { name: "Node.js 20 (Alpine)", icon: "nodedotjs", color: "#5FA04E" },
+        { name: "Java", icon: "openjdk", color: null },
+        { name: "Python", icon: "python", color: "#3776AB" },
+        { name: "PHP", icon: "php", color: "#777BB4" },
+        { name: "Express 5", icon: "express", color: null },
+        { name: "MySQL 8 (mysql2)", icon: "mysql", color: "#4479A1" },
+        { name: "JWT", icon: "jsonwebtokens", color: null },
+        { name: "Axios", icon: "axios", color: "#5A29E4" },
       ],
     },
     {
       category: "Frontend",
       items: [
-        { name: "TypeScript", icon: "typescript" },
-        { name: "Next.js 16 (App Router)", icon: "nextdotjs" },
-        { name: "React 18.3", icon: "react" },
-        { name: "Tailwind CSS 3", icon: "tailwindcss" },
-        { name: "Vite", icon: "vite" },
-        { name: "Google Fonts (Rubik)", icon: "googlefonts" },
+        { name: "HTML", icon: "html5", color: "#E34F26" },
+        { name: "TypeScript", icon: "typescript", color: "#3178C6" },
+        { name: "Tailwind CSS 3", icon: "tailwindcss", color: "#06B6D4" },
+        { name: "Next.js 16 (App Router)", icon: "nextdotjs", color: null },
+        { name: "React 18.3", icon: "react", color: "#61DAFB" },
+        { name: "Bootstrap", icon: "bootstrap", color: "#7952B3" },
+        { name: "Vite", icon: "vite", color: "#9135FF" },
       ],
     },
     {
       category: "AI & Machine Learning",
-      items: [{ name: "Ultralytics (YOLOv8)", icon: "ultralytics" }],
+      items: [
+        { name: "Ultralytics (YOLOv8)", icon: "ultralytics", color: "#111F68" },
+      ],
     },
     {
       category: "Developer Tools",
       items: [
-        { name: "Git", icon: "git" },
-        { name: "GitHub", icon: "github" },
-        { name: "VS Code", icon: null },
-        { name: "Vitest", icon: "vitest" },
-        { name: "Playwright", icon: null },
-        { name: "Husky", icon: null },
+        { name: "Git", icon: "git", color: "#F03C2E" },
+        { name: "GitHub", icon: "github", color: null },
+        { name: "VS Code", icon: "visualstudiocode", color: "#007ACC" },
+        { name: "Vitest", icon: "vitest", color: "#00FF74" },
+        { name: "Claude Code", icon: "claudecode", color: "#D97757" },
+        { name: "Codex", icon: "openai", color: null },
       ],
     },
   ],
@@ -176,6 +180,29 @@ const PORTFOLIO_DATA = {
       media: {
         desktop: "./assets/projects/pakisuyo-express-desktop.jpg",
         mobile: "./assets/projects/pakisuyo-express-mobile.jpg",
+      },
+    },
+    {
+      title: "OwlSet",
+      meta: "in progress",
+      status: "in-progress",
+      description:
+        "An Android app for freelancers that turns client conversations into project scopes, checks new requests against confirmed agreements, and drafts change proposals. It stores data locally in SQLite and supports on-device AI through llama.rn, with a companion website and interactive demo.",
+      tags: [
+        "React Native",
+        "Expo",
+        "TypeScript",
+        "SQLite",
+        "llama.rn",
+        "GitHub Actions",
+        "Vercel",
+      ],
+      links: {
+        source: "https://github.com/chimkenchrls/appbuildersph-hackathon",
+        live: "https://owlsetph.vercel.app",
+      },
+      media: {
+        mobile: "./assets/projects/owlset-mobile.jpg",
       },
     },
     {
@@ -276,7 +303,39 @@ const PORTFOLIO_DATA = {
     { photo: "./assets/outside/outside-8.jpg" },
   ],
 
-  certifications: [],
+  // Add issuer logos and certificate photos in ./assets/certifications/.
+  // Keep missing assets null; in-progress entries do not offer a preview.
+  certifications: [
+    {
+      title: "AI Engineer for Developers",
+      issuer: "DataCamp",
+      status: "in-progress",
+      date: null,
+      logo: "./assets/certifications/datacamp-logo.png",
+      photo: null,
+      link: null,
+    },
+    {
+      title: "Champion in Local Codefest Competition",
+      issuer: "STI College Lucena",
+      status: "completed",
+      date: "2026",
+      logo: "./assets/certifications/sti-logo.png",
+      photo: "./assets/certifications/sti-codefest-original.png",
+      // Crop the original photo in the viewer; keep its pixels untouched.
+      photoCrop: { aspectRatio: 768 / 745, positionY: 25.1 },
+      link: null,
+    },
+    {
+      title: "Certificate of Participation on AppBuildersPH Hackathon",
+      issuer: "AppBuildersPH",
+      status: "completed",
+      date: "2026",
+      logo: "./assets/certifications/appbuildersph-logo-black.png",
+      photo: "./assets/certifications/appbuildersph-certificate.png",
+      link: null,
+    },
+  ],
   certificationsPending:
     "Currently working toward certifications. Check back soon.",
 };

@@ -120,7 +120,7 @@ test('validateData flags the mistakes a later edit is likely to make', () => {
   bad.projects[1].status = 'wip';
   bad.projects[2].description = '';
   bad.stack[0].items[0].name = '';
-  bad.certifications.push({ title: 'AZ-900', issuer: '', date: '2027', link: null });
+  bad.certifications = [{ title: 'AZ-900', issuer: '', status: 'completed', date: '2027', logo: null, photo: null, link: null }];
   const errors = validateData(bad);
   for (const fragment of ['profile.linkedin', 'projects[0].links.source', 'projects[1].status', 'projects[2].description', 'stack[0].items[0].name', 'certifications[0]']) {
     assert.ok(errors.some((e) => e.startsWith(fragment)), `no error for ${fragment}: ${errors.join(' | ')}`);

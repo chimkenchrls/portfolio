@@ -27,7 +27,7 @@ test('content matches the approved spec', () => {
   assert.deepEqual(data.stack.map((g) => g.category), [
     'DevOps & Cloud', 'Security & Identity', 'Backend', 'Frontend', 'AI & Machine Learning', 'Developer Tools',
   ]);
-  assert.equal(data.certifications.length, 0);
+  assert.equal(data.certifications.length, 3);
   assert.ok(!('stats' in data), 'stats row was removed');
 });
 

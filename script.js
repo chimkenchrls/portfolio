@@ -21,11 +21,15 @@
   ];
 
   const PROJECT_STATUSES = ['done', 'in-progress', 'coming-soon'];
+  const CERTIFICATION_STATUSES = ['in-progress', 'completed'];
+  const CERTIFICATE_PHOTO_PATH = /^\.\/assets\/certifications\/[\w.-]+\.(jpe?g|png|webp)$/;
+  const CERTIFICATE_LOGO_PATH = /^\.\/assets\/certifications\/[\w.-]+\.(svg|jpe?g|png|webp)$/;
 
   // A project's screenshots as [{ kind, src, label }], desktop first. Only local
   // files in ./assets/projects/ are accepted.
   const SHOT_PATH = /^\.\/assets\/projects\/[\w.-]+\.(jpe?g|png|webp)$/;
   const ICON_NAME = /^[a-z][a-z0-9-]*$/;
+  const BRAND_COLOR = /^#[\da-f]{6}$/i;
   const projectShots = (project) => ['desktop', 'mobile']
     .map((kind) => ({ kind, src: project && project.media ? project.media[kind] : null, label: `${project.title} on ${kind}` }))
     .filter((shot) => typeof shot.src === 'string' && SHOT_PATH.test(shot.src));
@@ -847,6 +851,7 @@
       checkList(`${p}.items`, g.items, (item, ip) => {
         if (!isText(item.name)) errors.push(`${ip}.name: required text`);
         if (!isOptionalText(item.icon)) errors.push(`${ip}.icon: slug or null`);
+        if (item.color != null && !BRAND_COLOR.test(String(item.color))) errors.push(`${ip}.color: six-digit hex color or null`);
       });
     });
     checkList('projects', data.projects, (pr, p) => {
@@ -891,7 +896,18 @@
       }
     });
     checkList('certifications', data.certifications, (c, p) => {
-      if (!isText(c.title) || !isText(c.issuer) || !isText(c.date)) errors.push(`${p}: title, issuer, date required`);
+      if (!isText(c.title) || !isText(c.issuer)) errors.push(`${p}: title and issuer required`);
+      if (!CERTIFICATION_STATUSES.includes(c.status)) errors.push(`${p}.status: in-progress or completed`);
+      if (!isOptionalText(c.date) || (c.status === 'completed' && !isText(c.date))) errors.push(`${p}.date: completed entries need a date; otherwise text or null`);
+      [['photo', CERTIFICATE_PHOTO_PATH], ['logo', CERTIFICATE_LOGO_PATH]].forEach(([key, pattern]) => {
+        if (c[key] != null && !pattern.test(String(c[key]))) errors.push(`${p}.${key}: a file in ./assets/certifications/ or null`);
+      });
+      if (c.photoCrop != null) {
+        const { aspectRatio, positionY } = c.photoCrop;
+        if (!Number.isFinite(aspectRatio) || aspectRatio <= 0 || aspectRatio > 3 || !Number.isFinite(positionY) || positionY < 0 || positionY > 100) {
+          errors.push(`${p}.photoCrop: positive aspectRatio up to 3 and positionY from 0 to 100`);
+        }
+      }
       if (c.link !== undefined && !isOptionalUrl(c.link)) errors.push(`${p}.link: https URL or null`);
     });
     if (!isText(data.certificationsPending)) errors.push('certificationsPending: required text');
@@ -960,10 +976,11 @@
     return node;
   };
 
-  const stackIconEl = (slug) => {
-    const span = el('span', 'icon icon-sm');
+  const stackIconEl = (slug, color) => {
+    const span = el('span', 'icon icon-sm stack-brand');
     span.setAttribute('aria-hidden', 'true');
     span.style.setProperty('--icon', `url("./assets/icons/stack/${slug}.svg")`);
+    if (typeof color === 'string' && BRAND_COLOR.test(color)) span.style.setProperty('--brand-color', color);
     return span;
   };
 
@@ -1219,7 +1236,7 @@
       const list = el('ul', 'stack-items');
       (group.items || []).forEach((item) => {
         const li = el('li', 'stack-item');
-        if (item.icon) li.append(stackIconEl(item.icon));
+        if (item.icon) li.append(stackIconEl(item.icon, item.color));
         li.append(el('span', null, item.name));
         list.append(li);
       });
@@ -1353,10 +1370,41 @@
     const certifications = ({ certifications: items = [], certificationsPending }) => {
       if (!items.length) return [pendingEl('li', certificationsPending || 'Coming soon.')];
       return items.map((cert) => {
-        const li = el('li');
-        li.append(rowHead(cert.title, joinParts([cert.issuer, cert.date]), false));
-        const link = safeUrl(cert.link);
-        if (link) li.append(externalLink(link, 'view credential ↗', 'text-link row-link'));
+        const inProgress = cert.status === 'in-progress';
+        const li = el('li', `certification card${inProgress ? ' is-in-progress' : ''}`);
+        const logo = el('span', 'certification-logo');
+        logo.setAttribute('aria-hidden', 'true');
+        if (typeof cert.logo === 'string' && CERTIFICATE_LOGO_PATH.test(cert.logo)) {
+          const img = el('img');
+          img.src = cert.logo;
+          img.alt = '';
+          img.loading = 'lazy';
+          img.decoding = 'async';
+          logo.append(img);
+        } else {
+          logo.append(el('span', 'icon icon-certifications'));
+        }
+        li.append(logo, el('h3', 'certification-title', cert.title), el('p', 'certification-issuer', cert.issuer));
+        const status = inProgress ? 'In progress' : `Completed ${cert.date}`;
+        li.append(el('p', 'certification-status', status));
+        const footer = el('div', 'certification-footer');
+        if (!inProgress && typeof cert.photo === 'string' && CERTIFICATE_PHOTO_PATH.test(cert.photo)) {
+          const button = el('button', 'certification-action', 'View certificate');
+          button.type = 'button';
+          button.dataset.shot = cert.photo;
+          button.dataset.shotLabel = `${cert.title} — ${cert.issuer}`;
+          button.dataset.certificate = '';
+          if (cert.photoCrop) {
+            button.dataset.cropAspect = String(cert.photoCrop.aspectRatio);
+            button.dataset.cropPosition = String(cert.photoCrop.positionY);
+          }
+          button.setAttribute('aria-label', `View certificate: ${cert.title}`);
+          button.setAttribute('aria-haspopup', 'dialog');
+          footer.append(button);
+        } else if (!inProgress && safeUrl(cert.link)) {
+          footer.append(externalLink(safeUrl(cert.link), 'Verify credential', 'certification-action'));
+        }
+        li.append(footer);
         return li;
       });
     };
@@ -2110,7 +2158,7 @@
 
   const reveal = (() => {
     const SINGLE = ['.github-panel', '.contact-intro', '.terminal', '.terminal-chips', '.divider', '.about-bio', '.timeline-block'];
-    const STAGGERED = ['.stack-group', '.project', '#certifications .rows > li', '.outside-text', '.deck'];
+    const STAGGERED = ['.stack-group', '.project', '.certification', '.outside-text', '.deck'];
     const STAGGER_MS = 60;
     const STAGGER_CAP = 8;
 
@@ -2613,7 +2661,7 @@
   })();
 
   /* ==========================================================================
-     16. Screenshot viewer — enlarges a project shot in a dialog
+     16. Image viewer — enlarges project shots and certificate photos
      ========================================================================== */
 
   const shotViewer = (() => {
@@ -2629,6 +2677,23 @@
         const img = el('img');
         img.src = frame.dataset.shot;
         img.alt = frame.dataset.shotLabel || '';
+        const certificate = frame.hasAttribute('data-certificate');
+        dialog.setAttribute('aria-label', `${certificate ? 'Certificate' : 'Screenshot'}: ${img.alt}`);
+        stage.classList.toggle('is-certificate', certificate);
+        const aspect = Number(frame.dataset.cropAspect);
+        const position = Number(frame.dataset.cropPosition);
+        const cropped = certificate && Number.isFinite(aspect) && aspect > 0 && aspect <= 3
+          && Number.isFinite(position) && position >= 0 && position <= 100;
+        stage.classList.toggle('is-cropped', cropped);
+        if (cropped) {
+          stage.style.setProperty('--photo-aspect', String(aspect));
+          stage.style.setProperty('--photo-position', `${position}%`);
+        }
+        if (certificate) {
+          img.addEventListener('error', () => {
+            if (img.isConnected) stage.replaceChildren(el('p', 'image-preview-error', 'Certificate image could not load. Close this preview and try again.'));
+          }, { once: true });
+        }
         stage.replaceChildren(img);
         stage.classList.toggle('is-mobile', frame.classList.contains('device-mobile'));
         returnFocus = frame;
