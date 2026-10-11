@@ -23,7 +23,6 @@
   --border: #ebebea;
   --accent: var(--fg);
   --accent-fg: var(--bg);
-  --dot: rgba(17, 17, 19, 0.08);
   --status: #2f9e5b;
   /* Depth: cards sit on a slightly tinted surface with a soft shadow. */
   --surface: #ffffff;
@@ -59,7 +58,6 @@
   --fg: #ececee;
   --fg-muted: #8b8b91;
   --border: #232327;
-  --dot: rgba(236, 236, 238, 0.08);
   --status: #5fd08a;
   --surface: #19191c;
   --chimken-line: #000000;
@@ -79,7 +77,6 @@
     --fg: #ececee;
     --fg-muted: #8b8b91;
     --border: #232327;
-    --dot: rgba(236, 236, 238, 0.08);
     --status: #5fd08a;
     --surface: #19191c;
     --chimken-line: #000000;
@@ -117,9 +114,6 @@ body {
   line-height: 1.65;
   color: var(--fg);
   background-color: var(--bg);
-  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
-  background-size: 20px 20px;
-  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   transition:
     background-color var(--t) ease,
@@ -341,6 +335,18 @@ dd {
   margin-inline: auto;
 }
 
+/* The pixel night sky behind the page (dark theme only; drawn by script.js). */
+.sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.sky[hidden] {
+  display: none;
+}
 /* Reading progress along the top edge. */
 .scroll-progress {
   position: fixed;
@@ -689,51 +695,6 @@ body.is-rail .sidebar-controls {
   padding-top: 8px;
 }
 
-/* chimken's yard: a strip inside the hero's bottom padding, so it moves nothing. */
-.hero-yard {
-  position: absolute;
-  right: 0;
-  bottom: 16px;
-  left: 0;
-  height: 24px;
-  pointer-events: none;
-}
-.yard-chimken {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  color: var(--fg);
-  background: none;
-  border: 0;
-  border-radius: var(--radius);
-  cursor: pointer;
-  pointer-events: auto;
-}
-.yard-chimken::before {
-  position: absolute;
-  inset: -10px;
-  content: "";
-} /* larger tap target */
-.yard-chimken svg,
-.yard-corn svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-.yard-chimken.is-left svg {
-  scale: -1 1;
-}
-.yard-corn {
-  position: absolute;
-  bottom: 0;
-  width: 10px;
-  height: 10px;
-  color: var(--fg-muted);
-  translate: -50% 0;
-}
 
 .hero-text {
   display: flex;
@@ -985,6 +946,17 @@ body.is-rail .sidebar-controls {
   content: "> ";
   font-family: var(--font-mono);
   color: var(--fg-muted);
+}
+.coursework-label {
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.coursework {
+  margin-top: 8px;
 }
 .row-link {
   display: inline-block;
@@ -2063,8 +2035,7 @@ body.is-rail .sidebar-controls {
 }
 /* Game tap targets: no blue mobile tap flash, no text selection on rapid taps. */
 .game-canvas,
-.game-close,
-.yard-chimken {
+.game-close {
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
   user-select: none;
@@ -2237,8 +2208,6 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
-  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
-  background-size: 24px 24px;
 }
 .assistant-log { display: flex; flex-direction: column; gap: 14px; margin-top: auto; padding-bottom: 20px; }
 .assistant-log:empty { padding-bottom: 0; }
@@ -2546,9 +2515,6 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
     justify-content: center;
     min-height: calc(100vh - var(--topbar-h) - 28px);
     min-height: calc(100svh - var(--topbar-h) - 28px);
-  }
-  .hero-yard {
-    bottom: 12px;
   }
   .hero-photo {
     width: 224px;

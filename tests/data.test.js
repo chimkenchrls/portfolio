@@ -179,3 +179,20 @@ test('the degree is listed once, under Education, with its achievement', () => {
   bad.education[0].bullets = 'nope';
   assert.ok(validateData(bad).some((e) => e.startsWith('education[0].bullets')));
 });
+
+test('education lists the degree only, with optional relevant coursework', () => {
+  const { validateData } = require('../script.js');
+  const data = require('../assets/data.js');
+  assert.deepEqual(data.education.map((e) => e.school), ['STI College Lucena']);
+  const copy = structuredClone(data);
+  copy.education[0].coursework = ['Operating Systems', 'Computer Networks'];
+  assert.deepEqual(validateData(copy), []);
+  copy.education[0].coursework = null;
+  assert.deepEqual(validateData(copy), [], 'null leaves the list out');
+  for (const bad of ['Networks', [''], [3]]) {
+    copy.education[0].coursework = bad;
+    assert.ok(validateData(copy).some((e) => e.startsWith('education[0].coursework')));
+  }
+  const js = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'script.js'), 'utf8');
+  assert.match(js, /el\('p', 'coursework-label', 'Relevant coursework'\)/);
+});

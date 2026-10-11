@@ -228,3 +228,49 @@ test('skeletonDays is a full, empty 53-week grid ending this week (placeholder f
   assert.equal(weeks.length, 53);
   assert.ok(weeks.every((w) => w.length === 7 && w.every(Boolean)));
 });
+
+test('night sky: a sparse, repeatable field of pixel stars sized to the window', () => {
+  const { skyStars } = require('../script.js');
+  const stars = skyStars(1440, 900);
+  assert.equal(stars.length, 144, 'about one star per 9,000 square pixels');
+  assert.deepEqual(skyStars(1440, 900), stars, 'the same sky on every visit');
+  assert.equal(skyStars(8000, 8000).length, 240, 'capped on huge screens');
+  assert.deepEqual(skyStars(0, 900), []);
+  assert.deepEqual(skyStars(NaN, 900), []);
+  for (const star of stars) {
+    assert.ok(star.x >= 0 && star.x < 1440 && star.y >= 0 && star.y < 900);
+    assert.ok([1, 2, 3].includes(star.size), 'whole pixels only');
+  }
+  const small = stars.filter((s) => s.size === 1).length;
+  assert.ok(small > stars.length / 2, 'most stars are small and far');
+  assert.ok(stars.some((s) => s.twinkle) && stars.some((s) => !s.twinkle));
+});
+
+test('night sky: stars drift slowly, shift with scroll by depth, and wrap at the edges', () => {
+  const { skyPosition, skyAlpha } = require('../script.js');
+  const near = { x: 100, y: 100, size: 3, depth: 1, twinkle: false, phase: 0 };
+  const far = { ...near, size: 1, depth: 0.3 };
+  assert.deepEqual(skyPosition(near, 1000, 800, 0, 0), { x: 100, y: 100 });
+  assert.deepEqual(skyPosition(near, 1000, 800, 10, 0), { x: 60, y: 100 }, '4px a second for the nearest stars');
+  assert.equal(skyPosition(far, 1000, 800, 10, 0).x, 88, 'far stars move less');
+  assert.equal(skyPosition(near, 1000, 800, 0, 1000).y, 40);
+  assert.equal(skyPosition(far, 1000, 800, 0, 1000).y, 82);
+  assert.deepEqual(skyPosition(near, 1000, 800, 30, 5000), { x: 980, y: 600 }, 'wraps instead of leaving the screen');
+  assert.deepEqual(skyPosition(near, 0, 0, 5, 5), { x: 0, y: 0 });
+  assert.ok(skyAlpha(near, 0) > skyAlpha(far, 0), 'near stars are brighter');
+  assert.equal(skyAlpha(near, 0), skyAlpha(near, 99), 'steady stars do not flicker');
+  const twinkler = { ...near, twinkle: true };
+  const levels = [0, 1, 2, 3].map((t) => skyAlpha(twinkler, t));
+  assert.ok(Math.max(...levels) - Math.min(...levels) > 0.1);
+  assert.ok(levels.every((a) => a > 0.2 && a <= 0.8), 'a twinkle dims a star but never hides it');
+});
+
+test('the dotted grid is gone and the sky canvas is decorative', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+  assert.doesNotMatch(css, /--dot\b/);
+  assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /<canvas class="sky" aria-hidden="true" hidden><\/canvas>/);
+  assert.match(css, /\.sky \{[^}]*pointer-events:\s*none/);
+});

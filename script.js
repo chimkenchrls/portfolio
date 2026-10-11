@@ -151,7 +151,7 @@
   /* "Get in touch" terminal (pure). runCommand turns typed input into output
      lines plus an optional action; the DOM module only prints and performs.
      A line is { text, label?, href?, jump?, copy?, kind? } — always plain text. */
-  // chimken's 12x12 frames — drawn by the game, the hero yard and `neofetch`.
+  // chimken's 12x12 frames — drawn by the game, the sidebar button and `neofetch`.
   // K = outline, W = body, S = shaded belly, A = comb, beak and legs.
   const CHIMKEN_BODY = [
     '........A...', '.......KAK..', '.KK...KWWWK.', 'KWWK..KWKWAA', 'KWWWKKWWWWA.',
@@ -160,11 +160,6 @@
   const CHIMKEN_SPRITE = [...CHIMKEN_BODY, '...A..A.....', '..AA.AA.....'];
   const CHIMKEN_WALK_B = [...CHIMKEN_BODY, '....AA......', '...AA.AA....'];
   const CHIMKEN_AIR = [...CHIMKEN_BODY, '..AA.AA.....', '............'];
-  // Head down, pecking (the hero yard).
-  const CHIMKEN_PECK = [
-    '............', '............', '.KK.........', 'KWWK........', 'KWWWKKKK....', 'KWWWWWWWKKA.',
-    'KSWWWWWWWWKA', 'KSSWWWWWKWWK', '.KSSSWWWWWWK', '..KKKKKKKAAK', '...A..A...A.', '..AA.AA.....',
-  ];
   // Which colour token each sprite letter is painted with.
   const CHIMKEN_INK = { K: '--chimken-line', W: '--chimken-body', S: '--chimken-shade', A: '--chimken-accent' };
 
@@ -660,6 +655,40 @@
       default: return null;
     }
   };
+  // A small seeded generator, so the night sky is the same on every visit.
+  const skyRandom = (seed) => {
+    let state = seed >>> 0;
+    return () => {
+      state = (state + 0x6D2B79F5) >>> 0;
+      let t = Math.imul(state ^ (state >>> 15), 1 | state);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  };
+  // Stars for a width × height sky: mostly small and far, a few large and near.
+  // Sparse on purpose, so text is never fighting them.
+  const skyStars = (width, height, seed = 7) => {
+    const w = Math.max(0, Number(width) || 0);
+    const h = Math.max(0, Number(height) || 0);
+    const random = skyRandom(seed);
+    return Array.from({ length: Math.min(240, Math.round((w * h) / 9000)) }, () => {
+      const layer = random();
+      const near = layer > 0.9;
+      const mid = layer > 0.6;
+      return { x: random() * w, y: random() * h, size: near ? 3 : mid ? 2 : 1, depth: near ? 1 : mid ? 0.6 : 0.3, twinkle: random() < 0.2, phase: random() * Math.PI * 2 };
+    });
+  };
+  // Where a star is drawn: it drifts left very slowly and slides up a little as the
+  // page scrolls (near stars more than far ones), wrapping at the edges.
+  const skyPosition = (star, width, height, seconds, scrollY) => {
+    const wrap = (value, max) => (max > 0 ? ((value % max) + max) % max : 0);
+    return { x: Math.floor(wrap(star.x - seconds * 4 * star.depth, width)), y: Math.floor(wrap(star.y - scrollY * 0.06 * star.depth, height)) };
+  };
+  // Near stars are brighter; one in five twinkles.
+  const skyAlpha = (star, seconds) => {
+    const base = 0.25 + star.depth * 0.55;
+    return star.twinkle ? base * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(seconds * 1.6 + star.phase))) : base;
+  };
   // Each poke gets a different face; the order loops.
   const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
   const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
@@ -689,71 +718,6 @@
   const dotRadius = (level, cellSize) => {
     const clamped = Math.min(Math.max(level, 0), 4);
     return (cellSize * (0.3 + (clamped / 4) * 0.7)) / 2;
-  };
-
-  /* Hero yard (pure): chimken roams a strip under the hero — walks to a corn,
-     pecks it, rests, then heads for the next one. Units: px and seconds.
-     `x` is chimken's left edge, `cornX` the corn's centre (null once eaten). */
-  const ROAM = { size: 24, speed: 30, peck: 1.6, rest: 1.1, minWalk: 60, reach: 3 };
-
-  const placeCorn = (x, width, rand) => {
-    const lo = ROAM.size;
-    const hi = width - ROAM.size;
-    if (hi - lo < ROAM.minWalk) return null;
-    const centre = x + ROAM.size / 2;
-    const corn = lo + rand() * (hi - lo);
-    if (Math.abs(corn - centre) >= ROAM.minWalk) return corn;
-    // Too close to be a walk: drop it toward the farther end instead.
-    const far = centre < width / 2 ? hi - rand() * (hi - lo) * 0.25 : lo + rand() * (hi - lo) * 0.25;
-    return Math.abs(far - centre) >= ROAM.minWalk ? far : (centre < width / 2 ? hi : lo);
-  };
-
-  const createRoamState = (width, rand) => {
-    const x = Math.max(0, Math.min(width * 0.12, width - ROAM.size));
-    return { x, dir: 1, mode: 'walk', timer: 0, walked: 0, eaten: 0, width, cornX: placeCorn(x, width, rand) };
-  };
-
-  const roamStep = (state, dt, rand) => {
-    const step = Math.min(Math.max(dt, 0), 0.1);
-    const next = { ...state };
-    if (next.mode === 'peck') {
-      next.timer -= step;
-      if (next.timer <= 0) { next.mode = 'rest'; next.timer = ROAM.rest; next.cornX = null; next.eaten += 1; }
-      return next;
-    }
-    if (next.mode === 'rest') {
-      next.timer -= step;
-      if (next.timer <= 0) { next.mode = 'walk'; next.timer = 0; next.cornX = placeCorn(next.x, next.width, rand); }
-      return next;
-    }
-    if (next.cornX === null) { next.mode = 'rest'; next.timer = ROAM.rest; return next; }
-    next.dir = next.cornX >= next.x + ROAM.size / 2 ? 1 : -1;
-    const target = next.dir === 1 ? next.cornX - ROAM.size + ROAM.reach : next.cornX - ROAM.reach;
-    const move = ROAM.speed * step;
-    if (Math.abs(target - next.x) <= move) {
-      next.x = target;
-      next.mode = 'peck';
-      next.timer = ROAM.peck;
-    } else {
-      next.x += Math.sign(target - next.x) * move;
-      next.walked += move;
-    }
-    return next;
-  };
-
-  const roamResize = (state, width) => {
-    if (width === state.width) return state;
-    const maxX = Math.max(0, width - ROAM.size);
-    const cornFits = state.cornX !== null && state.cornX >= ROAM.size && state.cornX <= maxX;
-    const next = { ...state, width, x: Math.min(state.x, maxX), cornX: cornFits ? state.cornX : null };
-    if (!cornFits && next.mode !== 'rest') { next.mode = 'rest'; next.timer = ROAM.rest; }
-    return next;
-  };
-
-  const roamFrame = (state) => {
-    if (state.mode === 'peck') return Math.floor(state.timer * 5) % 2 ? 'peck' : 'walkA';
-    if (state.mode === 'walk') return Math.floor(state.walked / 7) % 2 ? 'walkB' : 'walkA';
-    return 'walkA';
   };
 
   /* chimken — a tiny endless runner (pure logic; drawing lives in the DOM section).
@@ -920,6 +884,7 @@
     checkList('education', data.education, (e, p) => {
       if (!isText(e.school) || !isText(e.degree) || !isText(e.dates)) errors.push(`${p}: school, degree, dates required`);
       if (e.bullets != null && !Array.isArray(e.bullets)) errors.push(`${p}.bullets: must be an array or null`);
+      if (e.coursework != null && !(Array.isArray(e.coursework) && e.coursework.every(isText))) errors.push(`${p}.coursework: an array of course names or null`);
     });
     checkList('stack', data.stack, (g, p) => {
       if (!isText(g.category)) errors.push(`${p}.category: required text`);
@@ -1019,10 +984,10 @@
       cardDepth, deckStep, cardTilt, cardStyle, gestureAction,
       TERMINAL_COMMANDS, runCommand, completeCommand, historyStep, mailtoLink,
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
-      ROAM, createRoamState, roamStep, roamResize, roamFrame, placeCorn,
-      CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_PECK, CHIMKEN_INK,
+      CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal,
+      skyStars, skyPosition, skyAlpha,
     };
   }
   if (typeof document === 'undefined') return;
@@ -1311,6 +1276,13 @@
       const li = el('li');
       li.append(rowHead(item.school, item.dates, item.current), el('p', 'row-sub', item.degree));
       rowBullets(li, item);
+      const courses = (item.coursework || []).filter(Boolean);
+      if (courses.length) {
+        const list = el('ul', 'tags coursework');
+        list.setAttribute('aria-label', 'Relevant coursework');
+        courses.forEach((course) => list.append(el('li', 'tag', course)));
+        li.append(el('p', 'coursework-label', 'Relevant coursework'), list);
+      }
       return li;
     });
 
@@ -2089,7 +2061,7 @@
       if (game && typeof game.owner === 'string' && Number.isInteger(game.highScore) && game.highScore >= 0) {
         rival = { owner: game.owner, highScore: game.highScore };
       }
-      const triggers = $$('.game-trigger, .yard-chimken, .score-row');
+      const triggers = $$('.game-trigger, .score-row');
       if (!dialog || !ctx || typeof dialog.showModal !== 'function') {
         triggers.forEach((button) => { button.hidden = true; });
         return;
@@ -3194,14 +3166,13 @@
   })();
 
   /* ==========================================================================
-     19b. Hero yard — chimken roams under the hero, eats corn, opens the game
+     19b. chimken art — the sidebar button shows the full sprite
      ========================================================================== */
 
-  const heroYard = (() => {
+  const chimkenArt = (() => {
     const SVG_NS = 'http://www.w3.org/2000/svg';
-    const CORN = ['..X..', '.XXX.', 'XXXXX', '.XXX.', '..X..'];
 
-    // One <rect> per run of same-coloured pixels; 'X' uses the current text colour.
+    // One <rect> per run of same-coloured pixels.
     const spriteSvg = (rows) => {
       const svg = document.createElementNS(SVG_NS, 'svg');
       svg.setAttribute('viewBox', `0 0 ${rows[0].length} ${rows.length}`);
@@ -3229,62 +3200,95 @@
         art.classList.add('chimken-art');
         icon.replaceWith(art);
       });
-      const yard = $('.hero-yard');
-      const button = $('.yard-chimken');
-      const corn = $('.yard-corn');
-      if (!yard || !button || !corn || button.hidden) return;
-      const frames = { walkA: spriteSvg(CHIMKEN_SPRITE), walkB: spriteSvg(CHIMKEN_WALK_B), peck: spriteSvg(CHIMKEN_PECK) };
-      button.append(frames.walkA, frames.walkB, frames.peck);
-      corn.append(spriteSvg(CORN));
-      yard.hidden = false;
-
-      let state = createRoamState(yard.clientWidth, Math.random);
-      let inView = !('IntersectionObserver' in window);
-      let raf = 0;
-      let last = 0;
-
-      const paint = () => {
-        const still = prefersReducedMotion();
-        const frame = still ? 'walkA' : roamFrame(state);
-        Object.entries(frames).forEach(([name, svg]) => { svg.style.display = name === frame ? '' : 'none'; });
-        button.style.translate = `${Math.round(state.x)}px 0`;
-        button.classList.toggle('is-left', state.dir === -1);
-        // The corn vanishes partway through the peck, as if swallowed.
-        const eaten = state.mode === 'peck' && state.timer < ROAM.peck * 0.35;
-        corn.hidden = still || state.cornX === null || eaten;
-        if (state.cornX !== null) corn.style.left = `${Math.round(state.cornX)}px`;
-      };
-
-      const tick = (now) => {
-        state = roamStep(state, (now - last) / 1000, Math.random);
-        last = now;
-        paint();
-        raf = requestAnimationFrame(tick);
-      };
-
-      const sync = () => {
-        const run = inView && !document.hidden && !prefersReducedMotion();
-        if (run && !raf) {
-          last = performance.now();
-          raf = requestAnimationFrame(tick);
-        } else if (!run && raf) {
-          cancelAnimationFrame(raf);
-          raf = 0;
-        }
-        paint();
-      };
-
-      const resize = () => { state = roamResize(state, yard.clientWidth); paint(); };
-      if ('ResizeObserver' in window) new ResizeObserver(resize).observe(yard);
-      else window.addEventListener('resize', resize);
-      if ('IntersectionObserver' in window) {
-        new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; sync(); }).observe(yard);
-      }
-      document.addEventListener('visibilitychange', sync);
-      motionQuery.addEventListener('change', sync);
-      sync();
     };
 
+    return { init };
+  })();
+
+  /* ==========================================================================
+     19c. Night sky — a slow pixel starfield behind the page (dark theme only)
+     ========================================================================== */
+  const nightSky = (() => {
+    const init = () => {
+      const canvas = $('.sky');
+      const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
+      if (!ctx) return;
+      const started = performance.now();
+      let stars = [];
+      let width = 0;
+      let height = 0;
+      let ink = '#ececee';
+      let frame = 0;
+      let drawn = 0;
+      let resizing = 0;
+      let shot = null;
+      let nextShot = started + 8000;
+      const dark = () => root.getAttribute('data-theme') === 'dark';
+
+      const resize = () => {
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        stars = skyStars(width, height);
+      };
+      // A pixel shooting star: a 2px head and a fading trail, about once every half minute.
+      const shoot = (now) => {
+        if (!shot && now >= nextShot) {
+          shot = { at: now, x: width * (0.35 + Math.random() * 0.6), y: height * Math.random() * 0.35 };
+          nextShot = now + 22000 + Math.random() * 24000;
+        }
+        if (!shot) return;
+        const age = (now - shot.at) / 1000;
+        if (age > 0.9) { shot = null; return; }
+        for (let i = 0; i < 12; i++) {
+          const t = age - i * 0.012;
+          if (t < 0) break;
+          ctx.globalAlpha = (1 - age / 0.9) * (1 - i / 12) * 0.9;
+          ctx.fillRect(Math.floor(shot.x - t * 520), Math.floor(shot.y + t * 230), 2, 2);
+        }
+      };
+      const draw = (now) => {
+        const moving = !prefersReducedMotion();
+        const seconds = moving ? (now - started) / 1000 : 0;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = ink;
+        stars.forEach((star) => {
+          const at = skyPosition(star, width, height, seconds, moving ? window.scrollY : 0);
+          ctx.globalAlpha = skyAlpha(star, seconds);
+          ctx.fillRect(at.x, at.y, star.size, star.size);
+        });
+        if (moving) shoot(now);
+        ctx.globalAlpha = 1;
+      };
+      const loop = (now) => {
+        frame = requestAnimationFrame(loop);
+        if (now - drawn < 33) return; // ~30 frames a second is plenty for a slow drift
+        drawn = now;
+        draw(now);
+      };
+      const sync = () => {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        canvas.hidden = !dark();
+        if (!dark()) return;
+        ink = getComputedStyle(root).getPropertyValue('--fg').trim() || ink;
+        draw(performance.now());
+        if (!prefersReducedMotion() && !document.hidden) frame = requestAnimationFrame(loop);
+      };
+
+      resize();
+      sync();
+      window.addEventListener('resize', () => {
+        cancelAnimationFrame(resizing);
+        resizing = requestAnimationFrame(() => { resize(); sync(); });
+      });
+      document.addEventListener('visibilitychange', sync);
+      motionQuery.addEventListener('change', sync);
+      if (typeof MutationObserver === 'function') new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+    };
     return { init };
   })();
 
@@ -3338,7 +3342,8 @@
     shotViewer.init();
     chatReplay.init();
     portfolioAssistant.init(data);
-    heroYard.init();
+    chimkenArt.init();
+    nightSky.init();
     scrollAids.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());

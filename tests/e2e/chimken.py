@@ -54,7 +54,7 @@ with sync_playwright() as pw:
         if name == "desktop":
             p.keyboard.press("Alt+k"); p.keyboard.press("Space")
         else:
-            p.tap(".yard-chimken"); p.wait_for_timeout(300); p.tap(".game-canvas")
+            p.tap(".menu-toggle"); p.wait_for_timeout(350); p.tap(".game-trigger"); p.wait_for_timeout(300); p.tap(".game-canvas")
         blinked = False
         biggest_jump, last = 0, points(p)
         for i in range(26):  # ~8s on the ground: invincible, so it runs through every corn

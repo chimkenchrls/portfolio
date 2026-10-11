@@ -76,24 +76,18 @@ const PORTFOLIO_DATA = {
       bullets: [
         "Champion in Local CodeFest Competition Tagisan ng Talino 2026.",
       ],
-    },
-    {
-      school: "Sariaya Institute Inc.",
-      degree: "Senior High School",
-      dates: "2021 — 2023",
-      current: false,
-    },
-    {
-      school: "Sariaya Institute Inc.",
-      degree: "Junior High School",
-      dates: "2017 — 2023",
-      current: false,
-    },
-    {
-      school: "Jose Rizal Elementary School",
-      degree: "Elementary",
-      dates: "2011 — 2017",
-      current: false,
+      // Relevant coursework, shown as a short list under the degree.
+      // An array of course names, or null to leave the list out.
+      coursework: [
+        "Platform Technology (Operating Systems)",
+        "Network Technology",
+        "Information Assurance & Security",
+        "Database Management Systems",
+        "Software Engineering",
+        "Software Quality Assurance",
+        "Web Development",
+        "Data Structures & Algorithms",
+      ],
     },
   ],
 

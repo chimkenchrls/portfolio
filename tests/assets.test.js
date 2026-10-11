@@ -67,7 +67,7 @@ test('quick jump is replaced by the chimken game', () => {
   assert.match(html, /<canvas[^>]*class="game-canvas"/);
   assert.match(html, /class="game-trigger"[\s\S]*?Play chimken/);
   assert.doesNotMatch(html + read('style.css') + read('script.js'), /topbar-game/, 'the top bar button was removed');
-  assert.match(html, /class="yard-chimken"/, 'on phones the hero chimken and the drawer button open the game');
+  assert.doesNotMatch(html, /yard-chimken/, 'on phones the drawer button opens the game');
   assert.match(html, /class="game-close"/, 'touch users need a close button');
   assert.ok(fs.existsSync(path.join(ROOT, 'assets', 'icons', 'chimken.svg')));
   assert.doesNotMatch(read('style.css'), /quick-jump/);
@@ -211,7 +211,7 @@ test('sidebar footer: no status line or visitor counter; a chimken score row ins
   assert.doesNotMatch(sidebar, /Open to OJT/, 'status line removed from the sidebar');
   assert.doesNotMatch(html + read('style.css') + read('script.js'), /visitors|abacus|status-dot|status-pulse/);
   assert.match(sidebar, /<button\s+class="score-row"[^>]*type="button"[^>]*hidden/, 'hidden until the script fills it');
-  assert.match(read('script.js'), /\$\$\('\.game-trigger, \.yard-chimken, \.score-row'\)/, 'the score row opens the game');
+  assert.match(read('script.js'), /\$\$\('\.game-trigger, \.score-row'\)/, 'the score row opens the game');
   assert.match(html, /class="terminal" data-status="Open to OJT \/ Internship"/, 'the terminal still knows the status');
 });
 
