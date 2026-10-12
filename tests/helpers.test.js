@@ -320,3 +320,32 @@ test('cover progress: 0 at the top, 1 shortly before the hero has left, smooth a
   assert.equal(coverProgress(10, 0), 1, 'a missing hero height cannot divide by zero');
   assert.equal(coverProgress(NaN, 900), 0);
 });
+
+test('photo glitch: a few thin strips, some showing the other image, never the whole photo', () => {
+  const { glitchSlices } = require('../script.js');
+  let seed = 11;
+  const random = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  for (let run = 0; run < 300; run++) {
+    const slices = glitchSlices(random);
+    assert.ok(slices.length >= 3 && slices.length <= 5);
+    assert.ok(slices.some((s) => s.alt), 'the alternate image always breaks through somewhere');
+    let area = 0;
+    for (const s of slices) {
+      assert.ok(s.height >= 4 && s.height <= 12, 'thin bands');
+      assert.ok(s.top >= 0 && s.top + s.height <= 100, 'inside the photo');
+      assert.ok(Math.abs(s.shift) >= 2 && Math.abs(s.shift) <= 6, 'a small sideways jump');
+      area += s.height;
+    }
+    assert.ok(area <= 60, 'strips, not a full-frame flash');
+  }
+  assert.ok(glitchSlices(() => 0.99).every((s) => !s.alt) === false, 'even an unlucky roll shows the alternate once');
+  for (let run = 0; run < 100; run++) {
+    const peak = glitchSlices(random, 1);
+    assert.ok(peak.length >= 4 && peak.length <= 6, 'the band plus the strips fit the six layers');
+    assert.deepEqual([peak[0].alt, peak[0].height, Math.abs(peak[0].shift)], [true, 75, 1], 'at the peak three quarters of the photo is the other image, almost in place');
+    assert.ok(peak[0].top >= 0 && peak[0].top + peak[0].height <= 100);
+    const part = glitchSlices(random, 0.4)[0];
+    assert.equal(part.height, 48, 'it builds up to the peak and back down');
+  }
+  assert.ok(glitchSlices(random, 7)[0].height === 75 && glitchSlices(random, -2).every((s) => s.height <= 12), 'out-of-range amounts are clamped');
+});

@@ -655,6 +655,25 @@
       default: return null;
     }
   };
+  // One frame of the photo glitch: a few thin horizontal strips (top/height in % of
+  // the photo) pushed sideways, some showing the alternate image. `reveal` (0–1) adds
+  // one wide band of the alternate image, so at the peak of a glitch it is plainly him.
+  const glitchSlices = (random = Math.random, reveal = 0) => {
+    const count = 3 + Math.floor(random() * 3);
+    const slices = Array.from({ length: count }, () => {
+      const height = 4 + Math.floor(random() * 9);
+      const shift = 2 + Math.floor(random() * 5);
+      return { top: Math.floor(random() * (100 - height)), height, shift: random() < 0.5 ? -shift : shift, alt: random() < 0.5 };
+    });
+    if (!slices.some((slice) => slice.alt)) slices[0].alt = true;
+    const amount = Math.min(1, Math.max(0, Number(reveal) || 0));
+    if (amount > 0) {
+      const height = Math.round(30 + amount * 45);
+      // The band goes first, so the thin strips still cut across it.
+      slices.unshift({ top: Math.floor(random() * (100 - height)), height, shift: random() < 0.5 ? -1 : 1, alt: true });
+    }
+    return slices;
+  };
   // How far the page has moved from the lone hero (0) to the ordinary layout (1),
   // eased at both ends. It is complete a little before the hero has fully left.
   const coverProgress = (scrollY, heroHeight) => {
@@ -1004,7 +1023,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal,
-      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress,
+      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices,
     };
   }
   if (typeof document === 'undefined') return;
@@ -2294,6 +2313,46 @@
       photo.addEventListener('click', () => {
         if (noHover.matches) photo.classList.toggle('is-revealed');
       });
+
+      // Every so often the photo glitches for a little over half a second: strips
+      // jump, then a wide band of the alternate image holds for a moment, then it
+      // breaks up and snaps back. Not while it is being revealed
+      // by hover, during the intro, off screen, in a background tab, or under
+      // reduced motion.
+      const base = $('.hero-photo-img', photo);
+      const glitch = el('span', 'photo-glitch');
+      glitch.setAttribute('aria-hidden', 'true');
+      const strips = Array.from({ length: 6 }, () => glitch.appendChild(document.createElement('span')));
+      if (base) base.after(glitch);
+      let inView = !('IntersectionObserver' in window);
+      let glitchTimer = 0;
+      const clear = () => strips.forEach((strip) => { strip.style.opacity = ''; });
+      const frame = (reveal) => {
+        const slices = glitchSlices(Math.random, reveal);
+        strips.forEach((strip, i) => {
+          const slice = slices[i];
+          if (!slice) { strip.style.opacity = ''; return; }
+          strip.style.backgroundImage = `url("${slice.alt || !base ? IMAGE : base.currentSrc || base.src}")`;
+          strip.style.clipPath = `inset(${slice.top}% 0 ${100 - slice.top - slice.height}% 0)`;
+          strip.style.translate = `${slice.shift}% 0`;
+          strip.style.opacity = '1';
+        });
+      };
+      const quiet = () => !inView || document.hidden || prefersReducedMotion() || root.classList.contains('intro-play')
+        || photo.matches(':hover, :focus-visible, .is-revealed');
+      const plan = (delay) => {
+        clearTimeout(glitchTimer);
+        glitchTimer = window.setTimeout(() => {
+          plan(8000 + Math.random() * 7000);
+          if (quiet()) return;
+          // [ms from the start, how much of the alternate image shows]
+          [[0, 0], [80, 0.4], [190, 1], [430, 0.5], [530, 0]].forEach(([at, reveal]) => window.setTimeout(() => frame(reveal), at));
+          window.setTimeout(clear, 620);
+        }, delay);
+      };
+      if ('IntersectionObserver' in window) new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; }).observe(photo);
+      photo.addEventListener('pointerenter', clear);
+      plan(6000);
 
       const preload = () => { const img = new Image(); img.src = IMAGE; };
       if (document.readyState === 'complete') preload();

@@ -831,6 +831,18 @@ body.is-rail .sidebar-controls {
   object-fit: cover;
 }
 
+/* Glitch strips: full-size copies of the photo, each clipped to one thin band. */
+.photo-glitch {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.photo-glitch span {
+  position: absolute;
+  inset: 0;
+  background: center / cover no-repeat;
+  opacity: 0;
+}
 .pixel-tile {
   position: absolute;
   background-repeat: no-repeat;
