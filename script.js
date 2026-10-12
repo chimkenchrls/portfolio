@@ -605,6 +605,18 @@
     return labels;
   };
 
+  /* Where he looks for a finger on a touch screen, as a cell of the directions atlas
+     (rows up / level / down, columns left / centre / right). `dx`, `dy` are the
+     finger's offset from his face. He sits in a corner, so the true angle to a
+     scrolling finger hardly changes; coarse bands of the screen make his eyes
+     visibly follow it instead. */
+  const touchGaze = (dx, dy, width, height) => {
+    if (![dx, dy, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return 4;
+    const column = dx < -0.2 * width ? 0 : dx > 0.2 * width ? 2 : 1;
+    const row = dy < -0.3 * height ? 0 : dy > 0.06 * height ? 2 : 1;
+    return row * 3 + column;
+  };
+
   /* Pixel Kenneth: eight look directions with a quiet centre and stable sector edges. */
   const MASCOT_CLOCKWISE = [5, 8, 7, 6, 3, 0, 1, 2];
   const mascotDirection = (dx, dy, previous = 4) => {
@@ -728,6 +740,19 @@
   // Each poke gets a different face; the order loops.
   const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
   const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
+  // The pixel emote that hops above his head for each face (7×7, X = ink), plus the
+  // swirl for when he has been poked dizzy.
+  const POKE_EMOTES = {
+    surprised: ['..XX...', '..XX...', '..XX...', '..XX...', '..XX...', '.......', '..XX...'],
+    wink: ['...X...', '..XXX..', 'XXXXXXX', '.XXXXX.', '.XXXXX.', 'XX...XX', 'X.....X'],
+    delighted: ['..XXXXX', '..X...X', '..X...X', '..X...X', '.XX..XX', 'XXX.XXX', '.X...X.'],
+    doubt: ['.XXXX..', 'XX..XX.', '....XX.', '...XX..', '..XX...', '.......', '..XX...'],
+    grin: ['...X...', '...X...', '..XXX..', 'XXXXXXX', '..XXX..', '...X...', '...X...'],
+    dizzy: ['.XXXXX.', 'X.....X', 'X.XXX.X', 'X.X.X.X', 'X.X...X', 'X.XXXX.', '.X.....'],
+  };
+  const pokeEmote = (count) => POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length];
+  // Five pokes inside two seconds make him dizzy.
+  const pokeDizzy = (stamps, now) => stamps.filter((at) => now - at >= 0 && now - at <= 2000).length >= 5;
   // The saved poke count, however storage hands it back.
   const pokeCount = (stored) => {
     const n = Math.floor(Number(stored));
@@ -1021,8 +1046,8 @@
       TERMINAL_COMMANDS, runCommand, completeCommand, historyStep, mailtoLink,
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
-      mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal,
+      mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy,
       skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices,
     };
   }
@@ -3104,8 +3129,46 @@
         // Keep the phone keyboard closed until the visitor chooses to type.
         if (pointerQuery.matches) input.focus({ preventScroll: true });
       };
-      const bump = [{ scale: 1.16 }, { scale: 1 }];
-      const spring = { duration: 320, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' };
+      // A poke squashes him down and he springs back; too many too fast and he sways.
+      const squash = [{ scale: '1 1' }, { scale: '1.14 0.82', offset: 0.22 }, { scale: '0.95 1.08', offset: 0.55 }, { scale: '1 1' }];
+      const sway = [0, -4, 4, -3, 3, -2, 2, 0].map((x) => ({ translate: `${x}px 0`, rotate: `${x * 1.5}deg` }));
+      const spring = { duration: 380, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' };
+      const DIZZY_MS = 1600;
+      let recent = [];
+      let dizzyUntil = 0;
+      // A small pixel drawing: one <rect> per run of ink, in the current text colour.
+      const pixelIcon = (rows) => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', `0 0 ${rows[0].length} ${rows.length}`);
+        svg.setAttribute('shape-rendering', 'crispEdges');
+        svg.setAttribute('fill', 'currentColor');
+        rows.forEach((row, y) => {
+          for (const run of row.matchAll(/X+/g)) {
+            const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', String(run.index));
+            rect.setAttribute('y', String(y));
+            rect.setAttribute('width', String(run[0].length));
+            rect.setAttribute('height', '1');
+            svg.append(rect);
+          }
+        });
+        return svg;
+      };
+      // The emote hops up from his head, holds, and fades.
+      const showEmote = (host, name, hold) => {
+        $$('.poke-emote', host).forEach((old) => old.remove());
+        const emote = el('span', 'poke-emote');
+        emote.setAttribute('aria-hidden', 'true');
+        emote.dataset.emote = name;
+        emote.append(pixelIcon(POKE_EMOTES[name]));
+        host.append(emote);
+        emote.animate([
+          { opacity: 0, translate: '0 6px', scale: 0.6 },
+          { opacity: 1, translate: '0 -3px', scale: 1, offset: 0.2 },
+          { opacity: 1, translate: '0 -5px', scale: 1, offset: 0.75 },
+          { opacity: 0, translate: '0 -11px', scale: 1 },
+        ], { duration: hold, easing: 'ease-out' }).onfinish = () => emote.remove();
+      };
       // With a server the number is everyone's pokes; without one it is this visitor's own.
       const pokeEndpoint = assistantEndpoint(data.pokes && data.pokes.endpoint, window.location.href);
       const pokeLabel = $('.poke-label');
@@ -3143,8 +3206,11 @@
         });
         window.addEventListener('pagehide', () => flushPokes(true));
       }
-      // One more poke: count it, save it, and have every visible CK pull the next face.
-      const pokeOnce = (sprite) => {
+      // One more poke: count it, save it, and have every visible CK pull the next face,
+      // with its emote. Returns false while he is too dizzy to notice.
+      const pokeOnce = (sprite, host) => {
+        const now = performance.now();
+        if (now < dizzyUntil) return false;
         pokes = pokeCount(pokes + 1);
         storage.set('localStorage', 'ck-pokes', String(pokes));
         if (total !== null) total += 1;
@@ -3153,16 +3219,24 @@
           if (!flushTimer) flushTimer = window.setTimeout(flushPokes, 1200);
         }
         showPokes();
-        pokeFace = pokeReaction(pokes);
-        pokeUntil = performance.now() + 1100;
+        recent = [...recent.filter((at) => now - at <= 2000), now];
+        const dizzy = pokeDizzy(recent, now);
+        const lasts = dizzy ? DIZZY_MS : 1100;
+        if (dizzy) { recent = []; dizzyUntil = now + DIZZY_MS; }
+        pokeFace = dizzy ? MASCOT_REACTION.sleepy : pokeReaction(pokes);
+        pokeUntil = now + lasts;
         paint();
-        window.setTimeout(paint, 1120);
-        // WAAPI, so a quick second poke restarts the bump cleanly.
-        if (!still() && typeof sprite.animate === 'function') sprite.animate(bump, spring);
+        window.setTimeout(paint, lasts + 20);
+        if (still() || typeof sprite.animate !== 'function') return true;
+        // WAAPI, so a quick second poke restarts the squash cleanly.
+        sprite.style.transformOrigin = '50% 100%';
+        sprite.animate(dizzy ? sway : squash, dizzy ? { duration: DIZZY_MS - 300, easing: 'ease-in-out' } : spring);
+        showEmote(host, dizzy ? 'dizzy' : pokeEmote(pokes), dizzy ? DIZZY_MS : 900);
+        return true;
       };
       launcher.addEventListener('click', () => {
         if (!openedOnce) { open(launcher); return; }
-        pokeOnce(sprites[0]);
+        if (!pokeOnce(sprites[0], launcher)) return;
         $$('.assistant-pop', launcher).forEach((old) => old.remove());
         const pop = document.createElement('span');
         pop.className = 'assistant-pop';
@@ -3180,7 +3254,7 @@
         showPokes();
         poke.hidden = false;
         pokeButton.addEventListener('click', () => {
-          pokeOnce(pokeSprite);
+          if (!pokeOnce(pokeSprite, poke)) return;
           if (!still() && typeof pokeValue.animate === 'function') pokeValue.animate([{ opacity: 0.4, translate: '0 4px' }, { opacity: 1, translate: '0 0' }], { duration: 220, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
         });
       }
@@ -3210,7 +3284,7 @@
       });
       character.addEventListener('click', () => { if (!busy && !typing) setMood('wink'); });
       // He looks at the cursor, and on touch screens at every tap and drag.
-      const lookAt = (x, y) => {
+      const lookAt = (x, y, finger = false) => {
         if (still() || document.hidden) return;
         cancelAnimationFrame(pointerFrame);
         pointerFrame = requestAnimationFrame(() => {
@@ -3218,20 +3292,25 @@
           // On desktop the launcher is hidden and the sidebar CK does the looking.
           const watcher = dialog.open ? character : launcher.getClientRects().length || !pokeButton ? launcher.lastElementChild : pokeButton;
           const box = watcher.getBoundingClientRect();
-          direction = mascotDirection(x - box.left - box.width / 2, y - box.top - box.height * 0.4, direction);
+          const dx = x - box.left - box.width / 2;
+          const dy = y - box.top - box.height * 0.4;
+          direction = finger ? touchGaze(dx, dy, window.innerWidth, window.innerHeight) : mascotDirection(dx, dy, direction);
           pointerAt = performance.now();
           activeAt = pointerAt;
           paint();
         });
       };
-      const lookAtPointer = (event) => lookAt(event.clientX, event.clientY);
+      const lookAtPointer = (event) => lookAt(event.clientX, event.clientY, event.pointerType === 'touch');
       window.addEventListener('pointermove', lookAtPointer, { passive: true });
       window.addEventListener('pointerdown', lookAtPointer, { passive: true });
-      // A scrolling finger stops sending pointer events, but still sends touch moves.
-      window.addEventListener('touchmove', (event) => {
+      // A scrolling finger stops sending pointer events, but still sends touch moves,
+      // so he keeps following it for the whole swipe.
+      const lookAtTouch = (event) => {
         const touch = event.touches[0];
-        if (touch) lookAt(touch.clientX, touch.clientY);
-      }, { passive: true });
+        if (touch) lookAt(touch.clientX, touch.clientY, true);
+      };
+      window.addEventListener('touchstart', lookAtTouch, { passive: true });
+      window.addEventListener('touchmove', lookAtTouch, { passive: true });
       document.addEventListener('visibilitychange', syncMotion);
       motionQuery.addEventListener('change', () => { finishTyping(); syncMotion(); });
       window.visualViewport?.addEventListener('resize', fitViewport);

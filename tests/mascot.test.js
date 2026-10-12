@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { mascotDirection, mascotIdle } = require('../script.js');
+const { mascotDirection, mascotIdle, touchGaze } = require('../script.js');
 
 test('pixel Kenneth looks toward the visitor across all eight directions', () => {
   for (const [x, y, cell] of [[-100, -100, 0], [0, -100, 1], [100, -100, 2], [-100, 0, 3], [100, 0, 5], [-100, 100, 6], [0, 100, 7], [100, 100, 8]]) {
@@ -25,4 +25,18 @@ test('the standalone character blinks briefly and rests facing the visitor', () 
   assert.equal(mascotIdle(6000).reaction, null);
   assert.deepEqual(mascotIdle(-100), mascotIdle(0));
   assert.deepEqual(mascotIdle(Infinity), mascotIdle(0));
+});
+
+test('on touch screens his eyes follow a finger in coarse bands, so a swipe visibly moves them', () => {
+  const W = 375, H = 812;
+  // He sits bottom right; dx/dy are measured from his face.
+  assert.equal(touchGaze(-140, -20, W, H), 3, 'a finger low on the left: he looks left');
+  assert.equal(touchGaze(-140, -460, W, H), 0, 'the same finger swiped up: up and to the left');
+  assert.equal(touchGaze(20, -460, W, H), 1, 'above him: straight up');
+  assert.equal(touchGaze(-20, -100, W, H), 4, 'right in front of him: at the visitor');
+  assert.equal(touchGaze(-300, 80, W, H), 6, 'below and left');
+  assert.equal(touchGaze(120, 0, W, H), 5, 'to his right');
+  const swipe = [-20, -120, -220, -320, -420, -520].map((dy) => touchGaze(-140, dy, W, H));
+  assert.deepEqual([...new Set(swipe)], [3, 0], 'one upward swipe takes his eyes from level to up');
+  for (const bad of [[NaN, 0, W, H], [0, 0, 0, H], [0, 0, W, -1]]) assert.equal(touchGaze(...bad), 4);
 });

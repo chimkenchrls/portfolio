@@ -586,6 +586,7 @@ dd {
 }
 /* Poke: a private counter beside pixel CK, who reacts to every poke. */
 .poke {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -594,6 +595,33 @@ dd {
 }
 .poke[hidden] {
   display: none;
+}
+/* The emote that pops up beside his head, upper left, when he is poked. */
+.poke-emote {
+  position: absolute;
+  top: 3px;
+  right: 45px;
+  width: 14px;
+  height: 14px;
+  color: var(--fg);
+  pointer-events: none;
+}
+.poke-emote svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+body.is-rail .poke-emote {
+  top: 0;
+  right: 25px;
+  width: 12px;
+  height: 12px;
+}
+.assistant-launcher .poke-emote {
+  top: 4px;
+  right: 56px;
+  width: 18px;
+  height: 18px;
 }
 .poke-count {
   display: flex;

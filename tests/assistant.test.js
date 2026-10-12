@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const { Readable, Writable } = require('node:stream');
 const { finished } = require('node:stream/promises');
 const data = require('../assets/data.js');
-const { assistantEndpoint, assistantHistory, assistantPose, assistantTyped, MASCOT_REACTION, pokeReaction, pokeCount, pokeTotal } = require('../script.js');
+const { assistantEndpoint, assistantHistory, assistantPose, assistantTyped, MASCOT_REACTION, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy } = require('../script.js');
 const { ChatError, validateMessages, portfolioContext, generateReply, createLimiter } = require('../server/chat.js');
 const { createPortfolioServer } = require('../server.js');
 
@@ -230,4 +230,27 @@ test('the shared poke total is only trusted when the server sends a real count',
   for (const junk of [null, undefined, '12', -1, 1.5, NaN, Infinity, {}]) assert.equal(pokeTotal(junk), null);
   assert.ok(data.pokes && 'endpoint' in data.pokes, 'data.js says where the shared counter lives (null = private counts)');
   assert.ok(data.pokes.endpoint === null || assistantEndpoint(data.pokes.endpoint, 'https://example.com/') !== null, 'a set endpoint must be HTTPS');
+});
+
+test('every poke face has its own pixel emote, in step with the face', () => {
+  const faces = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
+  assert.deepEqual([1, 2, 3, 4, 5, 6].map(pokeEmote), [...faces, 'surprised']);
+  for (let count = 1; count <= 10; count++) assert.equal(MASCOT_REACTION[pokeEmote(count)], pokeReaction(count), 'the emote always matches the face');
+  assert.deepEqual(Object.keys(POKE_EMOTES).sort(), [...faces, 'dizzy'].sort());
+  const drawings = new Set();
+  for (const [name, rows] of Object.entries(POKE_EMOTES)) {
+    assert.equal(rows.length, 7, `${name}: 7 rows`);
+    for (const row of rows) assert.match(row, /^[X.]{7}$/, `${name}: 7 columns of ink or space`);
+    assert.ok(rows.join('').includes('X'));
+    drawings.add(rows.join('|'));
+  }
+  assert.equal(drawings.size, 6, 'no two emotes are the same drawing');
+});
+
+test('five pokes inside two seconds make him dizzy; slower poking never does', () => {
+  assert.equal(pokeDizzy([0, 300, 600, 900, 1200], 1200), true);
+  assert.equal(pokeDizzy([0, 300, 600, 900], 900), false, 'four is not enough');
+  assert.equal(pokeDizzy([0, 600, 1200, 1800, 2400], 2400), false, 'spread over more than two seconds');
+  assert.equal(pokeDizzy([0, 1, 2, 3, 4, 5000], 5000), false, 'old pokes are forgotten');
+  assert.equal(pokeDizzy([], 0), false);
 });
