@@ -40,6 +40,11 @@
     "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-pixel: "Geist Pixel", "Geist Mono", ui-monospace, monospace;
 
+  /* The cursor: one rounded arrowhead everywhere (the link token only differs in
+     its fallback, the system hand, for browsers that refuse image cursors). */
+  --cursor: url("./assets/icons/cursor-on-light.svg") 4 3, auto;
+  --cursor-link: url("./assets/icons/cursor-on-light.svg") 4 3, pointer;
+
   --sidebar-w: 248px;
   --rail-w: 56px;
   --topbar-h: 56px;
@@ -60,6 +65,8 @@
   --border: #232327;
   --status: #5fd08a;
   --surface: #19191c;
+  --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
+  --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
   --chimken-line: #000000;
   --chimken-body: #fafafa;
   --chimken-shade: #bebec6;
@@ -79,6 +86,8 @@
     --border: #232327;
     --status: #5fd08a;
     --surface: #19191c;
+    --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
+    --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
     --chimken-line: #000000;
     --chimken-body: #fafafa;
     --chimken-shade: #bebec6;
@@ -106,6 +115,15 @@ html {
   -webkit-tap-highlight-color: transparent;
 }
 
+html {
+  cursor: var(--cursor);
+}
+a,
+summary,
+label[for],
+[role="button"] {
+  cursor: var(--cursor-link);
+}
 body {
   margin: 0;
   min-height: 100vh;
@@ -135,7 +153,7 @@ button {
   background: none;
   border: 0;
   padding: 0;
-  cursor: pointer;
+  cursor: var(--cursor-link);
 }
 ul,
 ol {
@@ -335,6 +353,36 @@ dd {
   margin-inline: auto;
 }
 
+/* Click burst: five short rays fan out from the cursor's tip (mouse only; drawn by
+   script.js). The layer is a popover so it also shows above open dialogs. */
+.click-layer {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  background: none;
+  border: 0;
+  pointer-events: none;
+}
+.click-burst {
+  position: fixed;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.click-burst span {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 7px;
+  height: 2px;
+  background: var(--fg);
+  border-radius: 1px;
+  transform-origin: 0 50%;
+}
 /* The pixel night sky behind the page (dark theme only; drawn by script.js). */
 .sky {
   position: fixed;
@@ -808,7 +856,7 @@ body.is-rail .sidebar-controls {
   padding-inline: 8px;
 }
 .social-pending {
-  cursor: default;
+  cursor: var(--cursor);
 }
 
 /* 10. Pixel photo ========================================================= */
@@ -1699,7 +1747,7 @@ body.is-rail .sidebar-controls {
   width: 100%;
   aspect-ratio: 4 / 5;
   margin-bottom: 36px; /* room for the cards peeking out below */
-  cursor: pointer;
+  cursor: var(--cursor-link);
   touch-action: pan-y;
   -webkit-tap-highlight-color: transparent;
   -webkit-user-select: none;
@@ -2043,7 +2091,7 @@ body.is-rail .sidebar-controls {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   touch-action: manipulation;
-  cursor: pointer;
+  cursor: var(--cursor-link);
 }
 /* Game tap targets: no blue mobile tap flash, no text selection on rapid taps. */
 .game-canvas,
@@ -2247,7 +2295,7 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
 .assistant-speech::after { left: -13px; height: 8px; }
 .assistant-speaker { display: block; margin-bottom: 4px; color: var(--fg-muted); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; }
 .assistant-say { font-size: 15px; line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
-.assistant-say.is-typing { cursor: pointer; }
+.assistant-say.is-typing { cursor: var(--cursor-link); }
 .assistant-say.is-typing::after { content: ""; display: inline-block; width: 7px; height: 15px; margin-left: 3px; vertical-align: -2px; background: currentColor; }
 .assistant-dots { display: flex; gap: 6px; padding: 10px 0 6px; }
 .assistant-dots[hidden] { display: none; }
@@ -2260,7 +2308,7 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
 .assistant-form textarea { display: block; flex: 1; width: 0; min-height: 44px; max-height: 112px; padding: 10px 0; resize: none; border: 0; border-radius: 0; outline: none; color: var(--fg); background: transparent; font: inherit; font-size: 16px; line-height: 24px; caret-color: var(--fg); }
 .assistant-form textarea::placeholder { color: var(--fg-muted); opacity: 1; }
 .assistant-send { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; background: var(--fg); color: var(--bg); border-radius: var(--radius); }
-.assistant-send:disabled { background: var(--bg-alt); color: var(--fg-muted); cursor: default; }
+.assistant-send:disabled { background: var(--bg-alt); color: var(--fg-muted); cursor: var(--cursor); }
 .assistant-send { transition: scale 160ms ease-out, opacity 150ms ease, background-color 150ms ease, color 150ms ease; }
 .assistant-send:active:not(:disabled) { scale: 0.94; }
 @media (hover: hover) and (pointer: fine) {

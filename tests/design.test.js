@@ -109,3 +109,28 @@ test('on phones the hero fills the first screen, so About starts below the fold'
   assert.match(hero[1], /min-height:\s*calc\(100svh - var\(--topbar-h\) - 28px\)/);
   assert.match(hero[1], /justify-content:\s*center/);
 });
+
+test('the cursor is one rounded arrowhead per theme: white on dark, black on light', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const icons = path.join(__dirname, '..', 'assets', 'icons');
+  const fills = (file) => [...fs.readFileSync(path.join(icons, file), 'utf8').matchAll(/fill="(#[0-9a-f]{6})"/g)].map((m) => m[1]);
+  for (const name of ['on-light', 'on-dark']) {
+    const svg = fs.readFileSync(path.join(icons, `cursor-${name}.svg`), 'utf8');
+    assert.match(svg, /width="26" height="28"/, `${name}: explicit size, so every browser accepts it as a cursor`);
+    assert.match(svg, /stroke-linejoin="round"/);
+  }
+  assert.equal(fills('cursor-on-dark.svg')[1], '#ececee', 'white arrow on the dark theme');
+  assert.equal(fills('cursor-on-light.svg')[1], '#111113', 'black arrow on the light theme');
+  assert.deepEqual(fs.readdirSync(icons).filter((f) => f.startsWith('cursor-')).sort(), ['cursor-on-dark.svg', 'cursor-on-light.svg'], 'no second colour for links');
+  assert.match(token(light, '--cursor'), /cursor-on-light\.svg"\) 4 3, auto/);
+  assert.match(token(dark, '--cursor-link'), /cursor-on-dark\.svg"\) 4 3, pointer/, 'the same arrow over links; only the fallback differs');
+  assert.match(css, /html \{\s*cursor: var\(--cursor\);/);
+  assert.doesNotMatch(css, /cursor:\s*(?:pointer|default);/, 'every clickable thing uses the themed cursor');
+  assert.match(css, /cursor: crosshair;/, 'the photo keeps its crosshair');
+  const js = read('script.js');
+  const burst = js.slice(js.indexOf('const clickBurst'), js.indexOf('20. Scroll aids'));
+  assert.match(burst, /event\.pointerType !== 'mouse'/, 'no burst on touch');
+  assert.match(burst, /prefersReducedMotion\(\)/);
+  assert.match(burst, /const RAYS = \[165, 205, 245, 285, 325\];/);
+});

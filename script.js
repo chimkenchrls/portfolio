@@ -3499,6 +3499,43 @@
   })();
 
   /* ==========================================================================
+     19e. Click burst — short rays fan out from the cursor's tip on a mouse click
+     ========================================================================== */
+  const clickBurst = (() => {
+    // Degrees clockwise from "right": a fan over the upper-left of the arrow's tip.
+    const RAYS = [165, 205, 245, 285, 325];
+    const init = () => {
+      const layer = el('div', 'click-layer');
+      layer.setAttribute('aria-hidden', 'true');
+      const topLayer = typeof layer.showPopover === 'function';
+      if (topLayer) layer.setAttribute('popover', 'manual');
+      document.body.append(layer);
+      document.addEventListener('pointerdown', (event) => {
+        if (event.pointerType !== 'mouse' || event.button !== 0 || prefersReducedMotion() || typeof layer.animate !== 'function') return;
+        // Re-show the layer so it sits above a dialog opened since the last click.
+        if (topLayer) {
+          try { layer.hidePopover(); } catch { /* not shown yet */ }
+          try { layer.showPopover(); } catch { /* fall back to the page layer */ }
+        }
+        const burst = el('span', 'click-burst');
+        burst.style.left = `${event.clientX}px`;
+        burst.style.top = `${event.clientY}px`;
+        RAYS.forEach((angle) => {
+          const ray = document.createElement('span');
+          burst.append(ray);
+          ray.animate([
+            { transform: `rotate(${angle}deg) translateX(8px) scaleX(1)`, opacity: 1 },
+            { transform: `rotate(${angle}deg) translateX(17px) scaleX(0.3)`, opacity: 0 },
+          ], { duration: 300, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' });
+        });
+        layer.append(burst);
+        window.setTimeout(() => burst.remove(), 340);
+      }, { passive: true });
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      20. Scroll aids — reading-progress line
      ========================================================================== */
 
@@ -3551,6 +3588,7 @@
     chimkenArt.init();
     nightSky.init();
     cover.init();
+    clickBurst.init();
     scrollAids.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());

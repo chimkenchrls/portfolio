@@ -117,6 +117,33 @@ with sync_playwright() as pw:
     check("reduced motion: it switches as soon as scrolling starts, with no glide", p.evaluate(STATE)["sidebarLeft"] == 18 and p.evaluate("Math.round(document.querySelector('.hero-photo').getBoundingClientRect().left)") == p.evaluate("Math.round(document.querySelector('.about-bio').getBoundingClientRect().left)"))
     ctx.close()
 
+    # Cursor and click burst.
+    ctx, p, errors = page(b, url=PLAIN + "#about")
+    p.wait_for_timeout(500)
+    cur = p.evaluate("[getComputedStyle(document.body).cursor, getComputedStyle(document.querySelector('.nav-link')).cursor, getComputedStyle(document.querySelector('.sidebar-chat')).cursor, getComputedStyle(document.querySelector('.hero-photo')).cursor]")
+    check("the page uses the same arrowhead cursor everywhere, links and buttons included", all("cursor-on-dark.svg" in c for c in cur[:3]) and cur[3] == "crosshair", str(cur))
+    check("the cursor images load", p.evaluate("Promise.all(['on-dark', 'on-light'].map(n => fetch('./assets/icons/cursor-' + n + '.svg').then(r => r.ok))).then(a => a.every(Boolean))"))
+    p.mouse.click(700, 400)
+    check("a click throws five rays from the cursor tip", p.locator(".click-burst span").count() == 5 and p.evaluate("(() => { const b = document.querySelector('.click-burst').getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top)]; })()") == [700, 400])
+    if SHOTS: p.screenshot(path=f"{SHOTS}/click-burst.png", clip={"x": 640, "y": 340, "width": 120, "height": 120})
+    p.wait_for_timeout(500)
+    check("and they clear away", p.locator(".click-burst").count() == 0)
+    p.click(".sidebar-chat")
+    p.wait_for_selector(".assistant-dialog[open]")
+    p.wait_for_timeout(450)
+    p.mouse.click(640, 450)
+    check("the burst also shows above an open dialog", p.locator(".click-burst span").count() == 5 and p.evaluate("document.querySelector('.click-layer').matches(':popover-open')"))
+    check("no errors with the cursor", not errors, "; ".join(errors))
+    ctx.close()
+    ctx, p, errors = page(b, url=PLAIN + "#about", reduced_motion="reduce")
+    p.mouse.click(700, 400)
+    check("reduced motion: no burst", p.locator(".click-burst").count() == 0)
+    ctx.close()
+    ctx, p, errors = page(b, url=PLAIN + "#about", width=390, height=844, is_mobile=True, has_touch=True)
+    p.touchscreen.tap(200, 400)
+    check("touch: no burst", p.locator(".click-burst").count() == 0)
+    ctx.close()
+
     # The photo glitch (random timing is pinned so the first one comes at 6s).
     GLITCHING = "[...document.querySelectorAll('.photo-glitch span')].filter(n => n.style.opacity === '1').length"
     ctx, p, errors = page(b)
