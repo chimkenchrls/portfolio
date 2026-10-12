@@ -56,7 +56,7 @@ test('Gemini receives server-owned facts, the private header, and correctly orde
   assert.ok(!call.url.includes('test-key'));
   const body = JSON.parse(call.options.body);
   assert.deepEqual(body.contents.map((entry) => entry.role), ['user', 'model', 'user']);
-  assert.ok(body.systemInstruction.parts[0].text.includes('AI Engineer for Developers'));
+  assert.ok(body.systemInstruction.parts[0].text.includes('AI Engineering for Developers'));
   assert.match(body.systemInstruction.parts[0].text, /in-progress is never completed/);
   assert.equal(portfolioContext(data).certifications[0].status, 'in-progress');
   assert.ok(!('assistant' in portfolioContext(data)), 'no endpoint configuration sent as portfolio facts');

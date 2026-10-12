@@ -7,7 +7,7 @@ const data = require('../assets/data.js');
 
 test('certifications distinguish study in progress from completed awards', () => {
   assert.deepEqual(data.certifications.map(({ title, issuer, status, date }) => ({ title, issuer, status, date })), [
-    { title: 'AI Engineer for Developers', issuer: 'DataCamp', status: 'in-progress', date: null },
+    { title: 'AI Engineering for Developers', issuer: 'DataCamp', status: 'in-progress', date: null },
     { title: 'Champion in Local Codefest Competition', issuer: 'STI College Lucena', status: 'completed', date: '2026' },
     { title: 'Certificate of Participation on AppBuildersPH Hackathon', issuer: 'AppBuildersPH', status: 'completed', date: '2026' },
   ]);

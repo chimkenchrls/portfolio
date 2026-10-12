@@ -68,6 +68,33 @@
         var calm =
           window.matchMedia &&
           window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        // A reload always starts over: back to the top, without the #section in
+        // the address, so the hero and its intro come first again. (A fresh visit
+        // through a link to a section still opens at that section.)
+        var entry =
+          window.performance &&
+          performance.getEntriesByType &&
+          performance.getEntriesByType("navigation")[0];
+        // The browser decides whether to restore the old scroll position from
+        // what the page said on its previous load, so this is set every time.
+        try {
+          if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+        } catch (e) {
+          /* history unavailable */
+        }
+        if (entry && entry.type === "reload") {
+          try {
+            if (window.location.hash)
+              history.replaceState(null, "", window.location.pathname + window.location.search);
+          } catch (e) {
+            /* fall through to the ordinary behaviour */
+          }
+          window.scrollTo(0, 0);
+          // In case a position was restored anyway before this took effect.
+          window.addEventListener("load", function () {
+            window.scrollTo(0, 0);
+          });
+        }
         root.classList.add("has-cover");
         if (!window.location.hash) {
           root.classList.add("at-cover");

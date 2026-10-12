@@ -296,6 +296,7 @@ test('the cover is set up in the head, with the intro only on a plain load, and 
   const js = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
   const head = html.slice(0, html.indexOf('</head>'));
   assert.match(head, /root\.classList\.add\("has-cover"\);\s*if \(!window\.location\.hash\) \{\s*root\.classList\.add\("at-cover"\);\s*if \(!calm\) root\.classList\.add\("intro-play"\);/);
+  assert.match(head, /history\.scrollRestoration = "manual";[\s\S]*?entry\.type === "reload"\) \{[\s\S]*?history\.replaceState\(null, "", window\.location\.pathname \+ window\.location\.search\);[\s\S]*?window\.scrollTo\(0, 0\);/, 'a reload starts over at the hero, without the #section');
   assert.match(head, /getAttribute\("data-cover"\) !== "ready"\)\s*root\.classList\.remove\("has-cover", "at-cover", "intro-play"\)/, 'the ordinary page appears if script.js never loads');
   assert.match(css, /html\.at-cover \.sidebar \{\s*visibility: hidden;\s*translate: calc\(-100% - 48px\) 0;/, 'away and unfocusable at the top of the page');
   assert.match(css, /html\.has-cover \.hero \{[^}]*min-height: 100vh;[^}]*translate: calc\(var\(--main-offset\) \/ -2\) 0;/, 'the hero fills the window and is centred on it');
