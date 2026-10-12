@@ -8,7 +8,7 @@
       name="description"
       content="Kenneth Charles Valdez — 4th-year BS Computer Science student and aspiring DevOps Engineer from Sariaya, Quezon, Philippines. Open to OJT / internship."
     />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content="dark light" />
     <link rel="canonical" href="https://kenchrls.vercel.app/" />
     <!-- Link previews (Messenger, Discord, LinkedIn…). These URLs must be absolute. -->
     <meta property="og:type" content="website" />
@@ -21,10 +21,7 @@
       property="og:description"
       content="4th-year BS Computer Science student and aspiring DevOps Engineer from Sariaya, Quezon, Philippines. Projects, stack, and a playable chimken."
     />
-    <meta
-      property="og:url"
-      content="https://kenchrls.vercel.app/"
-    />
+    <meta property="og:url" content="https://kenchrls.vercel.app/" />
     <meta
       property="og:image"
       content="https://kenchrls.vercel.app/assets/og.jpg"
@@ -51,15 +48,13 @@
     <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
     <script>
       (function () {
-        var dark =
-          window.matchMedia &&
-          window.matchMedia("(prefers-color-scheme: dark)").matches;
-        var theme = dark ? "dark" : "light";
+        // Dark is the default; a visitor's own choice (the toggle) is remembered.
+        var theme = "dark";
         try {
           var stored = localStorage.getItem("theme");
           if (stored === "light" || stored === "dark") theme = stored;
         } catch (e) {
-          /* storage blocked: keep system preference */
+          /* storage blocked: keep the default */
         }
         document.documentElement.setAttribute("data-theme", theme);
       })();
@@ -368,9 +363,10 @@
         <div class="about-bio">
           <p>
             I’m a 4th-year BS Computer Science student at STI College Lucena
-            with a real passion for tech. I got into DevOps Engineering because
-            I love figuring out how systems fit together and making deployments
-            smooth and scalable.
+            with a genuine interest in understanding how technology works. My
+            interest in DevOps Engineering grew from my curiosity about how
+            different systems work together and how to make deployments more
+            efficient, reliable, and scalable.
           </p>
           <p>
             Right now, I’m just building side projects to sharpen my skills. I
@@ -572,27 +568,60 @@
           <div class="contact-row">
             <p class="contact-field">
               <label for="contact-name">Name</label>
-              <input id="contact-name" name="name" type="text" autocomplete="name" maxlength="80" required aria-describedby="contact-name-error" />
+              <input
+                id="contact-name"
+                name="name"
+                type="text"
+                autocomplete="name"
+                maxlength="80"
+                required
+                aria-describedby="contact-name-error"
+              />
               <span class="contact-error" id="contact-name-error"></span>
             </p>
             <p class="contact-field">
               <label for="contact-email">Email</label>
-              <input id="contact-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="200" spellcheck="false" required aria-describedby="contact-email-error" />
+              <input
+                id="contact-email"
+                name="email"
+                type="email"
+                autocomplete="email"
+                inputmode="email"
+                maxlength="200"
+                spellcheck="false"
+                required
+                aria-describedby="contact-email-error"
+              />
               <span class="contact-error" id="contact-email-error"></span>
               <button class="contact-suggest" type="button" hidden></button>
             </p>
           </div>
           <p class="contact-field">
             <label for="contact-message">Message</label>
-            <textarea id="contact-message" name="message" rows="5" maxlength="4000" required aria-describedby="contact-message-error"></textarea>
+            <textarea
+              id="contact-message"
+              name="message"
+              rows="5"
+              maxlength="4000"
+              required
+              aria-describedby="contact-message-error"
+            ></textarea>
             <span class="contact-error" id="contact-message-error"></span>
           </p>
           <p class="contact-trap" aria-hidden="true">
             <label for="contact-website">Leave this field empty</label>
-            <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+            <input
+              id="contact-website"
+              name="website"
+              type="text"
+              tabindex="-1"
+              autocomplete="off"
+            />
           </p>
           <div class="contact-foot">
-            <p class="contact-note">This goes straight to my inbox. I’ll reply to the email you enter.</p>
+            <p class="contact-note">
+              This goes straight to my inbox. I’ll reply to the email you enter.
+            </p>
             <button class="contact-send" type="submit">Send</button>
           </div>
           <p class="contact-status" role="status" aria-live="polite"></p>

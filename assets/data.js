@@ -46,7 +46,9 @@ const PORTFOLIO_DATA = {
 
   // The contact form under the terminal. Messages are emailed to me by the Worker
   // (through Resend). null hides the form and leaves the terminal and email links.
-  contact: { endpoint: "https://kenchrls-api.kenchrls.workers.dev/api/contact" },
+  contact: {
+    endpoint: "https://kenchrls-api.kenchrls.workers.dev/api/contact",
+  },
 
   // chimken: the site owner's high score shown as the score to beat.
   game: { owner: "ck", highScore: 3236 },
@@ -329,7 +331,7 @@ const PORTFOLIO_DATA = {
   // Keep missing assets null; in-progress entries do not offer a preview.
   certifications: [
     {
-      title: "AI Engineer for Developers",
+      title: "AI Engineering for Developers",
       issuer: "DataCamp",
       status: "in-progress",
       date: null,
