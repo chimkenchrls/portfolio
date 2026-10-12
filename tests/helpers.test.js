@@ -274,3 +274,49 @@ test('the dotted grid is gone and the sky canvas is decorative', () => {
   assert.match(fs.readFileSync(path.join(root, 'index.html'), 'utf8'), /<canvas class="sky" aria-hidden="true" hidden><\/canvas>/);
   assert.match(css, /\.sky \{[^}]*pointer-events:\s*none/);
 });
+
+test('intro timeline: tiles, then the name, then the rest, all inside about two seconds', () => {
+  const { introTimeline } = require('../script.js');
+  const time = introTimeline(20, 5);
+  assert.equal(time.nameStart, 450);
+  assert.ok(time.restStart >= time.nameStart + 20 * time.nameStep - 100, 'the other lines wait for the name');
+  assert.equal(time.end, time.restStart + 4 * time.restStep + 380);
+  assert.ok(time.end <= 2200, `the whole intro is short (${time.end}ms)`);
+  assert.ok(80 + 63 * time.tileStep + time.tileFade <= time.restStart, 'the photo is complete before the rest appears');
+  assert.equal(introTimeline(0, 0).end, 1100 + 380, 'no letters and no extras still ends cleanly');
+  assert.deepEqual(introTimeline(NaN, -3), introTimeline(0, 0));
+});
+
+test('the cover is set up in the head, with the intro only on a plain load, and a failsafe', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+  const js = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+  const head = html.slice(0, html.indexOf('</head>'));
+  assert.match(head, /root\.classList\.add\("has-cover"\);\s*if \(!window\.location\.hash\) \{\s*root\.classList\.add\("at-cover"\);\s*if \(!calm\) root\.classList\.add\("intro-play"\);/);
+  assert.match(head, /getAttribute\("data-cover"\) !== "ready"\)\s*root\.classList\.remove\("has-cover", "at-cover", "intro-play"\)/, 'the ordinary page appears if script.js never loads');
+  assert.match(css, /html\.at-cover \.sidebar \{\s*visibility: hidden;\s*translate: calc\(-100% - 48px\) 0;/, 'away and unfocusable at the top of the page');
+  assert.match(css, /html\.has-cover \.hero \{[^}]*min-height: 100vh;[^}]*translate: calc\(var\(--main-offset\) \/ -2\) 0;/, 'the hero fills the window and is centred on it');
+  assert.doesNotMatch(css, /html\.(?:intro|at-cover) \.main > \.section/, 'the sections below are never hidden');
+  const module = js.slice(js.indexOf('const cover = (() => {'), js.indexOf('20. Scroll aids'));
+  assert.match(module, /coverProgress\(window\.scrollY, hero\.offsetHeight\)/, 'the layout follows the scroll position both ways');
+  assert.match(module, /prefersReducedMotion\(\) \? \(window\.scrollY > 4 \? 1 : 0\)/, 'reduced motion: it switches instead of gliding');
+  assert.match(module, /name\.setAttribute\('aria-label', title\)/, 'the name stays readable to screen readers while it types');
+  assert.doesNotMatch(module, /innerHTML/);
+});
+
+test('cover progress: 0 at the top, 1 shortly before the hero has left, smooth and never backwards', () => {
+  const { coverProgress } = require('../script.js');
+  assert.equal(coverProgress(0, 900), 0);
+  assert.equal(coverProgress(720, 900), 1, 'complete at 80% of the hero');
+  assert.equal(coverProgress(5000, 900), 1);
+  assert.equal(coverProgress(-50, 900), 0, 'rubber-band overscroll stays at the cover');
+  assert.equal(coverProgress(360, 900), 0.5, 'halfway in the middle');
+  assert.ok(coverProgress(72, 900) < 0.05, 'eases in: the first nudge barely moves anything');
+  let last = 0;
+  for (let y = 0; y <= 900; y += 10) { const p = coverProgress(y, 900); assert.ok(p >= last && p <= 1); last = p; }
+  assert.equal(coverProgress(10, 0), 1, 'a missing hero height cannot divide by zero');
+  assert.equal(coverProgress(NaN, 900), 0);
+});

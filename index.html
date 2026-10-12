@@ -64,6 +64,27 @@
         document.documentElement.setAttribute("data-theme", theme);
       })();
     </script>
+    <script>
+      // Cover: the hero is its own opening screen (see "cover" in script.js).
+      // The sidebar stays away until the page is scrolled past it. On a plain
+      // load the hero also assembles itself once, unless reduced motion is on.
+      (function () {
+        var root = document.documentElement;
+        var calm =
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        root.classList.add("has-cover");
+        if (!window.location.hash) {
+          root.classList.add("at-cover");
+          if (!calm) root.classList.add("intro-play");
+        }
+        // If the main script never arrives, fall back to the ordinary page.
+        setTimeout(function () {
+          if (root.getAttribute("data-cover") !== "ready")
+            root.classList.remove("has-cover", "at-cover", "intro-play");
+        }, 5000);
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

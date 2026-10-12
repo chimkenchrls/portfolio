@@ -655,6 +655,23 @@
       default: return null;
     }
   };
+  // How far the page has moved from the lone hero (0) to the ordinary layout (1),
+  // eased at both ends. It is complete a little before the hero has fully left.
+  const coverProgress = (scrollY, heroHeight) => {
+    const range = Math.max(1, (Number(heroHeight) || 0) * 0.8);
+    const raw = Math.min(1, Math.max(0, (Number(scrollY) || 0) / range));
+    return raw * raw * (3 - 2 * raw);
+  };
+  // When each part of the hero intro starts (ms): the photo's tiles drop away, the
+  // name types out as the photo completes, then the remaining lines rise in turn.
+  const introTimeline = (letters, extras) => {
+    const count = (value) => Math.max(0, Math.floor(value) || 0);
+    const nameStart = 450;
+    const nameStep = 34;
+    const restStart = Math.max(1100, nameStart + count(letters) * nameStep - 100);
+    const restStep = 70;
+    return { tileStep: 13, tileFade: 140, nameStart, nameStep, restStart, restStep, end: restStart + Math.max(0, count(extras) - 1) * restStep + 380 };
+  };
   // A small seeded generator, so the night sky is the same on every visit.
   const skyRandom = (seed) => {
     let state = seed >>> 0;
@@ -987,7 +1004,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal,
-      skyStars, skyPosition, skyAlpha,
+      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress,
     };
   }
   if (typeof document === 'undefined') return;
@@ -3293,6 +3310,136 @@
   })();
 
   /* ==========================================================================
+     19d. Cover — the hero is its own opening screen; the sidebar arrives after it
+     ========================================================================== */
+  const cover = (() => {
+    const init = () => {
+      if (!root.classList.contains('has-cover')) return;
+      // Tells the <head> failsafe that this script is in charge.
+      root.setAttribute('data-cover', 'ready');
+      const photo = $('.hero-photo');
+      const name = $('.hero-name');
+      if (!photo || !name || !$('.hero') || !$('#main')) { root.classList.remove('has-cover', 'at-cover', 'intro-play'); return; }
+
+      // The change from lone hero to ordinary page follows the scroll position:
+      // the hero glides from the centre of the window to the page column while the
+      // sidebar (the top bar on phones) slides in, and the floating CK fades in.
+      // Scrolling back up runs it in reverse. Styles are set on the elements
+      // themselves, not through a variable, so only they are restyled each frame.
+      const hero = $('.hero');
+      const main = $('#main');
+      const sidebar = $('#sidebar');
+      const topbar = $('.topbar');
+      const launcher = $('.assistant-launcher');
+      const wide = window.matchMedia('(min-width: 640px)');
+      let queued = false;
+      let hint = null;
+      const sync = () => {
+        queued = false;
+        const amount = prefersReducedMotion() ? (window.scrollY > 4 ? 1 : 0) : coverProgress(window.scrollY, hero.offsetHeight);
+        const away = 1 - amount;
+        root.classList.toggle('at-cover', window.scrollY <= 4);
+        if (wide.matches) {
+          hero.style.translate = `${(-(parseFloat(getComputedStyle(main).marginLeft) || 0) / 2) * away}px 0`;
+          if (sidebar) sidebar.style.translate = `calc(${-100 * away}% - ${48 * away}px) 0`;
+        } else {
+          hero.style.translate = '';
+          if (sidebar) sidebar.style.translate = '';
+        }
+        if (topbar) topbar.style.translate = `0 ${-100 * away}%`;
+        if (launcher) {
+          launcher.style.opacity = String(amount);
+          launcher.style.pointerEvents = amount > 0.6 ? '' : 'none';
+        }
+      };
+      const schedule = () => {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(sync);
+      };
+      window.addEventListener('scroll', schedule, { passive: true });
+      window.addEventListener('resize', schedule);
+      motionQuery.addEventListener('change', schedule);
+      if (sidebar) sidebar.addEventListener('transitionend', schedule); // collapsing changes the column
+      sync();
+
+      hint = el('button', 'intro-hint', 'Scroll');
+      hint.type = 'button';
+      hint.setAttribute('aria-label', 'Scroll to the About section');
+      hint.addEventListener('click', () => {
+        const about = $('#about');
+        if (about) about.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+      });
+      document.body.append(hint);
+
+      // The intro plays once per load, and only when the page opens at the top.
+      if (!root.classList.contains('intro-play')) return;
+      const rest = $$('.hero-text > :not(.hero-name)');
+      const title = name.textContent;
+      if (window.scrollY > 4 || typeof name.animate !== 'function') { root.classList.remove('intro-play'); return; }
+      const running = [];
+      let timer = 0;
+      let played = false;
+      // Jump to the finished hero (also how a click skips the animation).
+      const finish = () => {
+        if (played) return;
+        played = true;
+        clearTimeout(timer);
+        document.removeEventListener('pointerdown', finish);
+        window.removeEventListener('keydown', finish);
+        running.forEach((animation) => animation.cancel());
+        $$('.intro-tiles').forEach((tiles) => tiles.remove());
+        photo.style.opacity = '';
+        name.textContent = title;
+        name.removeAttribute('aria-label');
+        name.style.opacity = '';
+        root.classList.remove('intro-play');
+      };
+      document.addEventListener('pointerdown', finish);
+      window.addEventListener('keydown', finish);
+
+      const time = introTimeline(Array.from(title.replace(/\s/g, '')).length, rest.length);
+
+      // 1. The photo: 64 page-coloured tiles drop away in a shuffled order.
+      const tiles = el('div', 'intro-tiles');
+      tiles.setAttribute('aria-hidden', 'true');
+      revealDelays(64, time.tileStep).forEach((delay) => {
+        const tile = document.createElement('span');
+        tiles.append(tile);
+        running.push(tile.animate([{ opacity: 1 }, { opacity: 0 }], { duration: time.tileFade, delay: 80 + delay, easing: 'steps(2, end)', fill: 'forwards' }));
+      });
+      photo.append(tiles);
+      photo.style.opacity = '1';
+
+      // 2. The name: each letter is already in place, so nothing shifts as it types.
+      name.setAttribute('aria-label', title);
+      name.textContent = '';
+      let letter = 0;
+      title.split(/(\s+)/).forEach((part) => {
+        if (!part) return;
+        if (/^\s+$/.test(part)) { name.append(' '); return; }
+        const word = el('span', 'intro-word');
+        word.setAttribute('aria-hidden', 'true');
+        Array.from(part).forEach((character) => {
+          const span = el('span', 'intro-char', character);
+          word.append(span);
+          running.push(span.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1, delay: time.nameStart + letter * time.nameStep, fill: 'forwards' }));
+          letter += 1;
+        });
+        name.append(word);
+      });
+      name.style.opacity = '1';
+
+      // 3. Everything else rises into place, one line after another.
+      rest.forEach((node, index) => {
+        running.push(node.animate([{ opacity: 0, translate: '0 10px' }, { opacity: 1, translate: '0 0' }], { duration: 380, delay: time.restStart + index * time.restStep, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'both' }));
+      });
+      timer = window.setTimeout(finish, time.end + 60);
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      20. Scroll aids — reading-progress line
      ========================================================================== */
 
@@ -3344,6 +3491,7 @@
     portfolioAssistant.init(data);
     chimkenArt.init();
     nightSky.init();
+    cover.init();
     scrollAids.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());

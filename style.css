@@ -2337,6 +2337,138 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   }
 }
 
+/* 19b. Cover ============================================================== */
+/* The hero is its own opening screen: at the top of the page it fills the window
+   and is centred on it, with no sidebar. As the page scrolls through the hero,
+   script.js glides the hero across to the page column and slides the sidebar (or
+   the phone top bar) in, both tied to the scroll position, so they are in place
+   when About takes over and reverse on the way back up. The classes are set in
+   the <head> so nothing flashes before script.js runs. */
+:root {
+  --main-offset: calc(var(--sidebar-w) + 36px); /* how far the sidebar pushes .main */
+  --main-top: 48px; /* .main's top padding */
+}
+body.is-rail {
+  --main-offset: calc(var(--rail-w) + 36px);
+}
+@media (max-width: 1024px) {
+  :root {
+    --main-top: 40px;
+  }
+}
+@media (min-width: 640px) {
+  html.has-cover .hero {
+    min-height: 100vh;
+    margin-top: calc(-1 * var(--main-top));
+    padding-block: 0;
+    /* Drawn centred on the window, not on the column beside the sidebar. */
+    translate: calc(var(--main-offset) / -2) 0;
+  }
+  /* Where the sidebar waits before script.js starts moving it with the scroll;
+     it cannot be tabbed to while it is away. */
+  html.at-cover .sidebar {
+    visibility: hidden;
+    translate: calc(-100% - 48px) 0;
+  }
+}
+@media (min-width: 640px) and (max-width: 860px) {
+  /* The stacked tablet hero is centred in the window too. */
+  html.has-cover .hero {
+    justify-content: center;
+  }
+}
+html.at-cover .topbar {
+  translate: 0 -100%;
+}
+html.at-cover .assistant-launcher {
+  opacity: 0;
+  pointer-events: none;
+}
+/* The intro, once per load: script.js reveals each part of the hero in turn. */
+html.intro-play .hero-photo,
+html.intro-play .hero-name,
+html.intro-play .hero-text > :not(.hero-name) {
+  opacity: 0;
+}
+/* Page-coloured squares that cover the photo and drop away at random. */
+.intro-tiles {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  grid-template: repeat(8, 1fr) / repeat(8, 1fr);
+  pointer-events: none;
+}
+.intro-tiles span {
+  background: var(--bg);
+}
+.intro-word {
+  display: inline-block;
+  white-space: nowrap;
+}
+.intro-char {
+  opacity: 0;
+}
+/* "Scroll": shown whenever the hero is on its own. */
+.intro-hint {
+  position: fixed;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  left: 50%;
+  z-index: 22;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  opacity: 0;
+  pointer-events: none;
+  translate: -50% 0;
+  transition:
+    opacity 300ms ease-out,
+    color var(--t-fast) ease;
+}
+html.at-cover:not(.intro-play) .intro-hint {
+  opacity: 1;
+  pointer-events: auto;
+}
+.intro-hint::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border: solid currentColor;
+  border-width: 0 1.5px 1.5px 0;
+  rotate: 45deg;
+  animation: intro-nudge 1.6s steps(2, jump-none) infinite;
+}
+@keyframes intro-nudge {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 4px;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .intro-hint:hover {
+    color: var(--fg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-hint {
+    transition: none;
+  }
+  .intro-hint::after {
+    animation: none;
+  }
+}
+
 /* 20. Responsive ========================================================== */
 @media (min-width: 1280px) {
   .hero-photo {
