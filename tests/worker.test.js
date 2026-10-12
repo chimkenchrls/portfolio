@@ -107,12 +107,71 @@ test('one visitor cannot run the total up: bursts are limited per address', asyn
   assert.equal((await worker.fetch(call('/api/pokes', { method: 'POST', body: { count: 1 }, ip: '203.0.113.10' }), shared)).status, 200, 'other visitors are unaffected');
 });
 
+const note = { name: 'Ada Recruiter', email: 'ada@example.com', message: 'Hi Ken, we have an internship opening you might like.' };
+const mail = (extra = {}) => {
+  const sent = [];
+  return { sent, env: env({ RESEND_API_KEY: 're_test', CONTACT_TO: 'owner@example.com', fetchImpl: async (url, options) => { sent.push({ url, options, body: JSON.parse(options.body) }); return new Response('{"id":"1"}', { status: 200 }); }, ...extra }) };
+};
+
+test('the contact form emails the owner through Resend, with replies going to the sender', async () => {
+  const worker = await load();
+  const { sent, env: e } = mail();
+  const response = await worker.fetch(call('/api/contact', { method: 'POST', body: note }), e);
+  assert.equal(response.status, 200);
+  assert.deepEqual(await response.json(), { ok: true });
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].url, 'https://api.resend.com/emails');
+  assert.equal(sent[0].options.headers.Authorization, 'Bearer re_test');
+  assert.deepEqual(sent[0].body.to, ['owner@example.com']);
+  assert.equal(sent[0].body.reply_to, 'ada@example.com');
+  assert.equal(sent[0].body.subject, 'Portfolio message from Ada Recruiter');
+  assert.match(sent[0].body.text, /internship opening[\s\S]*Ada Recruiter <ada@example\.com>/);
+  assert.ok(!('html' in sent[0].body), 'plain text only');
+});
+
+test('contact: bad input is refused, header injection is flattened, and bots are quietly dropped', async () => {
+  const worker = await load();
+  const status = async (body, extra) => { const m = mail(extra); const r = await worker.fetch(call('/api/contact', { method: 'POST', body }), m.env); return [r.status, m.sent.length]; };
+  assert.deepEqual(await status({ ...note, name: ' ' }), [400, 0]);
+  assert.deepEqual(await status({ ...note, email: 'not-an-email' }), [400, 0]);
+  assert.deepEqual(await status({ ...note, message: 'hi' }), [400, 0]);
+  assert.deepEqual(await status({ ...note, message: 'x'.repeat(4001) }), [413, 0]);
+  assert.deepEqual(await status({ ...note, email: 5 }), [400, 0]);
+  assert.deepEqual(await status({ ...note, website: 'https://spam.example' }), [200, 0], 'the trap field: "sent", but nothing is');
+  const { sent, env: e } = mail();
+  await worker.fetch(call('/api/contact', { method: 'POST', body: { ...note, name: 'Eve\r\nBcc: victim@example.com' } }), e);
+  assert.equal(sent[0].body.subject, 'Portfolio message from Eve Bcc: victim@example.com', 'no line breaks reach the subject');
+  assert.ok(!('bcc' in sent[0].body));
+  assert.equal((await worker.fetch(call('/api/contact', { method: 'GET' }), mail().env)).status, 405);
+  const off = await worker.fetch(call('/api/contact', { method: 'POST', body: note }), env());
+  assert.equal(off.status, 503);
+  assert.equal((await off.json()).code, 'NOT_CONFIGURED');
+});
+
+test('contact: provider failures stay private, and sending is limited per visitor and per day', async () => {
+  const worker = await load();
+  const failing = mail({ fetchImpl: async () => new Response('{"message":"API key re_test is invalid"}', { status: 403 }) });
+  const failed = await worker.fetch(call('/api/contact', { method: 'POST', body: note }), failing.env);
+  assert.equal(failed.status, 502);
+  assert.doesNotMatch(await failed.text(), /re_test|API key/);
+  const one = mail();
+  const statuses = [];
+  for (let i = 0; i < 4; i++) statuses.push((await worker.fetch(call('/api/contact', { method: 'POST', body: note, ip: '203.0.113.50' }), one.env)).status);
+  assert.deepEqual(statuses, [200, 200, 200, 429], 'three a minute from one address');
+  const capped = mail({ CONTACT_DAILY_LIMIT: '2' });
+  const daily = [];
+  for (let i = 0; i < 3; i++) daily.push((await worker.fetch(call('/api/contact', { method: 'POST', body: note }), capped.env)).status);
+  assert.deepEqual(daily, [200, 200, 429]);
+  assert.equal(capped.sent.length, 2, 'nothing is sent once the day\'s budget is spent');
+});
+
 test('the Worker config holds no secret and the site never ships the Worker', () => {
   const root = path.join(__dirname, '..');
   const toml = fs.readFileSync(path.join(root, 'wrangler.toml'), 'utf8');
   assert.match(toml, /main = "worker\/index\.mjs"/);
   assert.match(toml, /binding = "DB"/);
-  assert.doesNotMatch(toml, /GEMINI_API_KEY\s*=/, 'the key is a Worker secret, not a var');
+  assert.doesNotMatch(toml, /(?:GEMINI|RESEND)_API_KEY\s*=/, 'keys are Worker secrets, not vars');
+  assert.match(toml, /CONTACT_TO = "[^"]+@[^"]+"/);
   const yml = fs.readFileSync(path.join(root, '.github', 'workflows', 'deploy.yml'), 'utf8');
   assert.match(yml, /cp -r index\.html style\.css script\.js assets _site\//, 'only the static files are published to Pages');
   assert.match(fs.readFileSync(path.join(root, 'worker', 'schema.sql'), 'utf8'), /CREATE TABLE IF NOT EXISTS counters/);

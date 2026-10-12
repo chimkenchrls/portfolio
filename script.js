@@ -737,6 +737,18 @@
     const base = 0.25 + star.depth * 0.55;
     return star.twinkle ? base * (0.45 + 0.55 * (0.5 + 0.5 * Math.sin(seconds * 1.6 + star.phase))) : base;
   };
+  // What is wrong with a contact message, per field (an empty object when it is fine).
+  // The Worker checks again; this is only so mistakes show up before sending.
+  const contactProblems = ({ name, email, message } = {}) => {
+    const text = (value) => (typeof value === 'string' ? value.trim() : '');
+    const problems = {};
+    if (!text(name)) problems.name = 'Please enter your name.';
+    if (!text(email)) problems.email = 'Please enter your email, so I can reply.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text(email))) problems.email = 'That email address doesn’t look right.';
+    if (!text(message)) problems.message = 'Please write a message.';
+    else if (text(message).length < 10) problems.message = 'Please write a little more.';
+    return problems;
+  };
   // Each poke gets a different face; the order loops.
   const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
   const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
@@ -1047,7 +1059,7 @@
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems,
       skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices,
     };
   }
@@ -3615,6 +3627,91 @@
   })();
 
   /* ==========================================================================
+     19f. Contact form — emails me through the Worker; falls back to the mail app
+     ========================================================================== */
+  const contactForm = (() => {
+    const init = (data) => {
+      const form = $('.contact-form');
+      const endpoint = assistantEndpoint(data && data.contact && data.contact.endpoint, window.location.href);
+      if (!form || !endpoint) return;
+      const fields = { name: $('#contact-name', form), email: $('#contact-email', form), message: $('#contact-message', form) };
+      const trap = $('#contact-website', form);
+      const button = $('.contact-send', form);
+      const status = $('.contact-status', form);
+      const owner = data.profile.email;
+      form.hidden = false;
+      let sending = false;
+
+      const values = () => ({ name: fields.name.value, email: fields.email.value, message: fields.message.value });
+      const mark = (problems) => {
+        Object.entries(fields).forEach(([key, field]) => {
+          const problem = problems[key] || '';
+          $(`#contact-${key}-error`, form).textContent = problem;
+          if (problem) field.setAttribute('aria-invalid', 'true');
+          else field.removeAttribute('aria-invalid');
+        });
+      };
+      // Once a field has been flagged, clear the flag as soon as it is put right.
+      Object.entries(fields).forEach(([key, field]) => {
+        field.addEventListener('input', () => {
+          if (field.getAttribute('aria-invalid') !== 'true' || contactProblems(values())[key]) return;
+          field.removeAttribute('aria-invalid');
+          $(`#contact-${key}-error`, form).textContent = '';
+        });
+      });
+      const say = (text, link) => {
+        status.textContent = text;
+        if (!link) return;
+        const anchor = el('a', null, link.label);
+        anchor.href = link.href;
+        status.append(' ', anchor);
+      };
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (sending) return;
+        const message = values();
+        const problems = contactProblems(message);
+        mark(problems);
+        const first = Object.keys(fields).find((key) => problems[key]);
+        if (first) { say(''); fields[first].focus(); return; }
+        sending = true;
+        button.disabled = true;
+        button.textContent = 'Sending…';
+        say('');
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 20000);
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit', signal: controller.signal,
+            body: JSON.stringify({ name: message.name.trim(), email: message.email.trim(), message: message.message.trim(), website: trap ? trap.value : '' }),
+          });
+          const body = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
+          if (response.ok) {
+            const replyTo = message.email.trim();
+            form.reset();
+            say(`Sent. Thanks, I’ll reply to you at ${replyTo}.`);
+          } else if (response.status === 400 || response.status === 413) {
+            // The Worker found something this page missed: show its wording.
+            say((body && body.error) || 'Please check the form and try again.');
+          } else {
+            throw new Error('unavailable');
+          }
+        } catch {
+          // Nothing they wrote is lost: the same message opens in their mail app.
+          say('That didn’t go through.', { label: 'Send it from your mail app instead', href: mailtoLink(owner, `Portfolio message from ${message.name.trim()}`, message.message.trim()) });
+        } finally {
+          clearTimeout(timeout);
+          sending = false;
+          button.disabled = false;
+          button.textContent = 'Send';
+        }
+      });
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      20. Scroll aids — reading-progress line
      ========================================================================== */
 
@@ -3668,6 +3765,7 @@
     nightSky.init();
     cover.init();
     clickBurst.init();
+    contactForm.init(data);
     scrollAids.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());

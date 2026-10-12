@@ -2004,6 +2004,131 @@ body.is-rail .sidebar-controls {
   color: var(--t-fg);
   border-color: var(--t-muted);
 }
+/* Contact form: under the terminal, for anyone who would rather just write. */
+.contact-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 40px;
+}
+.contact-form[hidden] {
+  display: none;
+}
+.contact-form .block-title {
+  margin-bottom: 4px;
+}
+.contact-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.contact-field {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+  min-width: 0;
+}
+.contact-field label {
+  font-size: 13px;
+  font-weight: 500;
+}
+.contact-field input,
+.contact-field textarea {
+  width: 100%;
+  padding: 11px 14px;
+  font: inherit;
+  font-size: 16px; /* iOS zooms inputs under 16px */
+  line-height: 1.5;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  caret-color: var(--fg);
+  transition: border-color var(--t-fast) ease;
+}
+.contact-field textarea {
+  min-height: 132px;
+  resize: vertical;
+}
+.contact-field input:focus-visible,
+.contact-field textarea:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 1px;
+}
+.contact-field [aria-invalid="true"] {
+  border-color: var(--fg);
+}
+.contact-error {
+  font-size: 12px;
+}
+.contact-error:empty {
+  display: none;
+}
+/* The trap for bots: in the markup, never on screen or in the tab order. */
+.contact-trap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.contact-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.contact-note {
+  max-width: 46ch;
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+.contact-send {
+  flex: none;
+  min-width: 96px;
+  height: 44px;
+  padding: 0 22px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--bg);
+  background: var(--fg);
+  border-radius: 999px;
+  transition:
+    opacity var(--t-fast) ease,
+    scale 160ms ease-out;
+}
+.contact-send:active:not(:disabled) {
+  scale: 0.97;
+}
+.contact-send:disabled {
+  opacity: 0.55;
+  cursor: var(--cursor);
+}
+.contact-status {
+  font-size: 14px;
+}
+.contact-status:empty {
+  display: none;
+}
+.contact-status a {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .contact-send:hover:not(:disabled) {
+    opacity: 0.86;
+  }
+  .contact-field input:hover,
+  .contact-field textarea:hover {
+    border-color: color-mix(in srgb, var(--fg) 22%, var(--border));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-send:active:not(:disabled) {
+    scale: none;
+  }
+}
 .terminal-chips {
   display: flex;
   flex-wrap: wrap;
@@ -2759,6 +2884,16 @@ html.at-cover:not(.intro-play) .intro-hint {
   } /* every other month on phones */
   .project {
     padding: 18px 16px;
+  }
+  .contact-row {
+    grid-template-columns: 1fr;
+  }
+  .contact-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .contact-send {
+    width: 100%;
   }
   /* Portfolio assistant: a fixed sheet on the bottom edge. The bubble takes the full
      width so answers read at a normal line length; CK stands under its tail. */

@@ -27,6 +27,7 @@ def offline_api(context, cover=False):
     """Keep the suites off the live API: no shared poke total, and chat answers "not connected"."""
     context.route("**/api/pokes", lambda r: r.fulfill(status=200, content_type="application/json", body='{"total": null}'))
     context.route("**/api/chat", lambda r: r.fulfill(status=503, content_type="application/json", body='{"code": "NOT_CONFIGURED", "error": "Live chat is not connected yet."}'))
+    context.route("**/api/contact", lambda r: r.fulfill(status=503, content_type="application/json", body='{"code": "NOT_CONFIGURED", "error": "The contact form is not connected yet."}'))
     if not cover:
         context.add_init_script("document.addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = %r; document.head.append(s); });" % NO_COVER)
 

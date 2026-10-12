@@ -349,3 +349,38 @@ test('photo glitch: a few thin strips, some showing the other image, never the w
   }
   assert.ok(glitchSlices(random, 7)[0].height === 75 && glitchSlices(random, -2).every((s) => s.height <= 12), 'out-of-range amounts are clamped');
 });
+
+test('contact form: problems are found per field, before anything is sent', () => {
+  const { contactProblems } = require('../script.js');
+  const good = { name: 'Ada', email: 'ada@example.com', message: 'We have an opening for you.' };
+  assert.deepEqual(contactProblems(good), {});
+  assert.deepEqual(Object.keys(contactProblems({})).sort(), ['email', 'message', 'name']);
+  assert.deepEqual(Object.keys(contactProblems()), ['name', 'email', 'message']);
+  assert.match(contactProblems({ ...good, name: '   ' }).name, /name/);
+  for (const email of ['ada', 'ada@', 'ada@example', 'a b@example.com', '@example.com']) assert.ok(contactProblems({ ...good, email }).email, email);
+  assert.match(contactProblems({ ...good, email: '' }).email, /so I can reply/, 'says why it is needed');
+  assert.match(contactProblems({ ...good, message: 'hi' }).message, /little more/);
+  assert.deepEqual(contactProblems({ ...good, email: '  ada@example.com ' }), {}, 'stray spaces are fine');
+  assert.deepEqual(Object.keys(contactProblems({ name: 5, email: null, message: [] })).sort(), ['email', 'message', 'name']);
+});
+
+test('contact form: labelled fields, a hidden trap for bots, and hidden until the script turns it on', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const contact = html.slice(html.indexOf('id="contact"'));
+  assert.ok(contact.indexOf('class="terminal"') < contact.indexOf('class="contact-form"'), 'terminal first, form below');
+  assert.match(contact, /<form class="contact-form" novalidate hidden>/);
+  for (const id of ['contact-name', 'contact-email', 'contact-message']) {
+    assert.match(contact, new RegExp(`<label for="${id}">`), `${id} has a visible label`);
+    assert.match(contact, new RegExp(`id="${id}"[^>]*required[^>]*aria-describedby="${id}-error"`));
+  }
+  assert.match(contact, /<p class="contact-trap" aria-hidden="true">[\s\S]*?name="website"[^>]*tabindex="-1"/);
+  const data = require('../assets/data.js');
+  assert.ok(data.contact && 'endpoint' in data.contact);
+  const js = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
+  const module = js.slice(js.indexOf('const contactForm = (() => {'), js.indexOf('20. Scroll aids'));
+  assert.match(module, /mailtoLink\(owner,/, 'a failed send offers the visitor\'s own mail app, message included');
+  assert.doesNotMatch(module, /innerHTML/);
+});

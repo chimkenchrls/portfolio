@@ -56,6 +56,19 @@ Limits: 8 chat requests per visitor per minute, `DAILY_CHAT_LIMIT` (default 100)
 
 To try the Worker locally: `npx wrangler d1 execute portfolio --local --file worker/schema.sql`, then `npx wrangler dev`. Local runs read `GEMINI_API_KEY` from `.env` or `.dev.vars` (both ignored by Git).
 
+## Contact form (Resend)
+
+The form under the terminal posts to the Worker's `POST /api/contact`, and the Worker emails the message to you through [Resend](https://resend.com). Replies go to the address the visitor typed (`reply_to`). Nothing is sent to the visitor.
+
+One-time setup:
+
+1. Create a free Resend account using the email address you want messages delivered to, and create an API key.
+2. `npx wrangler secret put RESEND_API_KEY` and paste the key.
+3. Check `CONTACT_TO` in `wrangler.toml`. With Resend's test sender (`onboarding@resend.dev`, the default `CONTACT_FROM`) Resend only delivers to the email address of the Resend account itself, so `CONTACT_TO` must be that address. To use another inbox or your own sender, verify a domain in Resend and change both values.
+4. `npx wrangler deploy`.
+
+`contact.endpoint` in `assets/data.js` points the page at the Worker; `null` hides the form. Limits: three messages a minute per visitor and `CONTACT_DAILY_LIMIT` (default 50) a day in total, kept in D1. A hidden field traps bots: when it is filled in, the Worker answers "sent" and sends nothing. If sending fails, the page offers the same message through the visitor's own mail app, so nothing they wrote is lost. The Node server (`server.js`) does not implement this endpoint.
+
 ## Hosting the Node server instead
 
 The Node server (`server.js`) is an alternative to the Worker for the chat only; it has no poke counter.
@@ -82,7 +95,7 @@ Only `index.html`, `style.css`, `script.js`, and supported files inside `assets/
 node --test tests/*.test.js
 ```
 
-`tests/worker.test.js` calls the Worker's real handler with a stand-in database: origins, bad requests, the daily budget, and the poke counter. `tests/assistant.test.js` exercises history truncation, endpoint validation, trusted context, provider failures, hidden reasoning filtering, rate limits, CORS, request bounds, and static-file isolation. Route tests invoke the real HTTP handler with streams without opening network sockets. They use mocked Gemini responses and never consume a real key.
+`tests/worker.test.js` calls the Worker's real handler with a stand-in database: origins, bad requests, the daily budget, the poke counter, and the contact form (validation, header injection, the bot trap, provider failures, limits). `tests/assistant.test.js` exercises history truncation, endpoint validation, trusted context, provider failures, hidden reasoning filtering, rate limits, CORS, request bounds, and static-file isolation. Route tests invoke the real HTTP handler with streams without opening network sockets. They use mocked Gemini responses and never consume a real key.
 
 For the browser suite on a machine with Docker, serve the site, then run:
 

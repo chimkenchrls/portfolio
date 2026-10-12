@@ -44,6 +44,10 @@ const PORTFOLIO_DATA = {
   // set it to the deployed Worker's HTTPS URL (…/api/pokes) to count every device.
   pokes: { endpoint: "https://kenchrls-api.kenchrls.workers.dev/api/pokes" },
 
+  // The contact form under the terminal. Messages are emailed to me by the Worker
+  // (through Resend). null hides the form and leaves the terminal and email links.
+  contact: { endpoint: "https://kenchrls-api.kenchrls.workers.dev/api/contact" },
+
   // chimken: the site owner's high score shown as the score to beat.
   game: { owner: "ck", highScore: 3236 },
 

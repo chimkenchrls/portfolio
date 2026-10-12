@@ -567,6 +567,35 @@
             </button>
           </li>
         </ul>
+        <form class="contact-form" novalidate hidden>
+          <h3 class="block-title">Or send a message</h3>
+          <div class="contact-row">
+            <p class="contact-field">
+              <label for="contact-name">Name</label>
+              <input id="contact-name" name="name" type="text" autocomplete="name" maxlength="80" required aria-describedby="contact-name-error" />
+              <span class="contact-error" id="contact-name-error"></span>
+            </p>
+            <p class="contact-field">
+              <label for="contact-email">Email</label>
+              <input id="contact-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="200" spellcheck="false" required aria-describedby="contact-email-error" />
+              <span class="contact-error" id="contact-email-error"></span>
+            </p>
+          </div>
+          <p class="contact-field">
+            <label for="contact-message">Message</label>
+            <textarea id="contact-message" name="message" rows="5" maxlength="4000" required aria-describedby="contact-message-error"></textarea>
+            <span class="contact-error" id="contact-message-error"></span>
+          </p>
+          <p class="contact-trap" aria-hidden="true">
+            <label for="contact-website">Leave this field empty</label>
+            <input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </p>
+          <div class="contact-foot">
+            <p class="contact-note">This goes straight to my inbox. I’ll reply to the email you enter.</p>
+            <button class="contact-send" type="submit">Send</button>
+          </div>
+          <p class="contact-status" role="status" aria-live="polite"></p>
+        </form>
       </section>
 
       <footer class="footer">

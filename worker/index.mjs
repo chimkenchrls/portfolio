@@ -2,12 +2,15 @@
 //   POST /api/chat   — pixel CK's replies, through Gemini (same logic as server.js)
 //   GET  /api/pokes  — the shared poke total
 //   POST /api/pokes  — add pokes to it
-// The Gemini key is a Worker secret (GEMINI_API_KEY); counters live in D1 (binding DB).
+//   POST /api/contact — the contact form, emailed to the owner through Resend
+// Keys are Worker secrets (GEMINI_API_KEY, RESEND_API_KEY); counters live in D1 (binding DB).
 // Deploy steps: docs/assistant.md.
 import chat from '../server/chat.js';
+import contact from '../server/contact.js';
 import data from '../assets/data.js';
 
 const { ChatError, validateMessages, generateReply, createLimiter } = chat;
+const { validateContact, sendContact } = contact;
 
 const MAX_BODY = 32768; // bytes, same as server.js
 const MAX_POKES_PER_REQUEST = 20;
@@ -29,6 +32,7 @@ const perMinute = (limit, now = Date.now) => {
   };
 };
 const allowPoke = perMinute(40);
+const allowContact = perMinute(3);
 
 const origins = (env) => new Set(String(env.ALLOWED_ORIGINS || '').split(',').map((origin) => origin.trim()).filter(Boolean));
 
@@ -80,7 +84,31 @@ const handlePokes = async (request, env, ip) => {
   return { total: Number(await add(env.DB, TOTAL, count)) };
 };
 
-const ROUTES = { '/api/chat': { handle: handleChat, methods: 'POST' }, '/api/pokes': { handle: handlePokes, methods: 'GET, POST' } };
+const handleContact = async (request, env, ip) => {
+  if (request.method !== 'POST') throw Object.assign(new ChatError(405, 'METHOD_NOT_ALLOWED', 'Use POST.'), { allow: 'POST, OPTIONS' });
+  if (!env.RESEND_API_KEY) throw new ChatError(503, 'NOT_CONFIGURED', 'The contact form is not connected yet.');
+  const message = validateContact(await readJson(request));
+  // A filled trap field is a bot: say "sent" and send nothing.
+  if (message.spam) return { ok: true };
+  const busy = () => Object.assign(new ChatError(429, 'RATE_LIMIT', 'Too many messages just now. Please try again in a minute, or email me.'), { retryAfter: '60' });
+  if (!allowContact(ip)) throw busy();
+  if (env.DB) {
+    const limit = Number(env.CONTACT_DAILY_LIMIT) || 50;
+    const used = await add(env.DB, `contact:${new Date().toISOString().slice(0, 10)}`, 1);
+    if (used > limit) throw busy();
+  }
+  await sendContact({
+    contact: message, apiKey: env.RESEND_API_KEY, to: env.CONTACT_TO || data.profile.email,
+    from: env.CONTACT_FROM || 'Portfolio <onboarding@resend.dev>', fetchImpl: env.fetchImpl || fetch, signal: AbortSignal.timeout(15000),
+  });
+  return { ok: true };
+};
+
+const ROUTES = {
+  '/api/chat': { handle: handleChat, methods: 'POST' },
+  '/api/pokes': { handle: handlePokes, methods: 'GET, POST' },
+  '/api/contact': { handle: handleContact, methods: 'POST' },
+};
 
 export default {
   async fetch(request, env) {
