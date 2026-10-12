@@ -2064,6 +2064,18 @@ body.is-rail .sidebar-controls {
 .contact-error:empty {
   display: none;
 }
+.contact-suggest {
+  justify-self: start;
+  min-height: 32px;
+  font-size: 12px;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  overflow-wrap: anywhere;
+}
+.contact-suggest[hidden] {
+  display: none;
+}
 /* The trap for bots: in the markup, never on screen or in the tab order. */
 .contact-trap {
   position: absolute;

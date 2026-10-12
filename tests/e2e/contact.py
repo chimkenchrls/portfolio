@@ -14,7 +14,9 @@ def api(route):
     if mode["next"] == "ok":
         route.fulfill(status=200, content_type="application/json", body='{"ok": true}')
     elif mode["next"] == "refused":
-        route.fulfill(status=400, content_type="application/json", body='{"code": "INVALID_EMAIL", "error": "Please enter a valid email address."}')
+        route.fulfill(status=400, content_type="application/json", body='{"code": "INVALID_MESSAGE", "error": "Please write a slightly longer message."}')
+    elif mode["next"] == "no-mail":
+        route.fulfill(status=400, content_type="application/json", body='{"code": "INVALID_EMAIL", "error": "That email’s domain can’t receive mail. Please check it for typos."}')
     else:
         route.fulfill(status=502, content_type="application/json", body='{"code": "UPSTREAM_ERROR", "error": "The message could not be sent."}')
 
@@ -71,8 +73,19 @@ with sync_playwright() as pw:
     check("if sending fails, the same message is offered through their mail app", href.startswith("mailto:charleskenneth129@gmail.com?") and "Second%20try" in href and p.input_value("#contact-message") == "Second try, still interested.", href)
     mode["next"] = "refused"
     p.click(".contact-send")
-    p.wait_for_function("document.querySelector('.contact-status').textContent.includes('valid email')")
+    p.wait_for_function("document.querySelector('.contact-status').textContent.includes('slightly longer')")
     check("a refusal from the server is shown in its own words", p.locator(".contact-status a").count() == 0)
+    mode["next"] = "no-mail"
+    p.fill("#contact-email", "ada@nosuchdomain.example")
+    p.click(".contact-send")
+    p.wait_for_function("document.getElementById('contact-email-error').textContent.includes('receive mail')")
+    check("an address that cannot receive mail is flagged at the email field, which takes focus", p.get_attribute("#contact-email", "aria-invalid") == "true" and p.evaluate("document.activeElement.id") == "contact-email" and p.input_value("#contact-message") != "")
+    p.fill("#contact-email", "ada@gmial.com")
+    p.press("#contact-email", "Tab")
+    check("a common typo gets a suggestion", p.is_visible(".contact-suggest") and p.inner_text(".contact-suggest") == "Did you mean ada@gmail.com?")
+    if SHOTS: p.locator(".contact-form").screenshot(path=f"{SHOTS}/contact-suggest.png")
+    p.click(".contact-suggest")
+    check("one click applies it", p.input_value("#contact-email") == "ada@gmail.com" and not p.is_visible(".contact-suggest"))
     check("no errors", not errors, "; ".join(errors))
     ctx.close()
 

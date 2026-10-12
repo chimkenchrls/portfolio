@@ -10,7 +10,7 @@ import contact from '../server/contact.js';
 import data from '../assets/data.js';
 
 const { ChatError, validateMessages, generateReply, createLimiter } = chat;
-const { validateContact, sendContact } = contact;
+const { validateContact, canReceiveMail, sendContact } = contact;
 
 const MAX_BODY = 32768; // bytes, same as server.js
 const MAX_POKES_PER_REQUEST = 20;
@@ -92,6 +92,10 @@ const handleContact = async (request, env, ip) => {
   if (message.spam) return { ok: true };
   const busy = () => Object.assign(new ChatError(429, 'RATE_LIMIT', 'Too many messages just now. Please try again in a minute, or email me.'), { retryAfter: '60' });
   if (!allowContact(ip)) throw busy();
+  const fetchImpl = env.fetchImpl || fetch;
+  if (!(await canReceiveMail({ email: message.email, fetchImpl, signal: AbortSignal.timeout(4000) }))) {
+    throw new ChatError(400, 'INVALID_EMAIL', 'That email’s domain can’t receive mail. Please check it for typos.');
+  }
   if (env.DB) {
     const limit = Number(env.CONTACT_DAILY_LIMIT) || 50;
     const used = await add(env.DB, `contact:${new Date().toISOString().slice(0, 10)}`, 1);
@@ -99,7 +103,7 @@ const handleContact = async (request, env, ip) => {
   }
   await sendContact({
     contact: message, apiKey: env.RESEND_API_KEY, to: env.CONTACT_TO || data.profile.email,
-    from: env.CONTACT_FROM || 'Portfolio <onboarding@resend.dev>', fetchImpl: env.fetchImpl || fetch, signal: AbortSignal.timeout(15000),
+    from: env.CONTACT_FROM || 'Portfolio <onboarding@resend.dev>', fetchImpl, signal: AbortSignal.timeout(15000),
   });
   return { ok: true };
 };

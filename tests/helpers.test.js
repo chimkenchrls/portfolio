@@ -384,3 +384,13 @@ test('contact form: labelled fields, a hidden trap for bots, and hidden until th
   assert.match(module, /mailtoLink\(owner,/, 'a failed send offers the visitor\'s own mail app, message included');
   assert.doesNotMatch(module, /innerHTML/);
 });
+
+test('email typos: common slips in the big providers get a suggestion, real domains do not', () => {
+  const { emailSuggestion } = require('../script.js');
+  assert.equal(emailSuggestion('ada@gmial.com'), 'ada@gmail.com');
+  assert.equal(emailSuggestion('Ada.L@GMAIL.CON'), 'Ada.L@gmail.com', 'the name is kept as typed');
+  assert.equal(emailSuggestion('  ada@yahooo.com '), 'ada@yahoo.com');
+  assert.equal(emailSuggestion('ada@hotmial.com'), 'ada@hotmail.com');
+  assert.equal(emailSuggestion('ada@outlok.com'), 'ada@outlook.com');
+  for (const fine of ['ada@gmail.com', 'ada@company.co', 'ada@sti.edu.ph', 'ada@yahoo.com.ph', 'ada', '@gmial.com', '', null, 5]) assert.equal(emailSuggestion(fine), null, String(fine));
+});

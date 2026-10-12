@@ -1,0 +1,19 @@
+# Vercel publishes only the static site (see vercel.json). Keep secrets, the API
+# code, tests and local tooling out of the upload entirely.
+.env
+.env.*
+!.env.example
+.wrangler
+.dev.vars
+node_modules
+output
+_site
+tests
+docs
+server
+server.js
+worker
+wrangler.toml
+AGENTS.md
+*.pem
+*.key

@@ -50,7 +50,7 @@ Then point the site at it in `assets/data.js` and publish as usual:
 - `assistant.endpoint`: `https://kenchrls-api.<your-subdomain>.workers.dev/api/chat`
 - `pokes.endpoint`: `https://kenchrls-api.<your-subdomain>.workers.dev/api/pokes`
 
-`ALLOWED_ORIGINS` in `wrangler.toml` lists the exact site origins that may call the API (no trailing slash). Add a custom domain there, comma-separated, and run `npx wrangler deploy` again. After editing facts in `assets/data.js`, redeploy the Worker too, since it bundles that file.
+`ALLOWED_ORIGINS` in `wrangler.toml` lists the exact site origins that may call the API (no trailing slash). It currently allows `https://kenchrls.vercel.app` (the public site) and `https://chimkenchrls.github.io` (the GitHub Pages copy). Add a custom domain there, comma-separated, and run `npx wrangler deploy` again. After editing facts in `assets/data.js`, redeploy the Worker too, since it bundles that file.
 
 Limits: 8 chat requests per visitor per minute, `DAILY_CHAT_LIMIT` (default 100) Gemini requests per day across everyone, stored in D1 so it survives restarts; up to 20 pokes per request and 40 poke requests per visitor per minute. The page batches quick taps into one request. While `pokes.endpoint` is `null`, each visitor only sees their own count ("Your pokes"); once it is set the sidebar shows the shared total ("Total pokes").
 
@@ -67,7 +67,7 @@ One-time setup:
 3. Check `CONTACT_TO` in `wrangler.toml`. With Resend's test sender (`onboarding@resend.dev`, the default `CONTACT_FROM`) Resend only delivers to the email address of the Resend account itself, so `CONTACT_TO` must be that address. To use another inbox or your own sender, verify a domain in Resend and change both values.
 4. `npx wrangler deploy`.
 
-`contact.endpoint` in `assets/data.js` points the page at the Worker; `null` hides the form. Limits: three messages a minute per visitor and `CONTACT_DAILY_LIMIT` (default 50) a day in total, kept in D1. A hidden field traps bots: when it is filled in, the Worker answers "sent" and sends nothing. If sending fails, the page offers the same message through the visitor's own mail app, so nothing they wrote is lost. The Node server (`server.js`) does not implement this endpoint.
+`contact.endpoint` in `assets/data.js` points the page at the Worker; `null` hides the form. Limits: three messages a minute per visitor and `CONTACT_DAILY_LIMIT` (default 50) a day in total, kept in D1. Before sending, the Worker asks public DNS whether the address's domain has mail servers and refuses made-up or mistyped domains (it cannot tell whether a particular mailbox exists; if the lookup itself fails the message is let through). The page also suggests fixes for common typos such as `gmial.com`. A hidden field traps bots: when it is filled in, the Worker answers "sent" and sends nothing. If sending fails, the page offers the same message through the visitor's own mail app, so nothing they wrote is lost. The Node server (`server.js`) does not implement this endpoint.
 
 ## Hosting the Node server instead
 

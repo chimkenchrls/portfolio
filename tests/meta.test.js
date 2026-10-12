@@ -7,7 +7,7 @@ const { safeResume, scrollProgress, validateData } = require('../script.js');
 const ROOT = path.join(__dirname, '..');
 const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 const html = read('index.html');
-const SITE = 'https://chimkenchrls.github.io/portfolio/';
+const SITE = 'https://kenchrls.vercel.app/';
 const meta = (key) => {
   const m = new RegExp(`<meta\\s+(?:property|name)="${key}"\\s+content="([^"]*)"`).exec(html);
   assert.ok(m, `missing meta ${key}`);

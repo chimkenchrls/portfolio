@@ -25,6 +25,34 @@ const validateContact = (body) => {
   return { name, email, message };
 };
 
+// Can the part after the @ receive mail at all? Asks public DNS (over HTTPS) for the
+// domain's mail servers. This catches made-up domains and typos; it cannot tell
+// whether a particular mailbox exists. If the lookup itself fails, the message is
+// let through: a DNS hiccup must never block a real person.
+const DNS = 'https://cloudflare-dns.com/dns-query';
+const lookup = async (domain, type, fetchImpl, signal) => {
+  const response = await fetchImpl(`${DNS}?name=${encodeURIComponent(domain)}&type=${type}`, { headers: { Accept: 'application/dns-json' }, signal });
+  if (!response.ok) throw new Error('lookup failed');
+  const body = await response.json();
+  if (typeof body.Status !== 'number') throw new Error('lookup failed');
+  return body;
+};
+const canReceiveMail = async ({ email, fetchImpl = fetch, signal }) => {
+  const domain = String(email).slice(String(email).lastIndexOf('@') + 1).toLowerCase();
+  try {
+    const mx = await lookup(domain, 'MX', fetchImpl, signal);
+    if (mx.Status === 3) return false; // the domain does not exist
+    const servers = (mx.Answer || []).filter((record) => record.type === 15);
+    // "0 ." is a domain's way of saying it accepts no mail.
+    if (servers.length) return servers.some((record) => !/^\d+\s+\.$/.test(String(record.data).trim()));
+    // No mail servers listed: mail may still be delivered to the domain's own address.
+    const host = await lookup(domain, 'A', fetchImpl, signal);
+    return (host.Answer || []).some((record) => record.type === 1);
+  } catch {
+    return true;
+  }
+};
+
 // Plain text only, so nothing a visitor types can become markup in the inbox.
 const sendContact = async ({ contact, apiKey, to, from, fetchImpl = fetch, signal }) => {
   if (!apiKey || !to) throw new ChatError(503, 'NOT_CONFIGURED', 'The contact form is not connected yet.');
@@ -55,4 +83,4 @@ const sendContact = async ({ contact, apiKey, to, from, fetchImpl = fetch, signa
   return true;
 };
 
-module.exports = { LIMITS, validateContact, sendContact };
+module.exports = { LIMITS, validateContact, canReceiveMail, sendContact };

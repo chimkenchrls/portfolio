@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "true",
+  "buildCommand": "mkdir -p _site && cp -r index.html style.css script.js assets _site/ && bash .github/scripts/cache-bust.sh _site \"${VERCEL_GIT_COMMIT_SHA:-$(date +%s)}\"",
+  "outputDirectory": "_site"
+}

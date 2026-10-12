@@ -108,9 +108,19 @@ test('one visitor cannot run the total up: bursts are limited per address', asyn
 });
 
 const note = { name: 'Ada Recruiter', email: 'ada@example.com', message: 'Hi Ken, we have an internship opening you might like.' };
-const mail = (extra = {}) => {
+// DNS answers for the mail-server lookup; anything not listed has working mail.
+const dns = (records) => async (url) => {
+  const { searchParams } = new URL(url);
+  const answer = (records[searchParams.get('name')] || { MX: [{ type: 15, data: '10 mx.example.' }] })[searchParams.get('type')];
+  if (answer === 'down') return new Response('nope', { status: 500 });
+  if (answer === 'missing') return new Response(JSON.stringify({ Status: 3 }), { status: 200 });
+  return new Response(JSON.stringify({ Status: 0, Answer: answer || [] }), { status: 200 });
+};
+const mail = (extra = {}, records = {}) => {
   const sent = [];
-  return { sent, env: env({ RESEND_API_KEY: 're_test', CONTACT_TO: 'owner@example.com', fetchImpl: async (url, options) => { sent.push({ url, options, body: JSON.parse(options.body) }); return new Response('{"id":"1"}', { status: 200 }); }, ...extra }) };
+  const resolve = dns(records);
+  const fetchImpl = extra.fetchImpl || (async (url, options) => { sent.push({ url, options, body: JSON.parse(options.body) }); return new Response('{"id":"1"}', { status: 200 }); });
+  return { sent, env: env({ RESEND_API_KEY: 're_test', CONTACT_TO: 'owner@example.com', ...extra, fetchImpl: (url, options) => (String(url).startsWith('https://cloudflare-dns.com/') ? resolve(url) : fetchImpl(url, options)) }) };
 };
 
 test('the contact form emails the owner through Resend, with replies going to the sender', async () => {
@@ -146,6 +156,18 @@ test('contact: bad input is refused, header injection is flattened, and bots are
   const off = await worker.fetch(call('/api/contact', { method: 'POST', body: note }), env());
   assert.equal(off.status, 503);
   assert.equal((await off.json()).code, 'NOT_CONFIGURED');
+});
+
+test('contact: an address whose domain cannot receive mail is refused before anything is sent', async () => {
+  const worker = await load();
+  const tryIt = async (email, records) => { const m = mail({}, records); const r = await worker.fetch(call('/api/contact', { method: 'POST', body: { ...note, email } }), m.env); return [r.status, m.sent.length, r.status === 400 ? (await r.json()).code : null]; };
+  assert.deepEqual(await tryIt('ada@nosuchdomain.example', { 'nosuchdomain.example': { MX: 'missing' } }), [400, 0, 'INVALID_EMAIL'], 'the domain does not exist');
+  assert.deepEqual(await tryIt('ada@gmial.con', { 'gmial.con': { MX: 'missing' } }), [400, 0, 'INVALID_EMAIL'], 'a typo');
+  assert.deepEqual(await tryIt('ada@nomail.example', { 'nomail.example': { MX: [{ type: 15, data: '0 .' }] } }), [400, 0, 'INVALID_EMAIL'], 'a domain that declares it takes no mail');
+  assert.deepEqual(await tryIt('ada@parked.example', { 'parked.example': { MX: [], A: [] } }), [400, 0, 'INVALID_EMAIL'], 'no mail servers and no address');
+  assert.deepEqual(await tryIt('ada@small.example', { 'small.example': { MX: [], A: [{ type: 1, data: '203.0.113.7' }] } }), [200, 1, null], 'no MX but an address: mail can still arrive');
+  assert.deepEqual(await tryIt('ada@EXAMPLE.com', {}), [200, 1, null], 'an ordinary domain passes');
+  assert.deepEqual(await tryIt('ada@flaky.example', { 'flaky.example': { MX: 'down' } }), [200, 1, null], 'if the lookup itself fails, a real person is not blocked');
 });
 
 test('contact: provider failures stay private, and sending is limited per visitor and per day', async () => {

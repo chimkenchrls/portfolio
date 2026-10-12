@@ -749,6 +749,23 @@
     else if (text(message).length < 10) problems.message = 'Please write a little more.';
     return problems;
   };
+  // Common slips in the big mail providers' domains, and what was meant.
+  const EMAIL_TYPOS = {
+    'gmail.com': ['gmial.com', 'gmai.com', 'gmal.com', 'gnail.com', 'gamil.com', 'gmaill.com', 'gmail.co', 'gmail.con', 'gmail.cm', 'gmail.cmo', 'gmail.comm'],
+    'yahoo.com': ['yahooo.com', 'yaho.com', 'yhoo.com', 'yahoo.co', 'yahoo.con', 'yahoo.cm'],
+    'outlook.com': ['outlok.com', 'outloo.com', 'outlook.co', 'outlook.con', 'outllook.com'],
+    'hotmail.com': ['hotmial.com', 'hotmai.com', 'hotmal.com', 'hotmail.co', 'hotmail.con'],
+    'icloud.com': ['iclould.com', 'icoud.com', 'icloud.co', 'icloud.con'],
+  };
+  // The address they probably meant, or null when the domain is not a known slip.
+  const emailSuggestion = (email) => {
+    const value = typeof email === 'string' ? email.trim() : '';
+    const at = value.lastIndexOf('@');
+    if (at < 1) return null;
+    const domain = value.slice(at + 1).toLowerCase();
+    const meant = Object.keys(EMAIL_TYPOS).find((good) => EMAIL_TYPOS[good].includes(domain));
+    return meant ? `${value.slice(0, at)}@${meant}` : null;
+  };
   // Each poke gets a different face; the order loops.
   const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
   const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
@@ -1059,7 +1076,7 @@
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion,
       skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices,
     };
   }
@@ -3659,6 +3676,21 @@
           $(`#contact-${key}-error`, form).textContent = '';
         });
       });
+      // "Did you mean …@gmail.com?" under the email field; one click applies it.
+      const suggest = $('.contact-suggest', form);
+      const offer = () => {
+        const better = emailSuggestion(fields.email.value);
+        suggest.hidden = !better;
+        suggest.textContent = better ? `Did you mean ${better}?` : '';
+        suggest.dataset.email = better || '';
+      };
+      fields.email.addEventListener('blur', offer);
+      fields.email.addEventListener('input', () => { if (!suggest.hidden) offer(); });
+      suggest.addEventListener('click', () => {
+        fields.email.value = suggest.dataset.email;
+        fields.email.dispatchEvent(new Event('input', { bubbles: true }));
+        fields.email.focus();
+      });
       const say = (text, link) => {
         status.textContent = text;
         if (!link) return;
@@ -3673,6 +3705,7 @@
         const message = values();
         const problems = contactProblems(message);
         mark(problems);
+        offer();
         const first = Object.keys(fields).find((key) => problems[key]);
         if (first) { say(''); fields[first].focus(); return; }
         sending = true;
@@ -3690,7 +3723,12 @@
           if (response.ok) {
             const replyTo = message.email.trim();
             form.reset();
+            offer();
             say(`Sent. Thanks, I’ll reply to you at ${replyTo}.`);
+          } else if (body && body.code === 'INVALID_EMAIL') {
+            // The address cannot receive mail: say so at the field itself.
+            mark({ email: body.error });
+            fields.email.focus();
           } else if (response.status === 400 || response.status === 413) {
             // The Worker found something this page missed: show its wording.
             say((body && body.error) || 'Please check the form and try again.');
