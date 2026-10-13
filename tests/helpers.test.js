@@ -402,7 +402,7 @@ test('pages: Projects and More about me are views of the same file, without the 
   const root = path.join(__dirname, '..');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-  assert.match(html, /view=\(projects\|more\|stack\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
+  assert.match(html, /view=\(projects\|more\|stack\|case\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
   assert.match(css, /html\.view-more \.main > \.section:not\(#outside\):not\(#contact\),/, 'More about me shows Outside the IDE and the terminal');
   assert.match(css, /html\.has-cover #outside,\s*html\.has-cover #contact :is\(\.contact-intro, \.terminal, \.terminal-chips\) \{\s*display: none;/, 'Home leaves those two out, but only when the head script ran');
   assert.match(html, /<button class="project-more" type="button" hidden><\/button>/);
@@ -422,7 +422,7 @@ test('home projects are slim rows that link to their full card on the Projects p
   const fs = require('node:fs');
   const path = require('node:path');
   const js = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
-  assert.match(js, /link\.href = `\.\/\?view=projects#\$\{projectSlug\(project\.title\)\}`;/);
+  assert.match(js, /link\.href = projectLink\(project\);/);
   assert.match(js, /li\.id = projectSlug\(project\.title\);/, 'the full card carries the matching anchor');
 });
 
@@ -440,4 +440,28 @@ test('stack page: each tool lists the projects whose tags name it, and nothing l
   for (const unused of ['Git', 'GitHub', 'Azure', 'Java', 'Python']) assert.deepEqual(uses(unused), [], `${unused}: no project tag names it`);
   assert.deepEqual(stackUses('Vite', null), []);
   assert.deepEqual(stackUses('', data.projects), []);
+});
+
+test('case studies: every project has a role and a study, with nothing private in them', () => {
+  const { validateData, projectSlug } = require('../script.js');
+  const data = require('../assets/data.js');
+  assert.deepEqual(validateData(data), []);
+  const roles = Object.fromEntries(data.projects.map((p) => [p.title, p.role]));
+  assert.equal(roles.Ambiancy, 'Independent developer');
+  assert.equal(roles['Pakisuyo Express'], 'Independent developer');
+  assert.equal(roles.AmIgo, 'Independent developer');
+  assert.match(roles.OwlSet, /Hackathon submission.*Frontend and DevOps lead/);
+  assert.match(roles.Thready, /Thesis.*Frontend and DevOps lead/);
+  for (const project of data.projects) {
+    const study = project.caseStudy;
+    for (const part of ['problem', 'built', 'ships', 'learned']) assert.ok(typeof study[part] === 'string' && study[part].length > 80, `${project.title}: ${part}`);
+    assert.ok(study.pipeline.oneWay && study.pipeline.flow.length >= 4, `${project.title}: a pipeline to draw`);
+    const text = JSON.stringify(study);
+    assert.doesNotMatch(text, /\b\d{1,3}(?:\.\d{1,3}){3}\b|[a-z0-9-]+\.(?:dev|ts\.net)\b/i, `${project.title}: no addresses or hostnames`);
+    assert.doesNotMatch(text, /—/, 'plain punctuation');
+  }
+  for (const title of ['Thready', 'AmIgo']) assert.equal(data.projects.find((p) => p.title === title).links.source, null, `${title}: the repository stays private`);
+  const bad = structuredClone(data); bad.projects[0].caseStudy.ships = 5;
+  assert.ok(validateData(bad).some((e) => e.startsWith('projects[0].caseStudy')));
+  assert.equal(projectSlug('Pakisuyo Express').replace('project-', ''), 'pakisuyo-express', 'the address is ?view=case&p=pakisuyo-express');
 });

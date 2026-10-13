@@ -30,7 +30,11 @@ const portfolioContext = (data) => ({
   profile: data.profile,
   experience: data.experience,
   education: data.education,
-  projects: data.projects.map(({ title, description, status, tags, links }) => ({ title, description, status, tags, links })),
+  // The case study text lets CK answer "how does it ship?" and "what went wrong?".
+  projects: data.projects.map(({ title, description, status, tags, links, role, caseStudy }) => ({
+    title, description, status, tags, links, role,
+    caseStudy: caseStudy ? { problem: caseStudy.problem, built: caseStudy.built, ships: caseStudy.ships, learned: caseStudy.learned } : null,
+  })),
   stack: data.stack.map(({ category, items }) => ({ category, items: items.map(({ name }) => name) })),
   certifications: data.certifications.map(({ title, issuer, status, date }) => ({ title, issuer, status, date })),
   outsideIntro: data.outsideIntro,

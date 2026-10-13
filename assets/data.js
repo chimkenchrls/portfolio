@@ -161,6 +161,28 @@ const PORTFOLIO_DATA = {
   projects: [
     {
       title: "Ambiancy",
+      role: "Independent developer",
+      // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
+      // line starts a new paragraph. Use null for a part that is not written yet.
+      caseStudy: {
+        problem:
+          "Most of my projects were about the app. This one is about the delivery. The app is small on purpose, an ambient sound mixer, so that the work goes into how it is built, shipped and run.",
+        built:
+          "A React and TypeScript player that layers sounds such as rain, a fireplace and a coffee shop, with a volume for each layer, a sleep and focus timer, and a mix you can share as a link. The mix is encoded in the link itself, so sharing needs no account and no server.",
+        ships:
+          "The app is built into a two-stage Docker image: a Node stage builds the static files, then a small nginx image serves only those files, leaving Node and the source code behind. Docker Compose runs that container next to a second nginx container that serves the audio, so the app and its media stay separate. The live site is on Vercel, with the media bundled alongside it.",
+        learned:
+          "The first pass failed quietly in three places: the timer reset when you changed pages, a sound that failed to load showed nothing, and a missing file could be cached as if it were real. All three are fixed.\n\nStill open: the repository has no CI pipeline yet, and the media is bundled with the site instead of being served from object storage, which is what the design calls for.",
+        pipeline: {
+          oneWay: true,
+          flow: [
+            { name: "Source", note: "React · TypeScript · Vite" },
+            { name: "Docker build", note: "Node 22 stage" },
+            { name: "nginx image", note: "static files only" },
+            { name: "Compose stack", note: "web + media server" },
+          ],
+        },
+      },
       meta: "in progress",
       status: "in-progress",
       description:
@@ -185,6 +207,29 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "Pakisuyo Express",
+      role: "Independent developer",
+      // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
+      // line starts a new paragraph. Use null for a part that is not written yet.
+      caseStudy: {
+        problem:
+          "Pakisuyo Express is a food and drink delivery service in Sariaya, Quezon that takes every order by hand through Facebook Messenger. I built this site as a portfolio piece, with the owner's permission, to replace that manual form with a structured order flow.",
+        built:
+          "A mobile-first site with one validated order form: Philippine mobile numbers, address, landmark, store, order list and payment method. The order is formatted in the layout the business already uses and handed to Messenger. A map with a draggable pin checks the location against the Sariaya boundary, a directory lists more than 150 stores sourced from OpenStreetMap, and a tap-through preview shows a possible delivery app. Nothing is stored on a server.",
+        ships:
+          "Every change reaches the main branch through a pull request, and the branch is protected. Three checks must pass: unit tests and builds, Playwright end-to-end tests on a phone-sized screen, and Lighthouse CI, which fails the change if the median performance score drops below 90 or accessibility below 95. Each pull request gets its own preview deploy on Netlify with the link posted on the pull request. Production deploys only the exact commit that passed, then runs smoke checks against the live site.",
+        learned:
+          "A risk I had to design around: the deploy job starts when CI finishes, so re-running an old CI run could have redeployed an old commit and quietly rolled the site back. The deploy now checks that the tested commit is still the newest one on main, and production deploys run one at a time.\n\nThe deploy tool is also installed from its own lockfile before the deploy token is present, so a compromised package cannot read it.",
+        pipeline: {
+          oneWay: true,
+          flow: [
+            { name: "Pull request", note: "protected main" },
+            { name: "CI", note: "unit · end-to-end · Lighthouse" },
+            { name: "Preview deploy", note: "Netlify, per pull request" },
+            { name: "Production deploy", note: "the tested commit only" },
+            { name: "Smoke checks", note: "against the live site" },
+          ],
+        },
+      },
       meta: "2026",
       status: "in-progress",
       description:
@@ -207,6 +252,28 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "OwlSet",
+      role: "Hackathon submission · Frontend and DevOps lead",
+      // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
+      // line starts a new paragraph. Use null for a part that is not written yet.
+      caseStudy: {
+        problem:
+          "Freelancers agree on work in chat, and later requests grow past what was agreed. OwlSet, a team entry for the AppBuildersPH hackathon, turns a client conversation into a confirmed scope, checks new requests against it, and drafts a change proposal when a request goes beyond it.",
+        built:
+          "An Android app in React Native and Expo. Data stays in a local SQLite database on the phone, and the AI can run on the phone itself through llama.rn with no internet connection, using a model the user imports once. A phone with too little memory can use a model on the local network instead, or a rule-based fallback with no AI. I led the frontend and the delivery pipeline; a companion website carries an interactive demo.",
+        ships:
+          "One CI job runs on every push and pull request: lint, type check, tests, an Expo dependency compatibility check and a production web build. Actions are pinned to exact commits and the job has a read-only token. A separate CD workflow publishes the website to Vercel only for a commit that CI has just verified on main, from a push, in this repository, and one deploy at a time. The Android app is built as an installable APK with EAS Build.",
+        learned:
+          "Running a model on a phone was the hard part. Long conversations overflowed what the model could take, and calls into the native library had to be made one at a time. We capped the input, serialised access to the model, and made a failed model import leave the working model in place.",
+        pipeline: {
+          oneWay: true,
+          flow: [
+            { name: "Push or pull request", note: "main" },
+            { name: "CI", note: "lint · types · tests · web build" },
+            { name: "CD gate", note: "verified commit on main" },
+            { name: "Vercel", note: "website + demo" },
+          ],
+        },
+      },
       meta: "in progress",
       status: "in-progress",
       description:
@@ -231,6 +298,29 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "Thready",
+      role: "Thesis project · Frontend and DevOps lead",
+      // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
+      // line starts a new paragraph. Use null for a part that is not written yet.
+      caseStudy: {
+        problem:
+          "A capstone for a local garment business, Shiela and Joel Garments: one system to manage production orders, who is working on each step, and quality checks, with computer vision to count garments.",
+        built:
+          "A Next.js, TypeScript and Tailwind frontend, a Node.js backend, a MySQL 8 database, and a separate Python service that runs a YOLO model for garment counting. It covers production planning, orders, assigning several employees to a step, a quality-control role with reason codes, and sign-in hardening such as one-time codes, a single active session and login lockout. I led the frontend and the infrastructure.",
+        ships:
+          "Six containers run under Docker Compose: Caddy, a Cloudflare Tunnel connector, the frontend, the backend, MySQL and the counting service. Only Caddy publishes a port, and it is bound to the private network. Employees reach the app through the Cloudflare Tunnel, which only connects outward, so no inbound port is open to the internet. Admins reach it over Tailscale.\n\nEvery pull request runs four checks: frontend lint, tests and a dependency audit; backend tests and audit; Python tests for the counting service with the model mocked, so no GPU is needed; and validation of the Compose files. On a push to main, once all four pass, a self-hosted GitHub Actions runner on the production server pulls the commit, rebuilds and restarts the stack, and waits for the health checks. There is no SSH access from outside.",
+        learned:
+          "A deploy that changed only the Caddy configuration reported success while the site kept serving the old configuration, because the running container never re-read the file. From the outside it looked like a broken certificate.\n\nSeparately, after Caddy was recreated, the tunnel container could no longer find it and the public site returned 502 errors until it retried. Both containers are now restarted on every deploy, in that order, whether or not they changed.",
+        pipeline: {
+          oneWay: true,
+          flow: [
+            { name: "Pull request", note: "four checks" },
+            { name: "Merge to main", note: "all checks green" },
+            { name: "Self-hosted runner", note: "on the production server" },
+            { name: "Compose rebuild", note: "six containers" },
+            { name: "Health checks", note: "before the deploy passes" },
+          ],
+        },
+      },
       meta: "in progress",
       status: "in-progress",
       description:
@@ -253,6 +343,28 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "AmIgo",
+      role: "Independent developer",
+      // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
+      // line starts a new paragraph. Use null for a part that is not written yet.
+      caseStudy: {
+        problem:
+          "The aim was a Discord bot that feels like one of the group chat: it talks in casual Taglish, joins in when mentioned or called by name, and remembers things about the server instead of starting fresh with every message.",
+        built:
+          "A discord.js and TypeScript bot backed by Google's Gemini API. It keeps conversation memory per channel in SQLite, has commands to save, list and forget notes, a study mode, a photo roast, and a Werewolf game. A background job distils settled channel chat into durable notes, so the bot can recall them later.",
+        ships:
+          "GitHub Actions runs a type check and the test suite on every push and pull request, covering the game, the commands, the AI layer and the storage. The bot runs as a single Node.js process with its SQLite file beside it, and slash commands are registered with a deploy script.",
+        learned:
+          "A slow or unreachable Gemini used to leave a reply waiting. Requests now time out after 15 seconds, and network failures are reported as the AI being unavailable instead of a generic error.\n\nStill open: the bot is not containerised, and CI tests it but does not deploy it.",
+        pipeline: {
+          oneWay: true,
+          flow: [
+            { name: "Push or pull request", note: "any branch" },
+            { name: "CI", note: "type check · tests" },
+            { name: "Deploy script", note: "registers slash commands" },
+            { name: "Node.js process", note: "bot + SQLite" },
+          ],
+        },
+      },
       meta: "2026",
       status: "done",
       description:

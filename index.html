@@ -97,7 +97,7 @@
         }
         // The Projects, Stack and More about me pages (?view=projects|stack|more)
         // are this same file showing only their own sections; no cover, no intro.
-        var view = /[?&]view=(projects|more|stack)(&|$)/.exec(window.location.search);
+        var view = /[?&]view=(projects|more|stack|case)(&|$)/.exec(window.location.search);
         if (view) {
           root.classList.add("view-" + view[1]);
           return;

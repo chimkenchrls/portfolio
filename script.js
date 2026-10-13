@@ -999,6 +999,15 @@
     checkList('projects', data.projects, (pr, p) => {
       if (!isText(pr.title)) errors.push(`${p}.title: required text`);
       if (!isText(pr.meta)) errors.push(`${p}.meta: required text`);
+      if (!isOptionalText(pr.role)) errors.push(`${p}.role: text or null`);
+      if (pr.caseStudy != null) {
+        const study = pr.caseStudy;
+        if (typeof study !== 'object' || !['problem', 'built', 'ships', 'learned'].every((key) => isOptionalText(study[key]))) {
+          errors.push(`${p}.caseStudy: an object of text parts (problem, built, ships, learned), each text or null`);
+        } else if (study.pipeline != null && !(Array.isArray(study.pipeline.flow) && study.pipeline.flow.every((node) => node && isText(node.name)))) {
+          errors.push(`${p}.caseStudy.pipeline: needs flow of { name, note? }`);
+        }
+      }
       if (!PROJECT_STATUSES.includes(pr.status)) errors.push(`${p}.status: one of ${PROJECT_STATUSES.join(', ')}`);
       if (!isOptionalText(pr.description)) errors.push(`${p}.description: text or null`);
       if (!Array.isArray(pr.tags)) errors.push(`${p}.tags: must be an array`);
@@ -1467,13 +1476,13 @@
         if (node.note) box.append(el('span', null, node.note));
         return box;
       };
-      const wrap = el('div', 'diagram');
+      const wrap = el('div', diagram.oneWay ? 'diagram is-pipeline' : 'diagram');
       wrap.setAttribute('role', 'img');
       const names = diagram.flow.map((node) => node.name).join(' to ');
-      wrap.setAttribute('aria-label', `Architecture: ${names}${diagram.store ? `; data stored in ${diagram.store.name}` : ''}`);
+      wrap.setAttribute('aria-label', `${diagram.oneWay ? 'Pipeline' : 'Architecture'}: ${names}${diagram.store ? `; data stored in ${diagram.store.name}` : ''}`);
       const flow = el('div', 'diagram-flow');
       diagram.flow.forEach((node, i) => {
-        if (i) flow.append(el('span', 'diagram-arrow', '⇄'));
+        if (i) flow.append(el('span', 'diagram-arrow', diagram.oneWay ? '↓' : '⇄'));
         flow.append(nodeEl(node));
       });
       wrap.append(flow);
@@ -1507,6 +1516,23 @@
 
     // Home: a slim row per project, linking to its full card on the Projects page
     // (?view=projects). The first few rows show; "+ N more" reveals the rest.
+    // Where a project leads: its case study when it has one, else its full card.
+    const projectLink = (project) => (project.caseStudy
+      ? `./?view=case&p=${projectSlug(project.title).replace('project-', '')}`
+      : `./?view=projects#${projectSlug(project.title)}`);
+    // The case study: up to four parts, each a heading and its paragraphs.
+    const caseStudyEl = (study) => {
+      const box = el('div', 'case');
+      [['problem', 'The problem'], ['built', 'What I built'], ['ships', 'How it ships'], ['learned', 'What went wrong, and what changed']].forEach(([key, heading]) => {
+        if (typeof study[key] !== 'string' || !study[key].trim()) return;
+        const part = el('section', 'case-part');
+        part.append(el('h4', 'case-title', heading));
+        study[key].split(/\n\s*\n/).forEach((text) => part.append(el('p', null, text.trim())));
+        if (key === 'ships' && study.pipeline && Array.isArray(study.pipeline.flow) && study.pipeline.flow.length) part.append(diagramEl(study.pipeline));
+        box.append(part);
+      });
+      return box;
+    };
     const projectRow = (project) => {
       const shots = projectShots(project);
       const avatar = project.chat && SHOT_PATH.test(String(project.chat.botAvatar)) ? project.chat.botAvatar : null;
@@ -1528,7 +1554,7 @@
       const main = el('span', 'project-main');
       main.append(line, el('span', 'project-summary', project.description || 'Details coming soon.'));
       const link = el('a', 'project-row-link');
-      link.href = `./?view=projects#${projectSlug(project.title)}`;
+      link.href = projectLink(project);
       link.append(thumb, main);
       const tag = (project.tags || []).find(Boolean);
       if (tag) link.append(el('span', 'project-kind', tag));
@@ -1536,14 +1562,93 @@
       li.append(link);
       return li;
     };
-    const projects = ({ projects: items = [] }) => (root.classList.contains('view-projects') ? items : items.map(projectRow)).map((project) => {
-      if (project instanceof Element) return project;
+    // Home: rows. The Projects page: every full card. A case study page
+    // (?view=case&p=<slug>): that one project's card with its case study under it.
+    const projects = ({ projects: items = [], stack = [] }) => {
+      if (root.classList.contains('view-case')) {
+        const wanted = `project-${new URLSearchParams(window.location.search).get('p')}`;
+        const one = items.find((project) => project.caseStudy && projectSlug(project.title) === wanted);
+        if (one) return [caseArticle(one, stack)];
+        // An unknown ?p= is the Projects page.
+        root.classList.replace('view-case', 'view-projects');
+      }
+      return items.map(root.classList.contains('view-projects') ? projectCard : projectRow);
+    };
+    // A project's screenshots or replayed chat, whichever it has.
+    const projectMedia = (project) => {
+      const shots = projectShots(project);
+      if (shots.length) return deviceFrames(shots);
+      return chatScript(project.chat && project.chat.scenes).length ? chatWindow(project.chat) : null;
+    };
+    // The project's tags sorted under the Stack areas they belong to; the rest under "Also".
+    const builtWith = (project, stack) => {
+      const rows = new Map();
+      (project.tags || []).filter(Boolean).forEach((tag) => {
+        const area = stack.find((group) => (group.items || []).some((item) => stackUses(item.name, [{ title: tag, tags: [tag] }]).length));
+        const label = area ? area.category : 'Also';
+        rows.set(label, [...(rows.get(label) || []), tag]);
+      });
+      const part = el('section', 'case-part');
+      part.append(el('h4', 'case-title', 'Built with'));
+      const list = el('dl', 'case-built');
+      [...rows].sort(([a], [b]) => (a === 'Also') - (b === 'Also')).forEach(([label, tags]) => {
+        const row = el('div', 'case-built-row');
+        row.append(el('dt', null, label), el('dd', null, tags.join(', ')));
+        list.append(row);
+      });
+      part.append(list);
+      return rows.size ? part : null;
+    };
+    // A case study page: a plain article on the page, no card.
+    const caseArticle = (project, stack) => {
+      const li = el('li', 'case-page');
+      const back = el('a', 'case-back', '← All projects');
+      back.href = './?view=projects';
+      li.append(back, el('h3', 'case-name', project.title));
+      if (project.description) li.append(el('p', 'case-lede', project.description));
+
+      const strip = el('div', 'case-meta');
+      const who = el('p', 'case-who');
+      if (project.role) who.append(el('strong', null, project.role));
+      who.append(el('span', project.status === 'done' ? 'project-meta' : 'badge', project.meta));
+      strip.append(who);
+      const links = project.links || {};
+      const source = safeUrl(links.source);
+      const live = safeUrl(links.live);
+      if (source || live) {
+        const row = el('p', 'project-links');
+        if (live) row.append(externalLink(live, 'live ↗'));
+        if (source) row.append(externalLink(source, 'source ↗'));
+        strip.append(row);
+      }
+      li.append(strip);
+
+      const media = projectMedia(project);
+      if (media) {
+        const frame = el('div', 'case-media');
+        frame.append(media);
+        li.append(frame);
+      }
+      li.append(caseStudyEl(project.caseStudy));
+      const built = builtWith(project, stack);
+      if (built) li.lastChild.append(built);
+      return li;
+    };
+    const projectCard = (project) => {
       const li = el('li', 'project');
       li.id = projectSlug(project.title);
       const head = el('div', 'project-head');
       const metaClass = project.status === 'done' ? 'project-meta' : 'badge';
-      head.append(el('h3', 'project-title', project.title), el('span', metaClass, project.meta));
+      const title = el('h3', 'project-title', project.caseStudy ? null : project.title);
+      if (project.caseStudy) {
+        // The whole card opens the case study: this link is stretched over it in CSS.
+        const open = el('a', 'project-open', project.title);
+        open.href = projectLink(project);
+        title.append(open);
+      }
+      head.append(title, el('span', metaClass, project.meta));
       li.append(head);
+      if (project.role) li.append(el('p', 'project-role', project.role));
 
       const body = el('div', 'project-body');
       const info = el('div', 'project-info');
@@ -1574,17 +1679,15 @@
         info.append(diagramEl(project.diagram));
       }
 
-      const shots = projectShots(project);
-      if (shots.length) {
+      const media = projectMedia(project);
+      if (media) {
         li.classList.add('has-media');
-        body.append(deviceFrames(shots));
-      } else if (chatScript(project.chat && project.chat.scenes).length) {
-        li.classList.add('has-media', 'has-chat');
-        body.append(chatWindow(project.chat));
+        if (!projectShots(project).length) li.classList.add('has-chat');
+        body.append(media);
       }
       li.append(body);
       return li;
-    });
+    };
 
     const certifications = ({ certifications: items = [], certificationsPending }) => {
       if (!items.length) return [pendingEl('li', certificationsPending || 'Coming soon.')];
@@ -1710,7 +1813,7 @@
         if (label) heading.lastChild.textContent = ` ${label} `;
       };
       if (root.classList.contains('view-more')) { head('outside', '01 //'); head('contact', '02 //', 'Terminal'); }
-      else if (root.classList.contains('view-projects')) head('projects', '01 //', 'All projects');
+      else if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       else if (root.classList.contains('view-stack')) head('stack', '01 //');
       else head('contact', '06 //');
       containers.forEach((container) => {
@@ -1723,7 +1826,7 @@
             const card = document.getElementById(window.location.hash.slice(1));
             if (card) card.scrollIntoView({ block: 'start' });
           }
-          if (container.dataset.render === 'projects' && !root.classList.contains('view-projects')) {
+          if (container.dataset.render === 'projects' && !/\bview-/.test(root.className)) {
             // Home shows the first three rows; the pill reveals the rest in place.
             const extra = [...container.children].slice(3);
             const more = $('.project-more');

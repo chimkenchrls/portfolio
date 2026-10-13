@@ -1227,7 +1227,7 @@ html.view-stack .github-panel {
   text-align: center;
 }
 /* Home: one quiet list of slim rows. Each row is a link to the project's full card. */
-html:not(.view-projects) .project-list {
+html:not(.view-projects):not(.view-case) .project-list {
   gap: 0;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1317,8 +1317,9 @@ html:not(.view-projects) .project-list {
     scale: none;
   }
 }
-html:not(.view-projects) [data-home],
+[data-home],
 html.view-projects .main > .section:not(#projects),
+html.view-case .main > .section:not(#projects),
 html.view-stack .main > .section:not(#stack),
 html.view-more .main > .section:not(#outside):not(#contact),
 html.view-more .contact-form,
@@ -1329,8 +1330,20 @@ html.has-cover #contact :is(.contact-intro, .terminal, .terminal-chips) {
 html.has-cover .contact-form {
   margin-top: 0;
 }
+html.view-projects [data-home] {
+  display: inline;
+}
+/* A case study has its own title, so the section divider is left to screen readers. */
+html.view-case #projects .divider {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
 html.view-more .nav-link[data-view="more"],
 html.view-projects .nav-link[data-view="projects"],
+html.view-case .nav-link[data-view="projects"],
 html.view-stack .nav-link[data-view="stack"] {
   color: var(--fg);
   background: var(--bg-alt);
@@ -1455,6 +1468,143 @@ html.view-stack .nav-link[data-view="stack"] {
   font-size: 12px;
 }
 
+/* A card with a case study is one big link: the title's link covers the card,
+   and the card's own links, screenshots and chat stay clickable above it. */
+.project:has(.project-open) {
+  position: relative;
+}
+.project-open {
+  color: inherit;
+  text-decoration: none;
+}
+.project-open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  cursor: var(--cursor-link);
+}
+.project-open:focus-visible {
+  outline: none;
+}
+.project-open:focus-visible::after {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+.project :is(.project-links a, .project-media) {
+  position: relative;
+  z-index: 1;
+}
+/* Who I was on the project, under its title. */
+.project-role {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+/* A case study page: a plain article in a narrow reading column, no card. */
+.case-page {
+  max-width: 660px;
+  margin-inline: auto;
+}
+.case-back {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 14px;
+  color: var(--fg-muted);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+.case-back:hover {
+  color: var(--fg);
+}
+.case-name {
+  font-size: 34px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.case-lede {
+  margin-top: 18px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+.case-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 24px;
+  margin-top: 44px;
+  padding-block: 14px;
+  border-block: 1px solid var(--border);
+}
+.case-who {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.case-who strong {
+  font-weight: 500;
+}
+.case-meta .project-links {
+  margin: 0;
+}
+.case-media {
+  margin-top: 32px;
+}
+.case {
+  display: grid;
+  gap: 40px;
+  margin-top: 44px;
+}
+.case-part {
+  display: grid;
+  gap: 12px;
+}
+.case-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+.case-part > p {
+  font-size: 16px;
+  line-height: 1.75;
+}
+.case-built-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 4px 20px;
+  padding-block: 12px;
+  border-top: 1px solid var(--border);
+  font-size: 15px;
+}
+.case-built-row dt {
+  color: var(--fg-muted);
+}
+.case .diagram {
+  margin-top: 8px;
+}
+/* A pipeline has any number of steps, so it runs top to bottom: one row a step. */
+.diagram.is-pipeline .diagram-flow {
+  grid-template-columns: minmax(0, 420px);
+  gap: 2px;
+}
+.diagram.is-pipeline .diagram-node {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2px 16px;
+  padding: 10px 14px;
+  text-align: left;
+}
+.diagram.is-pipeline .diagram-arrow {
+  justify-self: center;
+  line-height: 1;
+}
 /* Project screenshots: a browser frame with a phone overlapping its corner */
 .project-body {
   margin-top: 8px;
