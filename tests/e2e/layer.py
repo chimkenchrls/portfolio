@@ -1,12 +1,12 @@
 """The photo deck must never draw over the drawer, the top bar, or the game popup."""
 from playwright.sync_api import sync_playwright
-from common import check, finish, new_page
+from common import MORE, check, finish, new_page
 
 PROBE = "(pt) => { const e = document.elementFromPoint(pt[0], pt[1]); return e ? [!!e.closest('#sidebar'), !!e.closest('.deck'), String(e.className)] : null; }"
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
-    ctx, p, errors = new_page(b, 375, 812, has_touch=True, is_mobile=True)
+    ctx, p, errors = new_page(b, 375, 812, has_touch=True, is_mobile=True, url=MORE)
     p.evaluate("document.querySelector('.deck').scrollIntoView({ block: 'center' }); 0"); p.wait_for_timeout(900)
     box = p.locator(".deck").bounding_box()
     p.click(".menu-toggle"); p.wait_for_timeout(400)
@@ -24,7 +24,7 @@ with sync_playwright() as pw:
     check("no errors (phone)", not errors, "; ".join(errors))
     ctx.close()
 
-    ctx, p, errors = new_page(b)
+    ctx, p, errors = new_page(b, url=MORE)
     p.evaluate("document.querySelector('.deck').scrollIntoView({ block: 'center' }); 0"); p.wait_for_timeout(600)
     p.keyboard.press("Alt+k"); p.wait_for_timeout(300)
     g = p.evaluate("(() => { const r = document.querySelector('.game').getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width - 60, r.top + r.height / 2); return !!e.closest('.game'); })()")

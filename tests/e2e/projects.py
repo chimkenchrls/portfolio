@@ -1,7 +1,7 @@
 """Projects: device-pair screenshots beside the text, viewer dialog, layout on desktop and phone."""
 import os
 from playwright.sync_api import sync_playwright
-from common import check, finish, new_page
+from common import check, finish, new_page, ALL_PROJECTS
 
 SHOTS = os.environ.get("SHOTS")
 GEO = """() => [...document.querySelectorAll('.project.has-media:not(.has-chat)')].map(li => {
@@ -14,7 +14,7 @@ GEO = """() => [...document.querySelectorAll('.project.has-media:not(.has-chat)'
 with sync_playwright() as pw:
     b = pw.chromium.launch()
     for name, width, height, opts in [("desktop", 1280, 900, {}), ("phone", 375, 812, {"has_touch": True, "is_mobile": True})]:
-        ctx, p, errors = new_page(b, width, height, reduced_motion="reduce", **opts)
+        ctx, p, errors = new_page(b, width, height, url=ALL_PROJECTS, reduced_motion="reduce", **opts)
         p.evaluate("document.querySelectorAll('.project-more[aria-expanded=false], .project-toggle[aria-expanded=false]').forEach(b => b.click()); document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(1500)
         expected = p.evaluate("PORTFOLIO_DATA.projects.filter(x => x.media).map(x => x.title)")
         plain = p.evaluate("PORTFOLIO_DATA.projects.filter(x => !x.media).length")
@@ -55,7 +55,7 @@ with sync_playwright() as pw:
         check(f"{name}: no console errors", not errors, "; ".join(errors))
         ctx.close()
 
-    ctx, p, errors = new_page(b, 1280, 900)
+    ctx, p, errors = new_page(b, 1280, 900, url=ALL_PROJECTS)
     p.evaluate("document.querySelectorAll('.project-more[aria-expanded=false], .project-toggle[aria-expanded=false]').forEach(b => b.click()); document.getElementById('projects').scrollIntoView(); 0"); p.wait_for_timeout(1200)
     p.hover(".device-desktop"); p.wait_for_timeout(400)
     check("hover shows the screenshot in color", p.eval_on_selector(".device-desktop img", "i => getComputedStyle(i).filter") == "none")

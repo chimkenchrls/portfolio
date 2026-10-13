@@ -3,6 +3,10 @@ import sys
 
 # The suites open the page through a deep link, which skips the hero intro (see intro.py).
 URL = "http://localhost:8000/#home"
+# The full project cards (screenshots, chat replay) live on the all-projects page.
+ALL_PROJECTS = "http://localhost:8000/?view=projects"
+# Outside the IDE and the terminal live on the More about me page.
+MORE = "http://localhost:8000/?view=more"
 results = []
 
 
@@ -32,14 +36,14 @@ def offline_api(context, cover=False):
         context.add_init_script("document.addEventListener('DOMContentLoaded', () => { const s = document.createElement('style'); s.textContent = %r; document.head.append(s); });" % NO_COVER)
 
 
-def new_page(browser, width=1280, height=900, **context_options):
+def new_page(browser, width=1280, height=900, url=None, **context_options):
     context = browser.new_context(viewport={"width": width, "height": height}, **context_options)
     offline_api(context)
     page = context.new_page()
     errors = []
     page.on("pageerror", lambda e: errors.append(str(e)))
     page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
-    page.goto(URL)
+    page.goto(url or URL)
     page.wait_for_load_state("networkidle")
     return context, page, errors
 

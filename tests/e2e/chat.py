@@ -1,7 +1,7 @@
 """AmIgo chat replay + diagram: real conversation plays, pauses, loops scenes; static with reduced motion."""
 import os
 from playwright.sync_api import sync_playwright
-from common import URL, check, finish, offline_api
+from common import ALL_PROJECTS, check, finish, offline_api
 
 SHOTS = os.environ.get("SHOTS")
 norm = lambda s: " ".join(s.split())
@@ -26,7 +26,7 @@ def open_page(b, width=1280, height=900, fast=True, **opts):
     p = ctx.new_page(); errors = []
     p.on("pageerror", lambda e: errors.append(str(e)))
     p.on("console", lambda m: errors.append(m.text) if m.type == "error" and "ERR_FAILED" not in m.text else None)
-    p.goto(URL); p.wait_for_load_state("networkidle")
+    p.goto(ALL_PROJECTS); p.wait_for_load_state("networkidle")
     p.evaluate("document.querySelectorAll('.project-more[aria-expanded=false], .project-toggle[aria-expanded=false]').forEach(b => b.click()); 0")
     # No scroll-reveal slide in this suite: Playwright re-scrolls the page when it
     # clicks an element that is still moving, which would push the chat off screen.
@@ -141,7 +141,7 @@ with sync_playwright() as pw:
     ctx.route("**/assets/data.js*", lambda r: r.fulfill(status=200, content_type="text/javascript", body=src))
     p = ctx.new_page(); fired = []
     p.on("dialog", lambda d: (fired.append(d.message), d.dismiss()))
-    p.goto(URL); p.wait_for_load_state("networkidle"); to_chat(p); p.wait_for_timeout(300)
+    p.goto(ALL_PROJECTS); p.wait_for_load_state("networkidle"); to_chat(p); p.wait_for_timeout(300)
     check("message text is never rendered as HTML", p.locator(".chat-text img, .chat-text b").count() == 0 and not fired and "<img src=x onerror=alert(1)>" in p.inner_text(".chat-log"))
     ctx.close()
     b.close()

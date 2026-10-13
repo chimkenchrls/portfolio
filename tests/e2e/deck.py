@@ -1,6 +1,6 @@
 """Outside the IDE: cards sit inside the deck, counter + hint are below it, flipping works."""
 from playwright.sync_api import sync_playwright
-from common import check, finish, new_page
+from common import check, finish, new_page, MORE
 
 GEO = """() => {
   const r = (s) => { const b = document.querySelector(s).getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
@@ -12,7 +12,7 @@ GEO = """() => {
 with sync_playwright() as pw:
     b = pw.chromium.launch()
     for name, width, opts in [("desktop", 1280, {}), ("phone", 375, {"has_touch": True, "is_mobile": True})]:
-        ctx, p, errors = new_page(b, width, 900 if width > 400 else 812, reduced_motion="reduce", **opts)
+        ctx, p, errors = new_page(b, width, 900 if width > 400 else 812, reduced_motion="reduce", **opts, url=MORE)
         p.evaluate("document.getElementById('outside').scrollIntoView(); 0"); p.wait_for_timeout(700)
         g = p.evaluate(GEO)
         check(f"{name}: photo cards are inside the deck", g["inside"])

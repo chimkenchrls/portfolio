@@ -39,8 +39,7 @@ box = lambda p, sel: p.eval_on_selector(sel, "n => { const r = n.getBoundingClie
 with sync_playwright() as pw:
     b = pw.chromium.launch()
     ctx, p, errors = page(b)
-    form, terminal = box(p, ".contact-form"), box(p, ".terminal")
-    check("the form is shown, below the terminal", p.is_visible(".contact-form") and form["y"] > terminal["b"], f"{form} {terminal}")
+    check("the form is shown on Home, and the terminal is not (it lives on More about me)", p.is_visible(".contact-form") and not p.is_visible(".terminal"))
     name, email = box(p, "#contact-name"), box(p, "#contact-email")
     check("name and email sit side by side on desktop", abs(name["y"] - email["y"]) < 2 and email["x"] > name["r"])
     check("the bot trap is invisible and out of the tab order", box(p, ".contact-trap")["w"] <= 1 and box(p, ".contact-trap")["h"] <= 1 and p.get_attribute("#contact-website", "tabindex") == "-1")

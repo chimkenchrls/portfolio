@@ -509,6 +509,9 @@ dd {
   gap: 4px;
   margin-top: 4px;
 }
+.nav-list + .nav-label {
+  margin-top: 14px;
+}
 .nav-label {
   padding: 0 12px 4px;
   font-size: 12px;
@@ -1156,8 +1159,148 @@ body.is-rail .sidebar-controls {
   display: grid;
   gap: 16px;
 }
+/* Pages. Home lists every project as a slim row. The Projects page (?view=projects)
+   is the Projects section alone with the full cards; the More about me page
+   (?view=more) is Outside the IDE and the terminal, which Home leaves out (only
+   when the head script has run, so nothing is lost without JavaScript). */
+.projects-more {
+  margin-top: 20px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: center;
+}
+/* Home: one quiet list of slim rows. Each row is a link to the project's full card. */
+html:not(.view-projects) .project-list {
+  gap: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.project-row + .project-row {
+  border-top: 1px solid var(--border);
+}
+.project-row-link {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 14px 20px;
+  transition: background-color var(--t-fast) ease;
+}
+.project-row-link:active {
+  background: var(--bg-alt);
+}
+.project-row-link:focus-visible {
+  outline-offset: -2px;
+}
+.project-thumb {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 48px;
+  overflow: hidden;
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  color: var(--fg-muted);
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.project-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.project-thumb.is-avatar img {
+  object-position: center;
+}
+.project-main {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.project-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+.project-row .project-title {
+  font-size: 16px;
+}
+.project-row .project-title::before {
+  content: none;
+}
+.project-summary {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 13.5px;
+  color: var(--fg-muted);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+}
+.project-kind {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+  white-space: nowrap;
+}
+@media (hover: hover) and (pointer: fine) {
+  .project-row-link:hover,
+  .project-more:hover {
+    background: var(--bg-alt);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-more:active {
+    scale: none;
+  }
+}
+html:not(.view-projects) [data-home],
+html.view-projects .main > .section:not(#projects),
+html.view-stack .main > .section:not(#stack),
+html.view-more .main > .section:not(#outside):not(#contact),
+html.view-more .contact-form,
+html.has-cover #outside,
+html.has-cover #contact :is(.contact-intro, .terminal, .terminal-chips) {
+  display: none;
+}
+html.has-cover .contact-form {
+  margin-top: 0;
+}
+html.view-more .nav-link[data-view="more"],
+html.view-projects .nav-link[data-view="projects"],
+html.view-stack .nav-link[data-view="stack"] {
+  color: var(--fg);
+  background: var(--bg-alt);
+}
+.project-row[hidden],
+.project-more[hidden] {
+  display: none;
+}
+.project-more {
+  min-height: 40px;
+  padding: 0 20px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  transition:
+    background-color var(--t-fast) ease,
+    border-color var(--t-fast) ease,
+    scale 160ms ease-out;
+}
+.project-more:active {
+  scale: 0.97;
+}
 .project {
   padding: 24px;
+  scroll-margin-top: calc(var(--topbar-h) + 16px); /* reached by link: clear of the phone top bar */
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -2894,6 +3037,22 @@ html.at-cover:not(.intro-play) .intro-hint {
   } /* every other month on phones */
   .project {
     padding: 18px 16px;
+  }
+  .project-row-link {
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px 16px;
+  }
+  .project-thumb {
+    width: 56px;
+    height: 40px;
+  }
+  .project-summary {
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+  }
+  .project-kind {
+    display: none;
   }
   .contact-row {
     grid-template-columns: 1fr;

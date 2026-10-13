@@ -29,7 +29,10 @@ test('index.html has one section per nav target', () => {
   const html = read('index.html');
   for (const id of ['home', 'about', 'stack', 'projects', 'certifications', 'contact']) {
     assert.match(html, new RegExp(`<section[^>]*id="${id}"`), `section #${id} missing`);
-    assert.match(html, new RegExp(`<a[^>]*class="nav-link"[^>]*href="#${id}"`), `nav link #${id} missing`);
+  }
+  // The sidebar links Home; Explore opens the More about me, Projects and Stack pages.
+  for (const id of ['home']) {
+    assert.match(html, new RegExp(`<a[^>]*class="nav-link"[^>]*href="\\./#${id}"`), `nav link #${id} missing`);
   }
 });
 
@@ -125,7 +128,7 @@ test('sidebar has no visible shortcut badges; keys live in hover tooltips', () =
   const html = read('index.html');
   const sidebar = html.slice(html.indexOf('<aside'), html.indexOf('</aside>'));
   assert.doesNotMatch(sidebar, /<kbd/, 'no kbd badges in the sidebar');
-  for (const [id, label, key] of [['home', 'Home', 1], ['about', 'About', 2], ['projects', 'Projects', 3], ['stack', 'Stack', 4], ['certifications', 'Certifications', 5], ['contact', 'Contact', 6]]) {
+  for (const [id, label, key] of [['home', 'Home', 1]]) {
     assert.match(sidebar, new RegExp(`data-section="${id}"\\s+title="${label} \\(${key}\\)"`), `${label} tooltip`);
   }
   assert.match(sidebar, /title="Play chimken \(Alt \+ K\)"/);
@@ -201,8 +204,8 @@ test('Projects comes before Stack, in the page and in the nav', () => {
   const order = ['home', 'about', 'projects', 'stack', 'certifications', 'outside', 'contact'];
   const found = [...html.matchAll(/<section[^>]*\sid="([\w-]+)"/g)].map((m) => m[1]);
   assert.deepEqual(found, order);
-  const links = [...html.matchAll(/class="nav-link"\s+href="#([\w-]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(links, ['home', 'about', 'projects', 'stack', 'certifications', 'contact']);
+  const links = [...html.matchAll(/class="nav-link"\s+href="\.\/([^"]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(links, ['#home', '?view=more', '?view=projects', '?view=stack'], 'Menu: Home. Explore: More about me, Projects, Stack, each its own page');
 });
 
 test('sidebar footer: no status line or visitor counter; a chimken score row instead', () => {

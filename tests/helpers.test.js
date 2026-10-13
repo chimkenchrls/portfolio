@@ -395,3 +395,33 @@ test('email typos: common slips in the big providers get a suggestion, real doma
   assert.equal(emailSuggestion('ada@outlok.com'), 'ada@outlook.com');
   for (const fine of ['ada@gmail.com', 'ada@company.co', 'ada@sti.edu.ph', 'ada@yahoo.com.ph', 'ada', '@gmial.com', '', null, 5]) assert.equal(emailSuggestion(fine), null, String(fine));
 });
+
+test('pages: Projects and More about me are views of the same file, without the cover', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const root = path.join(__dirname, '..');
+  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+  assert.match(html, /view=\(projects\|more\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
+  assert.match(css, /html\.view-more \.main > \.section:not\(#outside\):not\(#contact\),/, 'More about me shows Outside the IDE and the terminal');
+  assert.match(css, /html\.has-cover #outside,\s*html\.has-cover #contact :is\(\.contact-intro, \.terminal, \.terminal-chips\) \{\s*display: none;/, 'Home leaves those two out, but only when the head script ran');
+  assert.match(html, /<button class="project-more" type="button" hidden><\/button>/);
+  assert.match(html, /href="\.\/#projects" data-home>Back to home</);
+  const data = require('../assets/data.js');
+  assert.ok(data.projects.every((p) => !('featured' in p)), 'every project is listed at home; nothing is marked featured');
+});
+
+test('home projects are slim rows that link to their full card on the Projects page', () => {
+  const { projectSlug } = require('../script.js');
+  assert.equal(projectSlug('Pakisuyo Express'), 'project-pakisuyo-express');
+  assert.equal(projectSlug('AmIgo'), 'project-amigo');
+  assert.equal(projectSlug('  C++ & Rust!  '), 'project-c-rust');
+  assert.equal(projectSlug(null), 'project-');
+  const data = require('../assets/data.js');
+  assert.equal(new Set(data.projects.map((p) => projectSlug(p.title))).size, data.projects.length, 'every project gets its own anchor');
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const js = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
+  assert.match(js, /link\.href = `\.\/\?view=projects#\$\{projectSlug\(project\.title\)\}`;/);
+  assert.match(js, /li\.id = projectSlug\(project\.title\);/, 'the full card carries the matching anchor');
+});

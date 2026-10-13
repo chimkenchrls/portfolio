@@ -1,6 +1,6 @@
 """'Get in touch' terminal: contact on load, chips, typing, history, completion, nav key 6."""
 from playwright.sync_api import sync_playwright
-from common import check, finish, new_page, offline_api
+from common import check, finish, new_page, offline_api, MORE
 
 EMAIL = "charleskenneth129@gmail.com"
 screen = lambda p: p.inner_text(".terminal-screen")
@@ -17,11 +17,11 @@ with sync_playwright() as pw:
     b = pw.chromium.launch()
 
     # --- desktop -------------------------------------------------------------
-    ctx, p, errors = new_page(b, permissions=["clipboard-read", "clipboard-write"])
+    ctx, p, errors = new_page(b, permissions=["clipboard-read", "clipboard-write"], url=MORE)
     order = p.evaluate("[...document.querySelectorAll('main section')].map(s => s.id)")
     check("contact is the last section", order[-1] == "contact" and order[-2] == "outside", str(order))
-    contact_link = p.locator('.nav-link[data-section="contact"]')
-    check("nav has Contact, no shortcut badge, key in the tooltip", contact_link.inner_text().split() == ["Contact"] and contact_link.get_attribute("title") == "Contact (6)" and p.locator("#sidebar kbd").count() == 0)
+    more_link = p.locator('.nav-link[data-view="more"]')
+    check("the terminal is on the More about me page, linked from the sidebar, no shortcut badges", more_link.inner_text().split() == ["More", "about", "me"] and p.is_visible(".terminal") and p.locator("#sidebar kbd").count() == 0)
     check("intro: nothing is printed before the terminal is on screen", EMAIL not in screen(p), screen(p))
     p.keyboard.press("6"); p.wait_for_timeout(450)
     mid = screen(p)
@@ -35,7 +35,7 @@ with sync_playwright() as pw:
     check("no tmux status bar", p.locator(".terminal-status").count() == 0)
     above = p.evaluate("(() => { const i = document.querySelector('.contact-intro').getBoundingClientRect(), t = document.querySelector('.terminal').getBoundingClientRect(); return i.bottom <= t.top; })()")
     check("short description sits above the terminal", above and p.inner_text(".contact-intro").startswith("This is a working terminal."))
-    check("key 6 jumps to contact and marks it active", p.evaluate("location.hash") == "#contact" and p.get_attribute('.nav-link[aria-current]', "data-section") == "contact")
+    check("key 6 jumps to the terminal", p.evaluate("location.hash") == "#contact")
 
     out = screen(p)
     check("contact block shown on load without typing", "$ contact" in out.replace("\n", " ") and EMAIL in out and "github.com/chimkenchrls" in out and "de4dicated" in out and "linkedin.com/in/kennethcharlesvaldez" in out, out[:200])
@@ -121,8 +121,8 @@ with sync_playwright() as pw:
     check("history numbers past commands", any(l.endswith("neofetch") and l[0].isdigit() for l in lines(p)), str(lines(p)[-6:]))
     type_run(p, "help")
     check("help lists the aliases", all(c in screen(p) for c in ["neofetch", "cd <section>", "cat <file>", "history"]))
-    type_run(p, "cd stack"); p.wait_for_timeout(900)
-    check("cd jumps to the section", p.evaluate("location.hash") == "#stack" and p.get_attribute('.nav-link[aria-current]', "data-section") == "stack")
+    type_run(p, "cd outside"); p.wait_for_timeout(900)
+    check("cd jumps to a section on this page", p.evaluate("location.hash") == "#outside")
     p.keyboard.press("6"); p.wait_for_timeout(900); p.focus(".terminal-input")
     type_run(p, "cd nowhere")
     check("cd to a missing section explains itself", "cd: no such section: nowhere — try ls" in lines(p)[-1], lines(p)[-1])
@@ -147,7 +147,7 @@ with sync_playwright() as pw:
     ctx.close()
 
     # --- phone ---------------------------------------------------------------
-    ctx, p, errors = new_page(b, 375, 812, has_touch=True, is_mobile=True)
+    ctx, p, errors = new_page(b, 375, 812, has_touch=True, is_mobile=True, url=MORE)
     p.evaluate("document.getElementById('contact').scrollIntoView(); 0"); p.wait_for_timeout(300)
     p.tap('.terminal-chip[data-command="email"]'); p.wait_for_timeout(200)
     early = lines(p)
@@ -167,16 +167,16 @@ with sync_playwright() as pw:
     check("phone: no page overflow", p.evaluate("document.documentElement.scrollWidth <= 375"), str(p.evaluate("document.documentElement.scrollWidth")))
     check("phone: prompt text is 16px (no iOS zoom)", p.eval_on_selector(".terminal-input", "i => getComputedStyle(i).fontSize") == "16px")
     p.click(".menu-toggle"); p.wait_for_timeout(300)
-    check("phone: drawer has the Contact link", p.is_visible('#sidebar .nav-link[data-section="contact"]'))
+    check("phone: drawer has the More about me link", p.is_visible('#sidebar .nav-link[data-view="more"]'))
     check("no console errors (phone)", not errors, "; ".join(errors))
     ctx.close()
 
     # --- dark theme, clipboard blocked, no JS --------------------------------
-    ctx, p, errors = new_page(b, reduced_motion="reduce")
+    ctx, p, errors = new_page(b, reduced_motion="reduce", url=MORE)
     check("reduced motion: contact is printed immediately, no typing", EMAIL in screen(p))
     ctx.close()
 
-    ctx, p, errors = new_page(b, color_scheme="dark")
+    ctx, p, errors = new_page(b, color_scheme="dark", url=MORE)
     p.evaluate("document.getElementById('contact').scrollIntoView(); 0"); p.wait_for_timeout(1800)
     colors = p.evaluate("(() => { const t = getComputedStyle(document.querySelector('.terminal')); const b = getComputedStyle(document.body); return [t.backgroundColor, b.color]; })()")
     check("dark theme: terminal is the light, inverted block", colors[0] == colors[1], str(colors))

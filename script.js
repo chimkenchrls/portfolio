@@ -766,6 +766,8 @@
     const meant = Object.keys(EMAIL_TYPOS).find((good) => EMAIL_TYPOS[good].includes(domain));
     return meant ? `${value.slice(0, at)}@${meant}` : null;
   };
+  // A project's anchor on the all-projects page, e.g. "project-pakisuyo-express".
+  const projectSlug = (title) => `project-${String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
   // Each poke gets a different face; the order loops.
   const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
   const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
@@ -1076,7 +1078,7 @@
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug,
       skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices,
     };
   }
@@ -1464,8 +1466,41 @@
       return media;
     };
 
-    const projects = ({ projects: items = [] }) => items.map((project) => {
+    // Home: a slim row per project, linking to its full card on the Projects page
+    // (?view=projects). The first few rows show; "+ N more" reveals the rest.
+    const projectRow = (project) => {
+      const shots = projectShots(project);
+      const avatar = project.chat && SHOT_PATH.test(String(project.chat.botAvatar)) ? project.chat.botAvatar : null;
+      const picture = shots.length ? (shots.find((shot) => shot.kind === 'desktop') || shots[0]).src : avatar;
+      const thumb = el('span', `project-thumb${shots.length ? '' : ' is-avatar'}`);
+      thumb.setAttribute('aria-hidden', 'true');
+      if (picture) {
+        const img = document.createElement('img');
+        img.src = picture;
+        img.alt = '';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        thumb.append(img);
+      } else {
+        thumb.textContent = String(project.title || '').slice(0, 1);
+      }
+      const line = el('span', 'project-line');
+      line.append(el('h3', 'project-title', project.title), el('span', project.status === 'done' ? 'project-meta' : 'badge', project.meta));
+      const main = el('span', 'project-main');
+      main.append(line, el('span', 'project-summary', project.description || 'Details coming soon.'));
+      const link = el('a', 'project-row-link');
+      link.href = `./?view=projects#${projectSlug(project.title)}`;
+      link.append(thumb, main);
+      const tag = (project.tags || []).find(Boolean);
+      if (tag) link.append(el('span', 'project-kind', tag));
+      const li = el('li', 'project-row');
+      li.append(link);
+      return li;
+    };
+    const projects = ({ projects: items = [] }) => (root.classList.contains('view-projects') ? items : items.map(projectRow)).map((project) => {
+      if (project instanceof Element) return project;
       const li = el('li', 'project');
+      li.id = projectSlug(project.title);
       const head = el('div', 'project-head');
       const metaClass = project.status === 'done' ? 'project-meta' : 'badge';
       head.append(el('h3', 'project-title', project.title), el('span', metaClass, project.meta));
@@ -1627,11 +1662,43 @@
       if (!data) { containers.forEach(showLoadError); return; }
       applyEmail(data);
       applyResume(data);
+      // The heading says which list this is: the selected few at home, or all of them.
+      // Each page numbers and names only the sections it shows.
+      const head = (id, index, label) => {
+        const heading = $(`#${id}-heading`);
+        if (!heading) return;
+        $('.divider-index', heading).textContent = index;
+        if (label) heading.lastChild.textContent = ` ${label} `;
+      };
+      if (root.classList.contains('view-more')) { head('outside', '01 //'); head('contact', '02 //', 'Terminal'); }
+      else if (root.classList.contains('view-projects')) head('projects', '01 //', 'All projects');
+      else if (root.classList.contains('view-stack')) head('stack', '01 //');
+      else head('contact', '06 //');
       containers.forEach((container) => {
         const build = renderers[container.dataset.render];
         if (!build) return;
         try {
           container.replaceChildren(...build(data));
+          if (container.dataset.render === 'projects' && root.classList.contains('view-projects') && window.location.hash) {
+            // The cards did not exist yet when the browser looked for this anchor.
+            const card = document.getElementById(window.location.hash.slice(1));
+            if (card) card.scrollIntoView({ block: 'start' });
+          }
+          if (container.dataset.render === 'projects' && !root.classList.contains('view-projects')) {
+            // Home shows the first three rows; the pill reveals the rest in place.
+            const extra = [...container.children].slice(3);
+            const more = $('.project-more');
+            if (more && extra.length) {
+              extra.forEach((row) => { row.hidden = true; });
+              more.textContent = `+ ${extra.length} more`;
+              more.hidden = false;
+              more.addEventListener('click', () => {
+                extra.forEach((row) => { row.hidden = false; });
+                more.hidden = true;
+                $('a', extra[0]).focus();
+              }, { once: true });
+            }
+          }
         } catch (error) {
           console.error(`[portfolio] failed to render ${container.dataset.render}`, error);
           showLoadError(container);
@@ -1765,7 +1832,7 @@
       menuToggle.addEventListener('click', () => (isDrawerOpen() ? closeDrawer() : openDrawer()));
       backdrop.addEventListener('click', () => closeDrawer());
       sidebar.addEventListener('click', (event) => {
-        if (mobileQuery.matches && event.target.closest('a[href^="#"]')) closeDrawer({ restoreFocus: false });
+        if (mobileQuery.matches && event.target.closest('a[href*="#"]')) closeDrawer({ restoreFocus: false });
       });
       document.addEventListener('keydown', trapFocus);
     };
@@ -1792,6 +1859,8 @@
     const jumpTo = (id) => {
       const target = document.getElementById(id);
       if (!target) return;
+      // A section this page does not show (the Projects and More about me pages show only their own): go home for it.
+      if (target.offsetParent === null && /\bview-/.test(root.className)) { window.location.href = `./#${id}`; return; }
       target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
       history.replaceState(null, '', `#${id}`);
       setActive(id);
@@ -1802,7 +1871,8 @@
     const lastId = SECTIONS[SECTIONS.length - 1].id;
 
     const init = () => {
-      setActive(SECTIONS[0].id);
+      // On the Projects, Stack and More about me pages the sidebar marks the page itself, not Home.
+      if (!/\bview-/.test(root.className)) setActive(SECTIONS[0].id);
       if (!('IntersectionObserver' in window)) return;
       const observer = new IntersectionObserver((entries) => {
         if (atBottom()) { setActive(lastId); return; }
