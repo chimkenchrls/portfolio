@@ -766,6 +766,16 @@
     const meant = Object.keys(EMAIL_TYPOS).find((good) => EMAIL_TYPOS[good].includes(domain));
     return meant ? `${value.slice(0, at)}@${meant}` : null;
   };
+  // Which projects use a tool: those with a tag whose words begin the tool's name
+  // ("Node.js" matches "Node.js 20 (Alpine)", "React" does not match "React Native").
+  const stackUses = (tool, projects) => {
+    const words = (text) => String(text || '').toLowerCase().match(/[a-z0-9]+/g) || [];
+    const name = words(tool);
+    return (Array.isArray(projects) ? projects : []).filter((project) => (project.tags || []).some((tag) => {
+      const tagWords = words(tag);
+      return tagWords.length > 0 && tagWords.length <= name.length && tagWords.every((word, i) => word === name[i]);
+    })).map((project) => project.title);
+  };
   // A project's anchor on the all-projects page, e.g. "project-pakisuyo-express".
   const projectSlug = (title) => `project-${String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
   // Each poke gets a different face; the order loops.
@@ -1078,7 +1088,7 @@
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
       skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices,
     };
   }
@@ -1378,7 +1388,36 @@
       return li;
     });
 
-    const stack = ({ stack: groups = [] }) => groups.map((group) => {
+    // The Stack page: every tool on its own line with the projects that use it,
+    // each linking to that project's card. Home keeps the short version below.
+    const stackSheet = ({ stack: groups = [], projects: all = [] }) => {
+      const tools = groups.reduce((sum, group) => sum + (group.items || []).length, 0);
+      const intro = el('p', 'stack-summary', `${tools} tools across ${groups.length} areas. The ones I have shipped with link to the projects that use them.`);
+      return [intro, ...groups.map((group) => {
+        const items = group.items || [];
+        const box = el('section', 'stack-sheet');
+        const title = el('h3', 'stack-sheet-title', group.category);
+        title.append(el('span', 'stack-sheet-count', String(items.length).padStart(2, '0')));
+        const list = el('ul', 'stack-sheet-list');
+        items.forEach((item) => {
+          const li = el('li', 'stack-sheet-item');
+          if (item.icon) li.append(stackIconEl(item.icon, item.color));
+          li.append(el('span', 'stack-sheet-name', item.name));
+          const used = el('span', 'stack-sheet-used');
+          stackUses(item.name, all).forEach((name) => {
+            const link = el('a', 'text-link', name);
+            link.href = `./?view=projects#${projectSlug(name)}`;
+            used.append(link);
+          });
+          if (used.childElementCount) li.append(used);
+          list.append(li);
+        });
+        box.append(title, list);
+        return box;
+      })];
+    };
+    const stack = (data) => (root.classList.contains('view-stack') ? stackSheet(data) : stackHome(data));
+    const stackHome = ({ stack: groups = [] }) => groups.map((group) => {
       const box = el('div', 'stack-group');
       const list = el('ul', 'stack-items');
       (group.items || []).forEach((item) => {

@@ -402,7 +402,7 @@ test('pages: Projects and More about me are views of the same file, without the 
   const root = path.join(__dirname, '..');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-  assert.match(html, /view=\(projects\|more\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
+  assert.match(html, /view=\(projects\|more\|stack\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
   assert.match(css, /html\.view-more \.main > \.section:not\(#outside\):not\(#contact\),/, 'More about me shows Outside the IDE and the terminal');
   assert.match(css, /html\.has-cover #outside,\s*html\.has-cover #contact :is\(\.contact-intro, \.terminal, \.terminal-chips\) \{\s*display: none;/, 'Home leaves those two out, but only when the head script ran');
   assert.match(html, /<button class="project-more" type="button" hidden><\/button>/);
@@ -424,4 +424,20 @@ test('home projects are slim rows that link to their full card on the Projects p
   const js = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
   assert.match(js, /link\.href = `\.\/\?view=projects#\$\{projectSlug\(project\.title\)\}`;/);
   assert.match(js, /li\.id = projectSlug\(project\.title\);/, 'the full card carries the matching anchor');
+});
+
+test('stack page: each tool lists the projects whose tags name it, and nothing looser', () => {
+  const { stackUses } = require('../script.js');
+  const data = require('../assets/data.js');
+  const uses = (tool) => stackUses(tool, data.projects);
+  assert.deepEqual(uses('Docker + Compose'), ['Ambiancy', 'Thready']);
+  assert.deepEqual(uses('Node.js 20 (Alpine)'), ['Thready'], 'a tag may be the start of the tool\'s full name');
+  assert.deepEqual(uses('GitHub Actions'), ['Pakisuyo Express', 'OwlSet']);
+  assert.deepEqual(uses('TypeScript'), ['Ambiancy', 'OwlSet', 'Thready', 'AmIgo']);
+  assert.deepEqual(uses('React 18.3'), ['Ambiancy'], 'React Native is a different thing');
+  assert.deepEqual(uses('Vite'), ['Ambiancy', 'Pakisuyo Express']);
+  assert.deepEqual(uses('Vitest'), ['Ambiancy']);
+  for (const unused of ['Git', 'GitHub', 'Azure', 'Java', 'Python']) assert.deepEqual(uses(unused), [], `${unused}: no project tag names it`);
+  assert.deepEqual(stackUses('Vite', null), []);
+  assert.deepEqual(stackUses('', data.projects), []);
 });

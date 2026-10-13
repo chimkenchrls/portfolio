@@ -1097,6 +1097,63 @@ body.is-rail .sidebar-controls {
   font-size: 14px;
 }
 
+/* The Stack page (?view=stack): a two-column sheet, one tool per line, with the
+   projects that use it on the right. Home keeps the short rows above. */
+html.view-stack .stack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 44px 56px;
+  border-bottom: 0;
+}
+.stack-summary {
+  grid-column: 1 / -1;
+  max-width: 62ch;
+  color: var(--fg-muted);
+}
+.stack-sheet-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  border-bottom: 1px solid var(--fg);
+}
+.stack-sheet-count {
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+}
+.stack-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--border);
+}
+.stack-sheet-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+.stack-sheet-used {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px 12px;
+  margin-left: auto;
+  padding-block: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.stack-sheet-used a {
+  padding-block: 4px;
+}
+html.view-stack .github-panel {
+  margin-top: 44px;
+}
 /* GitHub contributions (inside the Stack section) */
 .github-panel {
   padding-top: 28px;
@@ -3053,6 +3110,10 @@ html.at-cover:not(.intro-play) .intro-hint {
   }
   .project-kind {
     display: none;
+  }
+  html.view-stack .stack-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
   }
   .contact-row {
     grid-template-columns: 1fr;
