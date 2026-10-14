@@ -1888,7 +1888,7 @@
         $('.divider-index', heading).textContent = index;
         if (label) heading.lastChild.textContent = ` ${label} `;
       };
-      if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '02 //'); head('contact', '03 //', 'Terminal'); }
+      if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //'); head('writing', '02 //'); head('contact', '03 //', 'Terminal'); }
       else if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       else if (root.classList.contains('view-stack')) head('stack', '01 //');
       else head('contact', '06 //');

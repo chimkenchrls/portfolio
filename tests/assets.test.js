@@ -201,7 +201,7 @@ test('the GitHub panel reserves its space instead of popping in', () => {
 
 test('Projects comes before Stack, in the page and in the nav', () => {
   const html = read('index.html');
-  const order = ['home', 'about', 'projects', 'stack', 'certifications', 'personal', 'writing', 'outside', 'contact'];
+  const order = ['home', 'about', 'projects', 'stack', 'certifications', 'outside', 'personal', 'writing', 'contact'];
   const found = [...html.matchAll(/<section[^>]*\sid="([\w-]+)"/g)].map((m) => m[1]);
   assert.deepEqual(found, order);
   const links = [...html.matchAll(/class="nav-link"\s+href="\.\/([^"]+)"/g)].map((m) => m[1]);

@@ -2078,12 +2078,12 @@ html.view-stack .nav-link[data-view="stack"] {
 }
 
 /* More about me — personal introduction and a flat list of writing. */
+html.view-more #outside {
+  padding-bottom: clamp(24px, 4vw, 40px);
+}
 .personal-intro {
   padding-top: 16px;
   padding-bottom: 56px;
-}
-.personal-intro > div {
-  max-width: 660px;
 }
 .personal-title {
   margin-bottom: 24px;
