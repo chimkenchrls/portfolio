@@ -40,7 +40,12 @@ const PORTFOLIO_DATA = {
     intro: "Tools I use and explore across development, deployment, and infrastructure.",
   },
 
-  // Writing lives on More about me. Leave body and date null until a post is
+  blogPage: {
+    title: "Blog",
+    intro: "Notes on building things, learning as I go, and life beyond the terminal.",
+  },
+
+  // Posts appear on Blog, Home and More about me. Leave body and date null until a post is
   // ready. Set both (date: YYYY-MM-DD; body: paragraphs separated by blank lines)
   // to publish it at ./?view=post&p=<slug>. Text is displayed literally.
   writing: [

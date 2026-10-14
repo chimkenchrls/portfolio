@@ -33,6 +33,8 @@
   };
   const publishedPost = (post) => Boolean(post && POST_SLUG.test(post.slug) && postDate(post.date)
     && typeof post.body === 'string' && post.body.trim());
+  const postReadTime = (body) => typeof body === 'string' && body.trim()
+    ? Math.max(1, Math.ceil(body.trim().split(/\s+/).length / 200)) : null;
   const CERTIFICATE_PHOTO_PATH = /^\.\/assets\/certifications\/[\w.-]+\.(jpe?g|png|webp)$/;
   const CERTIFICATE_LOGO_PATH = /^\.\/assets\/certifications\/[\w.-]+\.(svg|jpe?g|png|webp)$/;
 
@@ -1089,6 +1091,9 @@
     if (data.stackPage !== undefined) {
       if (!data.stackPage || !isText(data.stackPage.title) || !isText(data.stackPage.intro)) errors.push('stackPage: title and intro text required');
     }
+    if (data.blogPage !== undefined) {
+      if (!data.blogPage || !isText(data.blogPage.title) || !isText(data.blogPage.intro)) errors.push('blogPage: title and intro text required');
+    }
     if (data.writing !== undefined) {
       const slugs = new Set();
       checkList('writing', data.writing, (post, p) => {
@@ -1123,7 +1128,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, joinParts, postDate, publishedPost,
+      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, joinParts, postDate, publishedPost, postReadTime,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -1815,6 +1820,7 @@
     const moreHeading = ({ more }) => pageHeading(more);
     const projectsHeading = ({ projectsPage }) => pageHeading(projectsPage, 'projects-page-intro');
     const stackHeading = ({ stackPage }) => pageHeading(stackPage, 'stack-page-intro');
+    const blogHeading = ({ blogPage }) => pageHeading(blogPage, 'blog-page-intro');
     const personal = ({ more, profile = {} }) => {
       if (!more) return [];
       const identity = el('div', 'personal-identity');
@@ -1831,8 +1837,8 @@
     const postArticle = (post) => {
       const item = el('li', 'writing-page');
       const article = el('article');
-      const back = el('a', 'case-back', '← More about me');
-      back.href = './?view=more#writing';
+      const back = el('a', 'case-back', '← Blog');
+      back.href = './?view=blog';
       const title = el('h1', 'writing-name', post.title);
       const body = el('div', 'writing-body');
       body.append(...paragraphs(post.body));
@@ -1841,32 +1847,35 @@
       document.title = `${post.title} • CK`;
       return item;
     };
+    const writingEntry = (post) => {
+      const ready = publishedPost(post);
+      const item = el('li', `writing-entry${ready ? '' : ' is-upcoming'}`);
+      const heading = el('h3', 'writing-title');
+      if (ready) {
+        const link = el('a', 'writing-link', post.title);
+        link.href = `./?view=post&p=${post.slug}`;
+        heading.append(link);
+      } else heading.textContent = post.title;
+      const copy = el('div', 'writing-copy');
+      copy.append(heading, el('p', 'writing-excerpt', post.excerpt));
+      if (ready) copy.append(el('p', 'writing-read-time', `~${postReadTime(post.body)} min read`));
+      item.append(copy, ready ? postTime(post) : el('span', 'writing-date', 'Coming soon'));
+      return item;
+    };
+    const writingRows = (posts) => posts.length ? posts.map(writingEntry) : [pendingEl('li', 'No posts yet.')];
+    const blogPreview = ({ writing: posts = [] }) => writingRows(posts.slice(0, 3));
     const writing = ({ writing: posts = [] }) => {
       if (root.classList.contains('view-post')) {
         const slug = new URLSearchParams(window.location.search).get('p');
         const post = posts.find((entry) => entry.slug === slug && publishedPost(entry));
         if (post) return [postArticle(post)];
-        // Unwritten and unknown posts return to the Writing list.
-        root.classList.replace('view-post', 'view-more');
+        // Unwritten and unknown posts return to the Blog list.
+        root.classList.replace('view-post', 'view-blog');
       }
-      if (!posts.length) return [pendingEl('li', 'No posts yet.')];
-      return posts.map((post) => {
-        const ready = publishedPost(post);
-        const item = el('li', `writing-entry${ready ? '' : ' is-upcoming'}`);
-        const heading = el('h3', 'writing-title');
-        if (ready) {
-          const link = el('a', 'writing-link', post.title);
-          link.href = `./?view=post&p=${post.slug}`;
-          heading.append(link);
-        } else heading.textContent = post.title;
-        const copy = el('div', 'writing-copy');
-        copy.append(heading, el('p', 'writing-excerpt', post.excerpt));
-        item.append(copy, ready ? postTime(post) : el('span', 'writing-date', 'Coming soon'));
-        return item;
-      });
+      return writingRows(posts);
     };
 
-    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, writing };
+    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, writing, blogHeading, blogPreview };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -1917,7 +1926,7 @@
       if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //'); head('writing', '02 //'); head('contact', '03 //', 'Terminal'); }
       else if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       else if (root.classList.contains('view-stack')) head('stack', '01 //');
-      else head('contact', '06 //');
+      else head('contact', '07 //');
       containers.forEach((container) => {
         const build = renderers[container.dataset.render];
         if (!build) return;
@@ -1951,6 +1960,7 @@
       if (root.classList.contains('view-more') && data.more) document.title = `${data.more.title} • CK`;
       if (root.classList.contains('view-projects') && data.projectsPage) document.title = `${data.projectsPage.title} • CK`;
       if (root.classList.contains('view-stack') && data.stackPage) document.title = `${data.stackPage.title} • CK`;
+      if (root.classList.contains('view-blog') && data.blogPage) document.title = `${data.blogPage.title} • CK`;
     };
 
     return { init };
@@ -2119,7 +2129,18 @@
 
     const init = () => {
       // On the Projects, Stack and More about me pages the sidebar marks the page itself, not Home.
-      if (!/\bview-/.test(root.className)) setActive(SECTIONS[0].id);
+      if (/\bview-/.test(root.className)) {
+        links.forEach((link) => {
+          const view = link.dataset.view;
+          const active = view && (root.classList.contains(`view-${view}`)
+            || (view === 'projects' && root.classList.contains('view-case'))
+            || (view === 'blog' && root.classList.contains('view-post')));
+          if (active) link.setAttribute('aria-current', 'page');
+          else link.removeAttribute('aria-current');
+        });
+        return;
+      }
+      setActive(SECTIONS[0].id);
       if (!('IntersectionObserver' in window)) return;
       const observer = new IntersectionObserver((entries) => {
         if (atBottom()) { setActive(lastId); return; }

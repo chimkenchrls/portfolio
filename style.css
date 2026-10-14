@@ -268,6 +268,9 @@ dd {
 .icon-home {
   --icon: url("./assets/icons/home.svg");
 }
+.icon-blog {
+  --icon: url("./assets/icons/blog.svg");
+}
 .icon-about {
   --icon: url("./assets/icons/about.svg");
 }
@@ -1217,17 +1220,20 @@ html.view-stack .github-panel {
   gap: 16px;
 }
 .projects-page-header,
-.stack-page-header {
+.stack-page-header,
+.blog-page-header {
   display: none;
 }
 html.view-projects .projects-page-header,
-html.view-stack .stack-page-header {
+html.view-stack .stack-page-header,
+html.view-blog .blog-page-header {
   display: block;
   padding-top: 16px;
   margin-bottom: 40px;
 }
 .projects-page-intro,
-.stack-page-intro {
+.stack-page-intro,
+.blog-page-intro {
   font-size: 17px;
   line-height: 1.7;
   color: var(--fg-muted);
@@ -1339,6 +1345,7 @@ html.view-case .main > .section:not(#projects),
 html.view-stack .main > .section:not(#stack),
 html.view-more .main > .section:not(#personal):not(#background):not(#writing):not(#outside):not(#contact),
 html.view-post .main > .section:not(#writing),
+html.view-blog .main > .section:not(#writing),
 html.view-more .contact-form,
 html.has-cover #personal,
 html.has-cover #background,
@@ -1356,6 +1363,7 @@ html.view-projects [data-home] {
 /* A case study has its own title, so the section divider is left to screen readers. */
 html.view-projects #projects .divider,
 html.view-stack #stack .divider,
+html.view-blog #writing .divider,
 html.view-case #projects .divider,
 html.view-post #writing .divider {
   position: absolute;
@@ -1365,7 +1373,8 @@ html.view-post #writing .divider {
   clip-path: inset(50%);
 }
 html.view-more .nav-link[data-view="more"],
-html.view-post .nav-link[data-view="more"],
+html.view-blog .nav-link[data-view="blog"],
+html.view-post .nav-link[data-view="blog"],
 html.view-projects .nav-link[data-view="projects"],
 html.view-case .nav-link[data-view="projects"],
 html.view-stack .nav-link[data-view="stack"] {
@@ -2204,6 +2213,16 @@ html.view-more .outside-intro {
 }
 .writing-list {
   list-style: none;
+}
+.blog-more {
+  margin-top: 20px;
+  font-size: 13px;
+}
+.writing-read-time {
+  margin-top: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
 }
 .writing-entry {
   display: grid;

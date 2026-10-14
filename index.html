@@ -97,7 +97,7 @@
         }
         // The Projects, Stack and More about me pages (?view=projects|stack|more)
         // are this same file showing only their own sections; no cover, no intro.
-        var view = /[?&]view=(projects|more|stack|case|post)(&|$)/.exec(window.location.search);
+        var view = /[?&]view=(projects|more|stack|case|post|blog)(&|$)/.exec(window.location.search);
         if (view) {
           root.classList.add("view-" + view[1]);
           return;
@@ -198,6 +198,16 @@
               title="Home (1)"
               ><span class="icon icon-home" aria-hidden="true"></span
               ><span class="nav-text">Home</span></a
+            >
+          </li>
+          <li>
+            <a
+              class="nav-link"
+              href="./?view=blog"
+              data-view="blog"
+              title="Blog"
+              ><span class="icon icon-blog" aria-hidden="true"></span
+              ><span class="nav-text">Blog</span></a
             >
           </li>
         </ul>
@@ -463,6 +473,18 @@
 
       <header class="more-page-header" data-render="moreHeading"></header>
 
+      <section class="section" id="blog" aria-labelledby="blog-heading">
+        <div class="divider">
+          <span class="divider-line"></span>
+          <h2 class="divider-label" id="blog-heading">
+            <span class="divider-index" aria-hidden="true">06 //</span> Blog
+          </h2>
+          <span class="divider-line"></span>
+        </div>
+        <ul class="writing-list" data-render="blogPreview"></ul>
+        <p class="blog-more"><a class="text-link" href="./?view=blog">View all posts</a></p>
+      </section>
+
       <section class="section" id="outside" aria-labelledby="outside-heading">
         <div class="divider">
           <span class="divider-line"></span>
@@ -511,6 +533,7 @@
       </section>
 
       <section class="section" id="writing" aria-labelledby="writing-heading">
+        <header class="blog-page-header" data-render="blogHeading"></header>
         <div class="divider">
           <span class="divider-line"></span>
           <h2 class="divider-label" id="writing-heading">

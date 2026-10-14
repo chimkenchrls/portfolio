@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { postDate, publishedPost, validateData } = require('../script.js');
+const { postDate, publishedPost, postReadTime, validateData } = require('../script.js');
 const data = require('../assets/data.js');
 
 test('writing dates reject impossible dates and format without a local-time shift', () => {
@@ -9,6 +9,13 @@ test('writing dates reject impossible dates and format without a local-time shif
   for (const value of [null, '', undefined, '2026-02-29', '2026-04-31', '2026-13-01', '14/10/2026']) {
     assert.equal(postDate(value), null);
   }
+});
+
+test('reading time is derived from the body and stays absent for unwritten posts', () => {
+  assert.equal(postReadTime(null), null);
+  assert.equal(postReadTime('  '), null);
+  assert.equal(postReadTime('A short post.'), 1);
+  assert.equal(postReadTime(Array(201).fill('word').join(' ')), 2);
 });
 
 test('a post needs both a body and a valid publication date before it can open', () => {
