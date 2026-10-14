@@ -1216,6 +1216,22 @@ html.view-stack .github-panel {
   display: grid;
   gap: 16px;
 }
+.projects-page-header,
+.stack-page-header {
+  display: none;
+}
+html.view-projects .projects-page-header,
+html.view-stack .stack-page-header {
+  display: block;
+  padding-top: 16px;
+  margin-bottom: 40px;
+}
+.projects-page-intro,
+.stack-page-intro {
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--fg-muted);
+}
 /* Pages. Home lists every project as a slim row. The Projects page (?view=projects)
    is the Projects section alone with the full cards; the More about me page
    (?view=more) is Outside the IDE and the terminal, which Home leaves out (only
@@ -1338,6 +1354,8 @@ html.view-projects [data-home] {
   display: inline;
 }
 /* A case study has its own title, so the section divider is left to screen readers. */
+html.view-projects #projects .divider,
+html.view-stack #stack .divider,
 html.view-case #projects .divider,
 html.view-post #writing .divider {
   position: absolute;

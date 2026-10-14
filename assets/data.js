@@ -30,6 +30,16 @@ const PORTFOLIO_DATA = {
       "Hey, I’m CK. I’m a computer science student building side projects and learning as I go.\n\nThis is a little space for thoughts between builds, and the places, things, and moments that recharge me away from the terminal.",
   },
 
+  projectsPage: {
+    title: "Projects",
+    intro: "Side projects and practical tools, with a focus on how they’re built, shipped, and run.",
+  },
+
+  stackPage: {
+    title: "Stack",
+    intro: "Tools I use and explore across development, deployment, and infrastructure.",
+  },
+
   // Writing lives on More about me. Leave body and date null until a post is
   // ready. Set both (date: YYYY-MM-DD; body: paragraphs separated by blank lines)
   // to publish it at ./?view=post&p=<slug>. Text is displayed literally.

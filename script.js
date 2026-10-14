@@ -1083,6 +1083,12 @@
     if (data.more !== undefined) {
       if (!data.more || !isText(data.more.title) || !isText(data.more.intro)) errors.push('more: title and intro text required');
     }
+    if (data.projectsPage !== undefined) {
+      if (!data.projectsPage || !isText(data.projectsPage.title) || !isText(data.projectsPage.intro)) errors.push('projectsPage: title and intro text required');
+    }
+    if (data.stackPage !== undefined) {
+      if (!data.stackPage || !isText(data.stackPage.title) || !isText(data.stackPage.intro)) errors.push('stackPage: title and intro text required');
+    }
     if (data.writing !== undefined) {
       const slugs = new Set();
       checkList('writing', data.writing, (post, p) => {
@@ -1799,13 +1805,16 @@
 
     const paragraphs = (text) => typeof text === 'string'
       ? text.split(/\n\s*\n/).filter((part) => part.trim()).map((part) => el('p', null, part.trim())) : [];
-    const moreHeading = ({ more }) => {
-      if (!more) return [];
+    const pageHeading = (content, introClass) => {
+      if (!content) return [];
       const back = el('a', 'case-back', '← Home');
       back.href = './';
-      const title = el('h1', 'personal-title', more.title);
-      return [back, title];
+      const title = el('h1', 'personal-title', content.title);
+      return introClass ? [back, title, el('p', introClass, content.intro)] : [back, title];
     };
+    const moreHeading = ({ more }) => pageHeading(more);
+    const projectsHeading = ({ projectsPage }) => pageHeading(projectsPage, 'projects-page-intro');
+    const stackHeading = ({ stackPage }) => pageHeading(stackPage, 'stack-page-intro');
     const personal = ({ more, profile = {} }) => {
       if (!more) return [];
       const identity = el('div', 'personal-identity');
@@ -1857,7 +1866,7 @@
       });
     };
 
-    const renderers = { social, experience, education, stack, projects, certifications, outside, moreHeading, personal, writing };
+    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, writing };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -1940,6 +1949,8 @@
         }
       });
       if (root.classList.contains('view-more') && data.more) document.title = `${data.more.title} • CK`;
+      if (root.classList.contains('view-projects') && data.projectsPage) document.title = `${data.projectsPage.title} • CK`;
+      if (root.classList.contains('view-stack') && data.stackPage) document.title = `${data.stackPage.title} • CK`;
     };
 
     return { init };
