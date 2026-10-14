@@ -402,7 +402,7 @@ test('pages: Projects and More about me are views of the same file, without the 
   const root = path.join(__dirname, '..');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-  assert.match(html, /view=\(projects\|more\|stack\|case\|post\|blog\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
+  assert.match(html, /view=\(projects\|more\|stack\|case\|post\|blog\|links\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
   assert.match(css, /html\.view-more \.main > \.section:not\(#personal\):not\(#background\):not\(#writing\):not\(#outside\):not\(#contact\),/, 'More about me shows photos, intro, experience and education, Writing and terminal');
   assert.match(css, /html\.has-cover #outside,\s*html\.has-cover #contact :is\(\.contact-intro, \.terminal, \.terminal-chips\) \{\s*display: none;/, 'Home leaves those two out, but only when the head script ran');
   assert.match(html, /<button class="project-more" type="button" hidden><\/button>/);

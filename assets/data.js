@@ -10,6 +10,7 @@
 const PORTFOLIO_DATA = {
   profile: {
     name: "Kenneth Charles Valdez",
+    siteName: "Kenneth Charles", // Public name used in browser tabs.
     title: "Aspiring DevOps Engineer",
     location: "Sariaya, Quezon, Philippines",
     bio: "A 4th-year BS Computer Science student at STI College Lucena, building side projects and learning how to make deployments smooth and scalable.",
@@ -18,6 +19,10 @@ const PORTFOLIO_DATA = {
     githubUsername: "chimkenchrls",
     linkedin: "https://www.linkedin.com/in/kennethcharlesvaldez",
     discord: "de4dicated",
+    // Social profile URLs for Links. Keep missing URLs null.
+    discordUrl: null,
+    tiktok: "https://www.tiktok.com/@chimkenchrls",
+    facebook: "https://www.facebook.com/kencharlesv",
     // Put the PDF in ./assets/ and set this to "./assets/resume.pdf" to show a
     // "Resume" button next to "Email me". null hides the button.
     resume: "./assets/resume.pdf",
@@ -32,17 +37,44 @@ const PORTFOLIO_DATA = {
 
   projectsPage: {
     title: "Projects",
-    intro: "Side projects and practical tools, with a focus on how they’re built, shipped, and run.",
+    intro:
+      "Side projects and practical tools, with a focus on how they’re built, shipped, and run.",
   },
 
   stackPage: {
     title: "Stack",
-    intro: "Tools I use and explore across development, deployment, and infrastructure.",
+    intro:
+      "Tools I use and explore across development, deployment, and infrastructure.",
   },
 
   blogPage: {
     title: "Blog",
-    intro: "Notes on building things, learning as I go, and life beyond the terminal.",
+    intro:
+      "Notes on building things, learning as I go, and life beyond the terminal.",
+  },
+
+  linksPage: {
+    title: "Links",
+    intro: "Find me online, or get in touch.",
+    groups: [
+      {
+        title: "Social",
+        items: [
+          { key: "discord", label: "Discord" },
+          { key: "tiktok", label: "TikTok" },
+          { key: "facebook", label: "Facebook" },
+        ],
+      },
+      {
+        title: "Work",
+        items: [
+          { key: "linkedin", label: "LinkedIn" },
+          { key: "github", label: "GitHub" },
+          { key: "email", label: "Email" },
+          { key: "resume", label: "Resume" },
+        ],
+      },
+    ],
   },
 
   // Posts appear on Blog, Home and More about me. Leave body and date null until a post is

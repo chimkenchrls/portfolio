@@ -108,6 +108,30 @@
     return /^https:\/\/\S+$/i.test(trimmed) ? trimmed : null;
   };
 
+  const LINK_KEYS = ['discord', 'tiktok', 'facebook', 'linkedin', 'github', 'email', 'resume'];
+  const safeHttps = (value) => {
+    if (typeof value !== 'string') return null;
+    try {
+      const url = new URL(value.trim());
+      return url.protocol === 'https:' && url.hostname ? url.href : null;
+    } catch { return null; }
+  };
+  // Resolve a Links row from the same profile used by the rest of the site.
+  const profileLink = (profile = {}, key) => {
+    if (!profile || !LINK_KEYS.includes(key)) return { href: null, copy: null, detail: null };
+    const text = (value) => typeof value === 'string' && value.trim() ? value.trim() : null;
+    const email = text(profile.email);
+    const discord = text(profile.discord);
+    const href = key === 'email' ? (email ? safeUrl(`mailto:${email}`) : null)
+      : key === 'resume' ? safeResume(profile.resume)
+        : safeHttps(key === 'discord' ? profile.discordUrl : profile[key]);
+    const copy = key === 'discord' && !href ? discord : null;
+    const detail = key === 'discord' ? discord : key === 'email' ? email
+      : key === 'github' && text(profile.githubUsername) ? `@${profile.githubUsername}`
+        : key === 'resume' && href ? 'PDF' : null;
+    return { href, copy, detail };
+  };
+
   // How far down the page the reader is, 0–1 (0 when the page does not scroll).
   const scrollProgress = (scrollY, pageHeight, viewportHeight) => {
     const range = pageHeight - viewportHeight;
@@ -997,6 +1021,10 @@
       if (!isOptionalText(profile.discord)) errors.push('profile.discord: text or null');
       if (profile.resume != null && !safeResume(profile.resume)) errors.push('profile.resume: a ./assets/*.pdf path, an https URL, or null');
       if (!isOptionalText(profile.githubUsername)) errors.push('profile.githubUsername: text or null');
+      if (profile.siteName !== undefined && !isOptionalText(profile.siteName)) errors.push('profile.siteName: text or null');
+      ['discordUrl', 'tiktok', 'facebook'].forEach((key) => {
+        if (profile[key] !== undefined && profile[key] !== null && !safeHttps(profile[key])) errors.push(`profile.${key}: https URL or null`);
+      });
     }
 
     checkList('experience', data.experience, (e, p) => {
@@ -1094,6 +1122,19 @@
     if (data.blogPage !== undefined) {
       if (!data.blogPage || !isText(data.blogPage.title) || !isText(data.blogPage.intro)) errors.push('blogPage: title and intro text required');
     }
+    if (data.linksPage !== undefined) {
+      const page = data.linksPage || {};
+      if (!isText(page.title) || !isText(page.intro)) errors.push('linksPage: title and intro text required');
+      const keys = new Set();
+      checkList('linksPage.groups', page.groups, (group, p) => {
+        if (!isText(group.title)) errors.push(`${p}.title: required text`);
+        checkList(`${p}.items`, group.items, (item, name) => {
+          if (!LINK_KEYS.includes(item.key) || keys.has(item.key)) errors.push(`${name}.key: a unique profile link key required`);
+          keys.add(item.key);
+          if (!isText(item.label)) errors.push(`${name}.label: required text`);
+        });
+      });
+    }
     if (data.writing !== undefined) {
       const slugs = new Set();
       checkList('writing', data.writing, (post, p) => {
@@ -1128,7 +1169,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, joinParts, postDate, publishedPost, postReadTime,
+      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, joinParts, postDate, publishedPost, postReadTime, profileLink,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -1357,6 +1398,8 @@
      ========================================================================== */
 
   const render = (() => {
+    let siteName = null;
+    const setTitle = (title) => { document.title = [title, siteName].filter(Boolean).join(' • '); };
     const pendingEl = (tag, text) => el(tag, 'pending', text);
 
     const social = ({ profile = {} }) => {
@@ -1645,6 +1688,7 @@
     };
     // A case study page: a plain article on the page, no card.
     const caseArticle = (project, stack) => {
+      setTitle(project.title);
       const li = el('li', 'case-page');
       const back = el('a', 'case-back', '← All projects');
       back.href = './?view=projects';
@@ -1821,6 +1865,53 @@
     const projectsHeading = ({ projectsPage }) => pageHeading(projectsPage, 'projects-page-intro');
     const stackHeading = ({ stackPage }) => pageHeading(stackPage, 'stack-page-intro');
     const blogHeading = ({ blogPage }) => pageHeading(blogPage, 'blog-page-intro');
+    const linksHeading = ({ linksPage }) => {
+      const nodes = pageHeading(linksPage, 'links-page-intro');
+      const heading = nodes.find((node) => node.tagName === 'H1');
+      if (heading) heading.id = 'links-heading';
+      return nodes;
+    };
+    const profileLinks = ({ linksPage, profile = {} }) => (linksPage ? linksPage.groups : []).map((group, groupIndex) => {
+      const section = el('section', 'links-group');
+      const heading = el('h2', 'history-title', group.title);
+      heading.id = `links-group-${groupIndex}`;
+      section.setAttribute('aria-labelledby', heading.id);
+      const list = el('ul', 'links-list');
+      group.items.forEach((item) => {
+        const { href, copy, detail } = profileLink(profile, item.key);
+        const active = href || copy;
+        const row = el(href ? 'a' : copy ? 'button' : 'div', `profile-link${active ? '' : ' is-unavailable'}`);
+        if (href) {
+          row.href = href;
+          if (!href.startsWith('mailto:')) { row.target = '_blank'; row.rel = 'noopener noreferrer'; }
+        } else if (copy) {
+          row.type = 'button';
+          row.dataset.copy = copy;
+          row.setAttribute('aria-label', `Copy ${item.label} username ${copy}`);
+        }
+        const icon = el('span', 'link-icon');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.append(el('span', `icon icon-${item.key}`));
+        const words = el('span', 'link-copy');
+        words.append(el('span', 'link-label', item.label));
+        if (detail) {
+          const info = el('span', 'link-detail', detail);
+          if (copy) info.setAttribute('data-copy-label', '');
+          words.append(info);
+        }
+        row.append(icon, words);
+        if (active) {
+          const action = el('span', `icon icon-${copy ? 'copy' : 'external'}`);
+          action.setAttribute('aria-hidden', 'true');
+          row.append(action);
+        } else row.append(el('span', 'link-status', 'Coming soon'));
+        const li = el('li');
+        li.append(row);
+        list.append(li);
+      });
+      section.append(heading, list);
+      return section;
+    });
     const personal = ({ more, profile = {} }) => {
       if (!more) return [];
       const identity = el('div', 'personal-identity');
@@ -1844,7 +1935,7 @@
       body.append(...paragraphs(post.body));
       article.append(back, title, postTime(post), el('p', 'writing-lede', post.excerpt), body);
       item.append(article);
-      document.title = `${post.title} • CK`;
+      setTitle(post.title);
       return item;
     };
     const writingEntry = (post) => {
@@ -1875,7 +1966,7 @@
       return writingRows(posts);
     };
 
-    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, writing, blogHeading, blogPreview };
+    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, writing, blogHeading, blogPreview, linksHeading, profileLinks };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -1913,6 +2004,7 @@
       const errors = validateData(data);
       if (errors.length) console.warn('[portfolio] data.js problems:', errors);
       if (!data) { containers.forEach(showLoadError); return; }
+      siteName = data.profile && (data.profile.siteName || data.profile.name);
       applyEmail(data);
       applyResume(data);
       // The heading says which list this is: the selected few at home, or all of them.
@@ -1957,10 +2049,11 @@
           showLoadError(container);
         }
       });
-      if (root.classList.contains('view-more') && data.more) document.title = `${data.more.title} • CK`;
-      if (root.classList.contains('view-projects') && data.projectsPage) document.title = `${data.projectsPage.title} • CK`;
-      if (root.classList.contains('view-stack') && data.stackPage) document.title = `${data.stackPage.title} • CK`;
-      if (root.classList.contains('view-blog') && data.blogPage) document.title = `${data.blogPage.title} • CK`;
+      if (root.classList.contains('view-more') && data.more) setTitle(data.more.title);
+      if (root.classList.contains('view-projects') && data.projectsPage) setTitle(data.projectsPage.title);
+      if (root.classList.contains('view-stack') && data.stackPage) setTitle(data.stackPage.title);
+      if (root.classList.contains('view-blog') && data.blogPage) setTitle(data.blogPage.title);
+      if (root.classList.contains('view-links') && data.linksPage) setTitle(data.linksPage.title);
     };
 
     return { init };

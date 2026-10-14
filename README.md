@@ -52,6 +52,8 @@ For live AI chat, copy `.env.example` to `.env`, add `GEMINI_API_KEY`, and run `
 
 All content lives in [`assets/data.js`](./assets/data.js). Use `null` for anything that is not ready yet; the page shows a "coming soon" state in its place.
 
+**Links** (`./?view=links`) sits above Blog in the sidebar. `linksPage` defines the heading and the Social/Work groups; each row reads its destination from `profile`. Set `profile.discordUrl`, `profile.tiktok` and `profile.facebook` to HTTPS profile URLs (or `null`). Discord copies `profile.discord` while its URL is missing. LinkedIn, GitHub, email and resume reuse the existing profile fields; missing destinations show a non-clickable "Coming soon" row.
+
 The **More about me** page (`./?view=more`) opens with `more.title`, the centered Outside the IDE photo deck, the profile name and role, and `more.intro`. Full-width Experience and Education rows reuse the same content as Home, followed by the `writing` list and terminal.
 
 **Blog** (`./?view=blog`) sits below Home in the sidebar, with its title and introduction in `blogPage`. Home previews the first three entries in `writing`; Blog and More about me show the full list. Each entry has a unique lowercase `slug`, `title`, `excerpt`, `date` and `body`. Leave `date` and `body` as `null` for an upcoming post; it has no link until both are filled. To publish, set a real `YYYY-MM-DD` date and the finished body text (separate paragraphs with blank lines). The post opens at `./?view=post&p=<slug>` with a back link to Blog. Reading time is estimated from the body at 200 words per minute. Text is rendered literally, without HTML or Markdown. Unknown or unfinished post URLs show Blog.

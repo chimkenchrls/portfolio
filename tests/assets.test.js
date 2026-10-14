@@ -201,11 +201,11 @@ test('the GitHub panel reserves its space instead of popping in', () => {
 
 test('Projects comes before Stack, in the page and in the nav', () => {
   const html = read('index.html');
-  const order = ['home', 'about', 'projects', 'stack', 'certifications', 'blog', 'outside', 'personal', 'background', 'writing', 'contact'];
+  const order = ['home', 'about', 'projects', 'stack', 'certifications', 'links', 'blog', 'outside', 'personal', 'background', 'writing', 'contact'];
   const found = [...html.matchAll(/<section[^>]*\sid="([\w-]+)"/g)].map((m) => m[1]);
   assert.deepEqual(found, order);
   const links = [...html.matchAll(/class="nav-link"\s+href="\.\/([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(links, ['#home', '?view=blog', '?view=more', '?view=projects', '?view=stack'], 'Menu: Home, Blog. Explore: More about me, Projects, Stack');
+  assert.deepEqual(links, ['#home', '?view=links', '?view=blog', '?view=more', '?view=projects', '?view=stack'], 'Menu: Home, Links, Blog. Explore: More about me, Projects, Stack');
 });
 
 test('sidebar footer: no status line or visitor counter; a chimken score row instead', () => {

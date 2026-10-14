@@ -271,6 +271,13 @@ dd {
 .icon-blog {
   --icon: url("./assets/icons/blog.svg");
 }
+.icon-links { --icon: url("./assets/icons/links.svg"); }
+.icon-discord { --icon: url("./assets/icons/discord.svg"); }
+.icon-tiktok { --icon: url("./assets/icons/tiktok.svg"); }
+.icon-facebook { --icon: url("./assets/icons/facebook.svg"); }
+.icon-email { --icon: url("./assets/icons/email.svg"); }
+.icon-resume { --icon: url("./assets/icons/resume.svg"); }
+.icon-external { --icon: url("./assets/icons/external.svg"); }
 .icon-about {
   --icon: url("./assets/icons/about.svg");
 }
@@ -1221,19 +1228,22 @@ html.view-stack .github-panel {
 }
 .projects-page-header,
 .stack-page-header,
-.blog-page-header {
+.blog-page-header,
+.links-page-header {
   display: none;
 }
 html.view-projects .projects-page-header,
 html.view-stack .stack-page-header,
-html.view-blog .blog-page-header {
+html.view-blog .blog-page-header,
+html.view-links .links-page-header {
   display: block;
   padding-top: 16px;
   margin-bottom: 40px;
 }
 .projects-page-intro,
 .stack-page-intro,
-.blog-page-intro {
+.blog-page-intro,
+.links-page-intro {
   font-size: 17px;
   line-height: 1.7;
   color: var(--fg-muted);
@@ -1346,8 +1356,10 @@ html.view-stack .main > .section:not(#stack),
 html.view-more .main > .section:not(#personal):not(#background):not(#writing):not(#outside):not(#contact),
 html.view-post .main > .section:not(#writing),
 html.view-blog .main > .section:not(#writing),
+html.view-links .main > .section:not(#links),
 html.view-more .contact-form,
 html.has-cover #personal,
+html.has-cover #links,
 html.has-cover #background,
 html.has-cover #writing,
 html.has-cover #outside,
@@ -1373,6 +1385,7 @@ html.view-post #writing .divider {
   clip-path: inset(50%);
 }
 html.view-more .nav-link[data-view="more"],
+html.view-links .nav-link[data-view="links"],
 html.view-blog .nav-link[data-view="blog"],
 html.view-post .nav-link[data-view="blog"],
 html.view-projects .nav-link[data-view="projects"],
@@ -2213,6 +2226,75 @@ html.view-more .outside-intro {
 }
 .writing-list {
   list-style: none;
+}
+/* Links — flat, grouped rows using the existing profile as their source. */
+.links-groups {
+  display: grid;
+  gap: 48px;
+}
+.links-list {
+  list-style: none;
+  border-top: 1px solid var(--border);
+}
+.links-list > li {
+  border-bottom: 1px solid var(--border);
+}
+.profile-link {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  width: 100%;
+  min-height: 76px;
+  padding: 16px 12px;
+  border: 0;
+  background: none;
+  color: var(--fg);
+  text-align: left;
+  text-decoration: none;
+}
+.profile-link:focus-visible {
+  outline-offset: -2px;
+}
+.link-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--bg-alt);
+}
+.link-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.link-label {
+  font-size: 16px;
+  font-weight: 500;
+}
+.link-detail {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+.link-status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+.profile-link > .icon {
+  color: var(--fg-muted);
+}
+.profile-link.is-unavailable {
+  color: var(--fg-muted);
+}
+@media (hover: hover) and (pointer: fine) {
+  a.profile-link:hover,
+  button.profile-link:hover {
+    background: var(--bg-alt);
+  }
 }
 .blog-more {
   margin-top: 20px;

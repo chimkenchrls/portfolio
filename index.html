@@ -97,7 +97,7 @@
         }
         // The Projects, Stack and More about me pages (?view=projects|stack|more)
         // are this same file showing only their own sections; no cover, no intro.
-        var view = /[?&]view=(projects|more|stack|case|post|blog)(&|$)/.exec(window.location.search);
+        var view = /[?&]view=(projects|more|stack|case|post|blog|links)(&|$)/.exec(window.location.search);
         if (view) {
           root.classList.add("view-" + view[1]);
           return;
@@ -198,6 +198,16 @@
               title="Home (1)"
               ><span class="icon icon-home" aria-hidden="true"></span
               ><span class="nav-text">Home</span></a
+            >
+          </li>
+          <li>
+            <a
+              class="nav-link"
+              href="./?view=links"
+              data-view="links"
+              title="Links"
+              ><span class="icon icon-links" aria-hidden="true"></span
+              ><span class="nav-text">Links</span></a
             >
           </li>
           <li>
@@ -472,6 +482,11 @@
       </section>
 
       <header class="more-page-header" data-render="moreHeading"></header>
+
+      <section class="section" id="links" aria-labelledby="links-heading">
+        <header class="links-page-header" data-render="linksHeading"></header>
+        <div class="links-groups" data-render="profileLinks"></div>
+      </section>
 
       <section class="section" id="blog" aria-labelledby="blog-heading">
         <div class="divider">
