@@ -22,6 +22,17 @@
 
   const PROJECT_STATUSES = ['done', 'in-progress', 'coming-soon'];
   const CERTIFICATION_STATUSES = ['in-progress', 'completed'];
+  const POST_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+  // Publication dates stay the same in every visitor's time zone.
+  const postDate = (value) => {
+    if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const date = new Date(`${value}T00:00:00Z`);
+    if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) return null;
+    return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(date);
+  };
+  const publishedPost = (post) => Boolean(post && POST_SLUG.test(post.slug) && postDate(post.date)
+    && typeof post.body === 'string' && post.body.trim());
   const CERTIFICATE_PHOTO_PATH = /^\.\/assets\/certifications\/[\w.-]+\.(jpe?g|png|webp)$/;
   const CERTIFICATE_LOGO_PATH = /^\.\/assets\/certifications\/[\w.-]+\.(svg|jpe?g|png|webp)$/;
 
@@ -1062,6 +1073,20 @@
       if (c.link !== undefined && !isOptionalUrl(c.link)) errors.push(`${p}.link: https URL or null`);
     });
     if (!isText(data.certificationsPending)) errors.push('certificationsPending: required text');
+    if (data.more !== undefined) {
+      if (!data.more || !isText(data.more.title) || !isText(data.more.intro)) errors.push('more: title and intro text required');
+    }
+    if (data.writing !== undefined) {
+      const slugs = new Set();
+      checkList('writing', data.writing, (post, p) => {
+        if (typeof post.slug !== 'string' || !POST_SLUG.test(post.slug) || slugs.has(post.slug)) errors.push(`${p}.slug: unique lowercase slug required`);
+        slugs.add(post.slug);
+        if (!isText(post.title) || !isText(post.excerpt)) errors.push(`${p}: title and excerpt text required`);
+        if (!isOptionalText(post.body)) errors.push(`${p}.body: text or null`);
+        if (post.date !== null && !postDate(post.date)) errors.push(`${p}.date: YYYY-MM-DD or null`);
+        if (isText(post.body) && !postDate(post.date)) errors.push(`${p}: a finished post needs a publication date`);
+      });
+    }
     if (data.outsideIntro !== undefined && !isText(data.outsideIntro)) errors.push('outsideIntro: text');
     if (data.outside !== undefined) {
       checkList('outside', data.outside, (item, p) => {
@@ -1084,7 +1109,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, joinParts,
+      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, joinParts, postDate, publishedPost,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -1764,7 +1789,58 @@
       return li;
     });
 
-    const renderers = { social, experience, education, stack, projects, certifications, outside };
+    const paragraphs = (text) => typeof text === 'string'
+      ? text.split(/\n\s*\n/).filter((part) => part.trim()).map((part) => el('p', null, part.trim())) : [];
+    const personal = ({ more }) => {
+      if (!more) return [];
+      const title = el('h1', 'personal-title', more.title);
+      title.id = 'personal-heading';
+      return [title, ...paragraphs(more.intro)];
+    };
+    const postTime = (post) => {
+      const time = el('time', 'writing-date', postDate(post.date));
+      time.dateTime = post.date;
+      return time;
+    };
+    const postArticle = (post) => {
+      const item = el('li', 'writing-page');
+      const article = el('article');
+      const back = el('a', 'case-back', '← More about me');
+      back.href = './?view=more#writing';
+      const title = el('h1', 'writing-name', post.title);
+      const body = el('div', 'writing-body');
+      body.append(...paragraphs(post.body));
+      article.append(back, title, postTime(post), el('p', 'writing-lede', post.excerpt), body);
+      item.append(article);
+      document.title = `${post.title} • CK`;
+      return item;
+    };
+    const writing = ({ writing: posts = [] }) => {
+      if (root.classList.contains('view-post')) {
+        const slug = new URLSearchParams(window.location.search).get('p');
+        const post = posts.find((entry) => entry.slug === slug && publishedPost(entry));
+        if (post) return [postArticle(post)];
+        // Unwritten and unknown posts return to the Writing list.
+        root.classList.replace('view-post', 'view-more');
+      }
+      if (!posts.length) return [pendingEl('li', 'No posts yet.')];
+      return posts.map((post) => {
+        const ready = publishedPost(post);
+        const item = el('li', `writing-entry${ready ? '' : ' is-upcoming'}`);
+        const heading = el('h3', 'writing-title');
+        if (ready) {
+          const link = el('a', 'writing-link', post.title);
+          link.href = `./?view=post&p=${post.slug}`;
+          heading.append(link);
+        } else heading.textContent = post.title;
+        const copy = el('div', 'writing-copy');
+        copy.append(heading, el('p', 'writing-excerpt', post.excerpt));
+        item.append(copy, ready ? postTime(post) : el('span', 'writing-date', 'Coming soon'));
+        return item;
+      });
+    };
+
+    const renderers = { social, experience, education, stack, projects, certifications, outside, personal, writing };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -1812,7 +1888,7 @@
         $('.divider-index', heading).textContent = index;
         if (label) heading.lastChild.textContent = ` ${label} `;
       };
-      if (root.classList.contains('view-more')) { head('outside', '01 //'); head('contact', '02 //', 'Terminal'); }
+      if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '02 //'); head('contact', '03 //', 'Terminal'); }
       else if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       else if (root.classList.contains('view-stack')) head('stack', '01 //');
       else head('contact', '06 //');
@@ -1846,6 +1922,7 @@
           showLoadError(container);
         }
       });
+      if (root.classList.contains('view-more') && data.more) document.title = `${data.more.title} • CK`;
     };
 
     return { init };
