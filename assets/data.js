@@ -445,6 +445,10 @@ const PORTFOLIO_DATA = {
   // (an .mp4 plus a same-named .webm for browsers without H.264).
   outsideIntro:
     "Life away from the terminal. The places, things, and little moments that recharge me between builds.",
+  outsideHint: {
+    action: "Tap or click the stack to shuffle",
+    controls: "Swipe · ← → keys · hold for color",
+  },
   outside: [
     {
       photo: "./assets/outside/outside-1.jpg",

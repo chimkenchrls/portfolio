@@ -19,7 +19,7 @@ with sync_playwright() as pw:
     # --- desktop -------------------------------------------------------------
     ctx, p, errors = new_page(b, permissions=["clipboard-read", "clipboard-write"], url=MORE)
     order = p.evaluate("[...document.querySelectorAll('main section')].map(s => s.id)")
-    check("More about me orders photos, intro, writing, then terminal", order[-4:] == ["outside", "personal", "writing", "contact"], str(order))
+    check("More about me orders photos, intro, background, writing, then terminal", order[-5:] == ["outside", "personal", "background", "writing", "contact"], str(order))
     more_link = p.locator('.nav-link[data-view="more"]')
     check("the terminal is on the More about me page, linked from the sidebar, no shortcut badges", more_link.inner_text().split() == ["More", "about", "me"] and p.is_visible(".terminal") and p.locator("#sidebar kbd").count() == 0)
     check("intro: nothing is printed before the terminal is on screen", EMAIL not in screen(p), screen(p))

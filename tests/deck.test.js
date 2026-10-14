@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { cardDepth, cardStyle, cardTilt, deckStep, gestureAction } = require('../script.js');
+const { cardDepth, cardStyle, cardTilt, fanCardStyle, deckStep, gestureAction } = require('../script.js');
 
 test('cardDepth puts the current card on top and the rest behind in order', () => {
   assert.deepEqual([0, 1, 2, 3].map((i) => cardDepth(i, 0, 4)), [0, 1, 2, 3]);
@@ -39,4 +39,27 @@ test('gestureAction tells a tap from a swipe from a scroll', () => {
   assert.equal(gestureAction(80, -12), 'prev');
   assert.equal(gestureAction(30, 5), null, 'too short for a swipe, too long for a tap');
   assert.equal(gestureAction(50, 120), null, 'mostly vertical = page scroll');
+});
+
+test('the fan centers the active photo and shows three neighbors on either side', () => {
+  const styles = Array.from({ length: 8 }, (_, i) => fanCardStyle(i, 0, 8));
+  assert.deepEqual(styles[0], { x: 0, y: 0, rotate: 0, scale: 1, z: 100, visible: true });
+  assert.equal(styles.filter((style) => style.visible).length, 7);
+  for (let i = 1; i <= 3; i += 1) {
+    const right = styles[i];
+    const left = styles[8 - i];
+    assert.equal(right.x, -left.x);
+    assert.equal(right.rotate, -left.rotate);
+    assert.equal(right.y, left.y);
+    assert.equal(right.scale, left.scale);
+    assert.equal(right.z, left.z);
+    assert.ok(right.z < styles[i - 1].z && right.scale < styles[i - 1].scale);
+  }
+});
+
+test('the fan wraps at both ends and handles a short photo list', () => {
+  assert.equal(fanCardStyle(0, 7, 8).x, 17);
+  assert.equal(fanCardStyle(7, 0, 8).x, -17);
+  assert.equal(fanCardStyle(0, 0, 1).z, 100);
+  assert.equal(fanCardStyle(1, 0, 2).visible, true);
 });

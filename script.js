@@ -444,6 +444,13 @@
   const cardStyle = (depth, i) => (depth === 0
     ? { rotate: 0, y: 0, scale: 1, z: 100, visible: true }
     : { rotate: cardTilt(i), y: depth * 10, scale: 1 - depth * 0.04, z: 100 - depth, visible: depth <= 2 });
+  // Three neighbors on either side. Percentages scale with the card width.
+  const fanCardStyle = (i, index, count) => {
+    const depth = cardDepth(i, index, count);
+    const offset = depth > Math.floor(count / 2) ? depth - count : depth;
+    const distance = Math.abs(offset);
+    return { x: offset * 17, y: distance ? -distance * 2.5 : 0, rotate: offset * 7, scale: 1 - distance * 0.06, z: 100 - distance, visible: distance <= 3 };
+  };
 
   // A pointer gesture: small movement = tap, long horizontal = swipe, else ignore (scroll).
   const gestureAction = (dx, dy) => {
@@ -1088,6 +1095,7 @@
       });
     }
     if (data.outsideIntro !== undefined && !isText(data.outsideIntro)) errors.push('outsideIntro: text');
+    if (data.outsideHint !== undefined && (!data.outsideHint || !isText(data.outsideHint.action) || !isText(data.outsideHint.controls))) errors.push('outsideHint: action and controls text required');
     if (data.outside !== undefined) {
       checkList('outside', data.outside, (item, p) => {
         if (!/^\.\/assets\/outside\/[\w.-]+\.(svg|jpe?g|png|webp)$/.test(String(item.photo))) {
@@ -1117,7 +1125,7 @@
       obstaclePool, spawnObstacle, hitsObstacle, milestone,
       chimkenView, buildSky, skyOffset, starAlpha,
       gameOverSummary, passedRival, bragText, scoreRow, spawnSparks, stepSparks,
-      cardDepth, deckStep, cardTilt, cardStyle, gestureAction,
+      cardDepth, deckStep, cardTilt, cardStyle, fanCardStyle, gestureAction,
       TERMINAL_COMMANDS, runCommand, completeCommand, historyStep, mailtoLink,
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
@@ -1791,11 +1799,20 @@
 
     const paragraphs = (text) => typeof text === 'string'
       ? text.split(/\n\s*\n/).filter((part) => part.trim()).map((part) => el('p', null, part.trim())) : [];
-    const personal = ({ more }) => {
+    const moreHeading = ({ more }) => {
       if (!more) return [];
+      const back = el('a', 'case-back', '← Home');
+      back.href = './';
       const title = el('h1', 'personal-title', more.title);
-      title.id = 'personal-heading';
-      return [title, ...paragraphs(more.intro)];
+      return [back, title];
+    };
+    const personal = ({ more, profile = {} }) => {
+      if (!more) return [];
+      const identity = el('div', 'personal-identity');
+      const name = el('h2', 'personal-name', profile.name);
+      name.id = 'personal-heading';
+      identity.append(name, el('p', 'personal-role', profile.title));
+      return [identity, ...paragraphs(more.intro)];
     };
     const postTime = (post) => {
       const time = el('time', 'writing-date', postDate(post.date));
@@ -1840,7 +1857,7 @@
       });
     };
 
-    const renderers = { social, experience, education, stack, projects, certifications, outside, personal, writing };
+    const renderers = { social, experience, education, stack, projects, certifications, outside, moreHeading, personal, writing };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -2826,6 +2843,29 @@
       else intro.hidden = true;
 
       const counter = $('.deck-count', section);
+      const fan = root.classList.contains('view-more');
+      deck.classList.toggle('is-fan', fan);
+      const dots = [];
+      if (fan) {
+        counter.classList.add('visually-hidden');
+        const choices = el('div', 'deck-dots');
+        choices.setAttribute('role', 'group');
+        choices.setAttribute('aria-label', 'Choose a photo');
+        cards.forEach((card, i) => {
+          const button = el('button', 'deck-dot');
+          button.type = 'button';
+          button.setAttribute('aria-label', `Show photo ${i + 1} of ${cards.length}`);
+          button.append(el('span'));
+          button.addEventListener('click', () => select(i));
+          dots.push(button);
+          choices.append(button);
+        });
+        deck.after(choices);
+        if (data.outsideHint) {
+          const hint = $('.deck-hint', section);
+          hint.replaceChildren(el('span', 'deck-hint-action', data.outsideHint.action), el('br'), el('span', 'deck-hint-controls', data.outsideHint.controls));
+        }
+      }
       let index = 0;
       let busy = false;
       let inView = false;
@@ -2851,18 +2891,31 @@
       const layout = () => {
         cards.forEach((card, i) => {
           const depth = cardDepth(i, index, cards.length);
-          const style = cardStyle(depth, i);
-          card.style.transform = `translateY(${style.y}px) rotate(${style.rotate}deg) scale(${style.scale})`;
+          const style = fan ? fanCardStyle(i, index, cards.length) : cardStyle(depth, i);
+          card.style.transform = fan
+            ? `translate(calc(${style.x}% * var(--fan-spread, 1)), ${style.y}%) rotate(${style.rotate}deg) scale(${style.scale})`
+            : `translateY(${style.y}px) rotate(${style.rotate}deg) scale(${style.scale})`;
           card.style.zIndex = String(style.z);
           card.style.opacity = style.visible ? '1' : '0';
           card.setAttribute('aria-hidden', depth === 0 ? 'false' : 'true');
         });
         counter.textContent = `${index + 1} / ${cards.length}`;
+        dots.forEach((dot, i) => dot.setAttribute('aria-pressed', String(i === index)));
         syncVideos();
       };
 
+      const select = (next) => {
+        if (busy || next === index) return;
+        index = next;
+        layout();
+        if (!prefersReducedMotion()) {
+          busy = true;
+          window.setTimeout(() => { busy = false; }, LEAVE_MS);
+        }
+      };
       const go = (direction) => {
         if (busy || cards.length < 2) return;
+        if (fan) { select(deckStep(index, cards.length, direction)); return; }
         const top = cards[index];
         const finish = () => {
           top.classList.remove('is-leaving', 'is-leaving-back');

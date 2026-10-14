@@ -1321,10 +1321,11 @@ html:not(.view-projects):not(.view-case) .project-list {
 html.view-projects .main > .section:not(#projects),
 html.view-case .main > .section:not(#projects),
 html.view-stack .main > .section:not(#stack),
-html.view-more .main > .section:not(#personal):not(#writing):not(#outside):not(#contact),
+html.view-more .main > .section:not(#personal):not(#background):not(#writing):not(#outside):not(#contact),
 html.view-post .main > .section:not(#writing),
 html.view-more .contact-form,
 html.has-cover #personal,
+html.has-cover #background,
 html.has-cover #writing,
 html.has-cover #outside,
 html.has-cover #contact :is(.contact-intro, .terminal, .terminal-chips) {
@@ -2078,8 +2079,33 @@ html.view-stack .nav-link[data-view="stack"] {
 }
 
 /* More about me — personal introduction and a flat list of writing. */
+.more-page-header {
+  display: none;
+}
+html.view-more .more-page-header {
+  display: block;
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
 html.view-more #outside {
   padding-bottom: clamp(24px, 4vw, 40px);
+}
+html.view-more .outside {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+html.view-more .deck-column {
+  order: -1;
+  width: min(760px, 100%);
+  margin-inline: auto;
+}
+html.view-more .outside-text {
+  text-align: center;
+}
+html.view-more .outside-intro {
+  margin-inline: auto;
+  font-size: 14px;
+  color: var(--fg-muted);
 }
 .personal-intro {
   padding-top: 16px;
@@ -2092,6 +2118,20 @@ html.view-more #outside {
   line-height: 1.2;
   letter-spacing: -0.02em;
 }
+.personal-identity {
+  margin-bottom: 24px;
+}
+.personal-name {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+.personal-intro .personal-role {
+  margin-top: 4px;
+  font-size: 16px;
+  color: var(--fg-muted);
+}
 .personal-intro p {
   font-size: 17px;
   line-height: 1.7;
@@ -2099,6 +2139,50 @@ html.view-more #outside {
 .personal-intro p + p {
   margin-top: 16px;
   color: var(--fg-muted);
+}
+.more-background {
+  display: grid;
+  gap: 44px;
+}
+.history-title {
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg-muted);
+}
+.more-background .rows > li {
+  padding-block: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.more-background .rows > li:first-child {
+  border-top: 1px solid var(--border);
+}
+.more-background .row-title {
+  font-size: 16px;
+}
+.more-background :is(.row-sub, .row-bullets) {
+  font-size: 14px;
+  line-height: 1.7;
+}
+.more-background .row-bullets {
+  margin-top: 10px;
+}
+.more-background .coursework-label {
+  font-size: 11px;
+}
+.more-background .coursework {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+}
+.more-background .coursework .tag {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.6;
 }
 .writing-list {
   list-style: none;
@@ -2279,6 +2363,59 @@ html.view-more #outside {
 .deck-card.is-leaving-back {
   transform: translateX(-115%) rotate(-14deg) !important;
   opacity: 0 !important;
+}
+/* A broad fan. The stage reserves room for tilted neighbors and their shadows. */
+.deck.is-fan {
+  aspect-ratio: 7 / 4;
+  margin-bottom: 12px;
+}
+.deck.is-fan .deck-card {
+  inset: 12px auto auto 29%;
+  width: 42%;
+  aspect-ratio: 4 / 5;
+  padding: 4px;
+  border-radius: 18px;
+  transform-origin: 50% 80%;
+  border-color: color-mix(in srgb, var(--fg) 24%, var(--border));
+}
+.deck.is-fan .deck-card :is(img, video) {
+  border-radius: 13px;
+}
+.deck-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.deck-dot {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+}
+.deck-dot span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--fg-muted);
+  opacity: 0.45;
+}
+.deck-dot[aria-pressed="true"] span {
+  width: 18px;
+  background: var(--fg);
+  opacity: 1;
+}
+.deck-dot:hover span {
+  opacity: 1;
+}
+.deck-hint-action {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-family: var(--font-sans);
+  font-size: 13px;
 }
 @media (prefers-reduced-motion: reduce) {
   .deck-card,
@@ -3317,6 +3454,25 @@ html.at-cover:not(.intro-play) .intro-hint {
     padding: 28px 16px 24px;
   }
   .writing-entry {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html.view-more .outside {
+    padding-inline: 0;
+  }
+  .deck.is-fan {
+    --fan-spread: 0.75;
+    aspect-ratio: 3 / 2;
+  }
+  .deck.is-fan .deck-card {
+    left: 27%;
+    width: 46%;
+    padding: 3px;
+    border-radius: 12px;
+  }
+  .deck.is-fan .deck-card :is(img, video) {
+    border-radius: 8px;
+  }
+  .more-background .coursework {
     grid-template-columns: minmax(0, 1fr);
   }
   .section {
