@@ -3935,6 +3935,12 @@ html.at-cover:not(.intro-play) .intro-hint {
     margin-left: 0;
     padding: 28px 16px 24px;
   }
+  html:is(.view-more, .view-projects, .view-stack, .view-blog, .view-links, .view-guestbook, .view-case, .view-post) .main {
+    padding-top: 16px;
+  }
+  html .main :is(.more-page-header, .projects-page-header, .stack-page-header, .blog-page-header, .links-page-header) {
+    padding-top: 0;
+  }
   .writing-entry.has-thumbnail {
     grid-template-columns: 88px minmax(0, 1fr);
     gap: 16px;
