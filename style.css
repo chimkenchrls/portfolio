@@ -3470,6 +3470,7 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   padding: 0;
   color: var(--fg);
   background: var(--bg);
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
