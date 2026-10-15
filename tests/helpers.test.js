@@ -8,6 +8,19 @@ const {
 const close = (actual, expected, eps = 1e-6) =>
   assert.ok(Math.abs(actual - expected) < eps, `${actual} !≈ ${expected}`);
 
+test('in-place routes stay in this document and preserve relative deployment paths', () => {
+  const { portfolioRoute } = require('../script.js');
+  const data = require('../assets/data.js');
+  const base = 'https://example.com/portfolio/?view=more';
+  assert.deepEqual(portfolioRoute('./?view=stack', base, data), { view: 'stack', slug: null, hash: '', url: 'https://example.com/portfolio/?view=stack' });
+  assert.equal(portfolioRoute('./#contact', base, data).view, 'home');
+  assert.equal(portfolioRoute('./?view=case&p=ambiancy', base, data).slug, 'ambiancy');
+  assert.equal(portfolioRoute('./?view=case&p=unknown', base, data).view, 'projects');
+  assert.equal(portfolioRoute('./?view=post&p=unknown', base, data).view, 'blog');
+  for (const href of ['https://elsewhere.example/', './assets/resume.pdf', '../', './?view=unknown', 'mailto:a@example.com', 'javascript:alert(1)']) assert.equal(portfolioRoute(href, base, data), null, href);
+  assert.equal(portfolioRoute('./index.html?view=links', base, data).view, 'links');
+});
+
 test('project previews follow below the pointer and flip clear of viewport edges', () => {
   const { projectPreviewPosition } = require('../script.js');
   const size = { width: 320, height: 236, viewportWidth: 1280, viewportHeight: 900 };

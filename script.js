@@ -857,6 +857,21 @@
   };
   // A project's anchor on the all-projects page, e.g. "project-pakisuyo-express".
   const projectSlug = (title) => `project-${String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+  // Only this document's public views are eligible for in-place navigation.
+  const portfolioRoute = (href, base, data = {}) => {
+    let url, current;
+    try { url = new URL(href, base); current = new URL(base); } catch { return null; }
+    const directory = current.pathname.replace(/index\.html$/, '');
+    if (url.origin !== current.origin || url.username || url.password
+      || ![current.pathname, directory, `${directory}index.html`].includes(url.pathname)) return null;
+    let view = url.searchParams.get('view') || 'home';
+    if (!['home', 'more', 'projects', 'stack', 'case', 'post', 'blog', 'links', 'guestbook'].includes(view)) return null;
+    let slug = url.searchParams.get('p');
+    if (view === 'case' && !(data.projects || []).some((project) => project.caseStudy && projectSlug(project.title) === `project-${slug}`)) view = 'projects';
+    if (view === 'post' && !(data.writing || []).some((post) => post.slug === slug && publishedPost(post))) view = 'blog';
+    if (view !== 'case' && view !== 'post') slug = null;
+    return { view, slug, hash: url.hash, url: url.href };
+  };
   // Each poke gets a different face; the order loops.
   const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
   const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
@@ -1235,7 +1250,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition,
+      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
@@ -1451,6 +1466,8 @@
      ========================================================================== */
 
   const render = (() => {
+    const homeTitle = document.title;
+    const variants = new Map();
     let siteName = null;
     const setTitle = (title) => { document.title = [title, siteName].filter(Boolean).join(' • '); };
     const pendingEl = (tag, text) => el(tag, 'pending', text);
@@ -2199,6 +2216,45 @@
       });
     };
 
+    const modeFor = (name) => {
+      const slug = new URLSearchParams(window.location.search).get('p');
+      if (name === 'projects') return root.classList.contains('view-case') ? `case:${slug}` : root.classList.contains('view-projects') ? 'all' : 'home';
+      if (name === 'stack') return root.classList.contains('view-stack') ? 'sheet' : 'home';
+      if (name === 'writing') return root.classList.contains('view-post') ? `post:${slug}` : 'list';
+      return /\bview-/.test(root.className) ? 'hidden' : 'home';
+    };
+    const headings = (data) => {
+      const head = (id, index, label) => {
+        const heading = $(`#${id}-heading`);
+        if (!heading) return;
+        $('.divider-index', heading).textContent = index;
+        heading.lastChild.textContent = ` ${label} `;
+      };
+      head('projects', '03 //', 'Projects');
+      head('stack', '04 //', 'Stack');
+      head('contact', '06 //', 'Get in touch');
+      if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //', 'Outside the IDE'); head('writing', '02 //', 'Writing'); head('contact', '03 //', 'Terminal'); }
+      if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
+      if (root.classList.contains('view-stack')) head('stack', '01 //', 'Stack');
+      const page = Object.entries({ more: data.more, projects: data.projectsPage, stack: data.stackPage, blog: data.blogPage, links: data.linksPage, guestbook: data.guestbook })
+        .find(([view]) => root.classList.contains(`view-${view}`));
+      const slug = new URLSearchParams(window.location.search).get('p');
+      if (root.classList.contains('view-case')) setTitle(data.projects.find((project) => projectSlug(project.title) === `project-${slug}`).title);
+      else if (root.classList.contains('view-post')) setTitle(data.writing.find((post) => post.slug === slug).title);
+      else if (page && page[1]) setTitle(page[1].title);
+      else document.title = homeTitle;
+    };
+    const changeView = (data) => {
+      variants.forEach((entry, container) => {
+        const mode = modeFor(container.dataset.render);
+        if (entry.mode === mode) return;
+        entry.cache.set(entry.mode, [...container.childNodes]);
+        if (!entry.cache.has(mode)) entry.cache.set(mode, renderers[container.dataset.render](data));
+        container.replaceChildren(...entry.cache.get(mode));
+        entry.mode = mode;
+      });
+      headings(data);
+    };
     const init = (data) => {
       const containers = $$('[data-render]');
       const errors = validateData(data);
@@ -2215,18 +2271,6 @@
       applyEmail(data);
       applyResume(data);
       applyNavCounts(data);
-      // The heading says which list this is: the selected few at home, or all of them.
-      // Each page numbers and names only the sections it shows.
-      const head = (id, index, label) => {
-        const heading = $(`#${id}-heading`);
-        if (!heading) return;
-        $('.divider-index', heading).textContent = index;
-        if (label) heading.lastChild.textContent = ` ${label} `;
-      };
-      if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //'); head('writing', '02 //'); head('contact', '03 //', 'Terminal'); }
-      else if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
-      else if (root.classList.contains('view-stack')) head('stack', '01 //');
-      else head('contact', '06 //');
       containers.forEach((container) => {
         const build = renderers[container.dataset.render];
         if (!build) return;
@@ -2242,15 +2286,13 @@
           showLoadError(container);
         }
       });
-      if (root.classList.contains('view-more') && data.more) setTitle(data.more.title);
-      if (root.classList.contains('view-projects') && data.projectsPage) setTitle(data.projectsPage.title);
-      if (root.classList.contains('view-stack') && data.stackPage) setTitle(data.stackPage.title);
-      if (root.classList.contains('view-blog') && data.blogPage) setTitle(data.blogPage.title);
-      if (root.classList.contains('view-links') && data.linksPage) setTitle(data.linksPage.title);
-      if (root.classList.contains('view-guestbook') && data.guestbook) setTitle(data.guestbook.title);
+      $$('[data-render="projects"], [data-render="stack"], [data-render="writing"], [data-render="projectListHeading"]').forEach((container) => {
+        variants.set(container, { mode: modeFor(container.dataset.render), cache: new Map() });
+      });
+      headings(data);
     };
 
-    return { init };
+    return { init, changeView };
   })();
 
   /* ==========================================================================
@@ -2404,9 +2446,9 @@
       const target = document.getElementById(id);
       if (!target) return;
       // A section this page does not show (the Projects and More about me pages show only their own): go home for it.
-      if (target.offsetParent === null && /\bview-/.test(root.className)) { window.location.href = `./#${id}`; return; }
+      if (target.offsetParent === null && /\bview-/.test(root.className)) { navigation.go(`./#${id}`); return; }
       target.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
-      history.replaceState(null, '', `#${id}`);
+      history.replaceState(history.state, '', `#${id}`);
       setActive(id);
     };
 
@@ -2414,8 +2456,8 @@
     const atBottom = () => window.innerHeight + window.scrollY >= root.scrollHeight - 4;
     const lastId = SECTIONS[SECTIONS.length - 1].id;
 
-    const init = () => {
-      // On the Projects, Stack and More about me pages the sidebar marks the page itself, not Home.
+    const sync = () => {
+      links.forEach((link) => link.classList.remove('is-active'));
       if (/\bview-/.test(root.className)) {
         links.forEach((link) => {
           const view = link.dataset.view;
@@ -2425,11 +2467,13 @@
           if (active) link.setAttribute('aria-current', 'page');
           else link.removeAttribute('aria-current');
         });
-        return;
-      }
-      setActive(SECTIONS[0].id);
+      } else setActive(SECTIONS[0].id);
+    };
+    const init = () => {
+      sync();
       if (!('IntersectionObserver' in window)) return;
       const observer = new IntersectionObserver((entries) => {
+        if (/\bview-/.test(root.className)) return;
         if (atBottom()) { setActive(lastId); return; }
         entries.forEach((entry) => { if (entry.isIntersecting) setActive(entry.target.id); });
       }, { rootMargin: '-35% 0px -60% 0px' });
@@ -2444,12 +2488,13 @@
         ticking = true;
         window.requestAnimationFrame(() => {
           ticking = false;
+          if (/\bview-/.test(root.className)) return;
           if (atBottom()) setActive(lastId);
         });
       }, { passive: true });
     };
 
-    return { init, jumpTo };
+    return { init, jumpTo, sync };
   })();
 
   /* ==========================================================================
@@ -3162,7 +3207,7 @@
       else intro.hidden = true;
 
       const counter = $('.deck-count', section);
-      const fan = root.classList.contains('view-more');
+      const fan = true; // The deck is shown only on More about me.
       deck.classList.toggle('is-fan', fan);
       const dots = [];
       if (fan) {
@@ -3386,7 +3431,7 @@
             print([{ text: "couldn't copy automatically — select the text above", kind: 'error' }]);
           }
         } else if (action.type === 'open') {
-          window.location.href = action.href;
+          if (!navigation.go(action.href)) window.location.href = action.href;
         } else if (action.type === 'jump') {
           nav.jumpTo(action.id);
         } else if (action.type === 'game') {
@@ -3510,9 +3555,11 @@
      ========================================================================== */
 
   const projectHover = (() => {
+    let started = false;
     const init = (data) => {
       const links = $$('.project-row-link');
-      if (!links.length || !data || !Array.isArray(data.projects)) return;
+      if (started || !links.length || !data || !Array.isArray(data.projects)) return;
+      started = true;
       const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
       const projects = new Map(data.projects.map((project) => [projectSlug(project.title), project]));
       const layer = el('div', 'project-hover');
@@ -3633,6 +3680,7 @@
       });
       document.addEventListener('pointerdown', hide, { passive: true });
       document.addEventListener('visibilitychange', hide);
+      document.addEventListener('portfolio:navigate', hide);
       window.addEventListener('scroll', hide, { passive: true, capture: true });
       window.addEventListener('resize', hide);
       window.addEventListener('blur', hide);
@@ -4278,8 +4326,9 @@
      19d. Cover — the hero is its own opening screen; the sidebar arrives after it
      ========================================================================== */
   const cover = (() => {
+    let refresh = () => {};
+    let replay = () => {};
     const init = () => {
-      if (!root.classList.contains('has-cover')) return;
       // Tells the <head> failsafe that this script is in charge.
       root.setAttribute('data-cover', 'ready');
       const photo = $('.hero-photo');
@@ -4301,17 +4350,27 @@
       let hint = null;
       const sync = () => {
         queued = false;
+        if (hint) hint.hidden = !root.classList.contains('has-cover');
+        if (!root.classList.contains('has-cover')) {
+          root.classList.remove('at-cover');
+          hero.style.translate = '';
+          if (sidebar) sidebar.style.translate = '';
+          if (topbar) topbar.style.translate = '';
+          if (launcher) { launcher.style.opacity = ''; launcher.style.pointerEvents = ''; }
+          return;
+        }
+        const stable = root.classList.contains('stable-sidebar');
         const amount = prefersReducedMotion() ? (window.scrollY > 4 ? 1 : 0) : coverProgress(window.scrollY, hero.offsetHeight);
         const away = 1 - amount;
         root.classList.toggle('at-cover', window.scrollY <= 4);
         if (wide.matches) {
-          hero.style.translate = `${(-(parseFloat(getComputedStyle(main).marginLeft) || 0) / 2) * away}px 0`;
-          if (sidebar) sidebar.style.translate = `calc(${-100 * away}% - ${48 * away}px) 0`;
+          hero.style.translate = stable ? '0 0' : `${(-(parseFloat(getComputedStyle(main).marginLeft) || 0) / 2) * away}px 0`;
+          if (sidebar) sidebar.style.translate = stable ? '0 0' : `calc(${-100 * away}% - ${48 * away}px) 0`;
         } else {
           hero.style.translate = '';
           if (sidebar) sidebar.style.translate = '';
         }
-        if (topbar) topbar.style.translate = `0 ${-100 * away}%`;
+        if (topbar) topbar.style.translate = stable ? '0 0' : `0 ${-100 * away}%`;
         if (launcher) {
           launcher.style.opacity = String(amount);
           launcher.style.pointerEvents = amount > 0.6 ? '' : 'none';
@@ -4329,6 +4388,7 @@
       sync();
 
       hint = el('button', 'intro-hint', 'Scroll');
+      hint.hidden = !root.classList.contains('has-cover');
       hint.type = 'button';
       hint.setAttribute('aria-label', 'Scroll to the About section');
       hint.addEventListener('click', () => {
@@ -4408,21 +4468,15 @@
         timer = window.setTimeout(finish, time.end + 60);
       };
 
-      // An explicit Home click returns to the cover and replays the same intro.
-      // Ordinary scrolling back to the top still leaves the completed hero alone.
-      const homeLink = $('.nav-link[data-section="home"]');
-      if (homeLink) homeLink.addEventListener('click', (event) => {
-        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-        event.preventDefault();
-        layout.closeDrawer({ restoreFocus: false });
-        history.replaceState(null, '', homeLink.href);
+      refresh = () => { stopIntro(); sync(); };
+      replay = () => {
         window.scrollTo({ top: 0, behavior: 'instant' });
         sync();
         playIntro();
-      });
+      };
       if (root.classList.contains('intro-play')) playIntro();
     };
-    return { init };
+    return { init, refresh: () => refresh(), replay: () => replay() };
   })();
 
   /* ==========================================================================
@@ -4694,11 +4748,13 @@
      19g. Guestbook — public notes, published only after the owner reviews them
      ========================================================================== */
   const guestbook = (() => {
+    let started = false;
     const init = (data) => {
-      if (!root.classList.contains('view-guestbook') || !data || !data.guestbook) return;
+      if (started || !root.classList.contains('view-guestbook') || !data || !data.guestbook) return;
       const config = data.guestbook;
       const form = $('.guestbook-form');
       if (!form) return;
+      started = true;
       const local = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
       const endpoint = assistantEndpoint(config.endpoint === null ? null : local ? './api/guestbook' : config.endpoint, window.location.href);
       const list = $('.guestbook-list');
@@ -4828,6 +4884,75 @@
   })();
 
   /* ==========================================================================
+     19h. Navigation — preserve the shell and cache each main-content variant
+     ========================================================================== */
+  const navigation = (() => {
+    let visit = () => false;
+    const init = (data) => {
+      if (!data || !window.history || !history.pushState) return;
+      const main = $('#main');
+      const positions = new Map();
+      let serial = 0;
+      let current = 0;
+      history.replaceState({ ...history.state, portfolioEntry: current }, '', window.location.href);
+      positions.set(current, window.scrollY);
+      window.addEventListener('scroll', () => positions.set(current, window.scrollY), { passive: true });
+
+      const show = (route, { replay = false, scroll = null } = {}) => {
+        document.dispatchEvent(new Event('portfolio:navigate'));
+        $$('dialog[open]').forEach((dialog) => dialog.close());
+        $$('video', main).forEach((video) => video.pause());
+        layout.closeDrawer({ restoreFocus: false });
+        [...root.classList].filter((name) => name.startsWith('view-')).forEach((name) => root.classList.remove(name));
+        root.classList.remove('at-cover', 'intro-play');
+        root.classList.add('stable-sidebar');
+        root.classList.toggle('has-cover', route.view === 'home');
+        if (route.view !== 'home') root.classList.add(`view-${route.view}`);
+        render.changeView(data);
+        chatReplay.init();
+        projectHover.init(data);
+        guestbook.init(data);
+        nav.sync();
+        cover.refresh();
+        main.focus({ preventScroll: true });
+        let target = null;
+        try { if (route.hash) target = document.getElementById(decodeURIComponent(route.hash.slice(1))); } catch { /* malformed fragment */ }
+        if (scroll !== null) window.scrollTo({ top: scroll, behavior: 'instant' });
+        else if (target && main.contains(target) && target.getClientRects().length) target.scrollIntoView({ block: 'start', behavior: 'instant' });
+        else window.scrollTo({ top: 0, behavior: 'instant' });
+        cover.refresh();
+        if (replay && route.view === 'home' && !route.hash) cover.replay();
+      };
+      visit = (href, options = {}) => {
+        const route = portfolioRoute(href, window.location.href, data);
+        if (!route) return false;
+        positions.set(current, window.scrollY);
+        if (route.url !== window.location.href) {
+          current = ++serial;
+          history.pushState({ portfolioEntry: current }, '', route.url);
+        }
+        show(route, options);
+        return true;
+      };
+      document.addEventListener('click', (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const link = event.target.closest('a[href]');
+        if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+        if (!portfolioRoute(link.href, window.location.href, data)) return;
+        event.preventDefault();
+        visit(link.href, { replay: link.matches('.nav-link[data-section="home"]') });
+      });
+      window.addEventListener('popstate', (event) => {
+        const route = portfolioRoute(window.location.href, window.location.href, data);
+        if (!route) return;
+        current = Number.isInteger(event.state && event.state.portfolioEntry) ? event.state.portfolioEntry : ++serial;
+        show(route, { scroll: positions.has(current) ? positions.get(current) : null });
+      });
+    };
+    return { init, go: (href, options) => visit(href, options) };
+  })();
+
+  /* ==========================================================================
      20. Scroll aids — reading-progress line
      ========================================================================== */
 
@@ -4885,6 +5010,7 @@
     contactForm.init(data);
     guestbook.init(data);
     scrollAids.init();
+    navigation.init(data);
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());
   };

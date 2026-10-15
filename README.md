@@ -40,6 +40,11 @@ wrangler.toml     Worker configuration (no secrets)
 
 ## Running locally
 
+Internal page links update the main content through the History API while keeping
+the sidebar and its state mounted. Back/Forward restore the visited page and its
+scroll position. Direct URLs and page refreshes still work as ordinary static
+pages. Clicking Home replays the hero intro while keeping navigation visible.
+
 ```bash
 node server.js
 ```

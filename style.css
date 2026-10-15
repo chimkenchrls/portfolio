@@ -3651,6 +3651,16 @@ body.is-rail {
 html.at-cover .topbar {
   translate: 0 -100%;
 }
+/* In-place Home visits replay the hero while navigation stays in its column. */
+@media (min-width: 640px) {
+  html.stable-sidebar.at-cover .sidebar {
+    visibility: visible;
+    translate: 0 0;
+  }
+}
+html.stable-sidebar.at-cover .topbar {
+  translate: 0 0;
+}
 html.at-cover .assistant-launcher {
   opacity: 0;
   pointer-events: none;
