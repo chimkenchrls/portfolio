@@ -32,7 +32,7 @@ const PORTFOLIO_DATA = {
   more: {
     title: "More about me",
     intro:
-      "Hey, I’m CK. I’m a computer science student building side projects and learning as I go.\n\nThis is a little space for thoughts between builds, and the places, things, and moments that recharge me away from the terminal.",
+      "I'm a 4th-year BS Computer Science student at STI College Lucena who enjoys exploring how technology works. My curiosity about how different systems connect led me to pursue DevOps Engineering, where I'm continuously learning about automation, infrastructure, and building reliable, scalable systems.\n\nOutside of academics, I spend my time building side projects, experimenting with new technologies, and challenging myself to learn something new. I enjoy turning simple ideas into meaningful applications, and I believe that the best way to grow as a developer is to keep building, breaking things, and learning along the way.",
   },
 
   // Optional current update on More about me; null keeps the section hidden.
