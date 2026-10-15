@@ -2264,11 +2264,29 @@ html.view-post #writing .divider {
 .project-demo {
   margin-top: 32px;
 }
+.demo-player {
+  position: relative;
+  margin-top: 14px;
+}
+.demo-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-height: 44px;
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--fg);
+  font: inherit;
+  cursor: var(--cursor-link);
+}
+.demo-play[hidden] { display: none; }
 .demo-video {
   display: block;
   width: 100%;
   height: auto;
-  margin-top: 14px;
   aspect-ratio: 8 / 5;
   background: var(--bg-alt);
   border: 1px solid var(--border);

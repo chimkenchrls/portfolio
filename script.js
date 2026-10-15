@@ -1757,7 +1757,7 @@
         heading.id = 'demo-heading';
         section.setAttribute('aria-labelledby', heading.id);
         const video = el('video', 'demo-video');
-        video.controls = true;
+        video.controls = false;
         video.playsInline = true;
         video.preload = 'metadata';
         video.poster = demo.poster;
@@ -1773,9 +1773,22 @@
         captions.label = 'English';
         captions.src = demo.captions;
         video.append(source, captions);
+        const player = el('div', 'demo-player');
+        const play = el('button', 'demo-play', demo.playLabel || demo.title);
+        play.type = 'button';
+        play.setAttribute('aria-label', `${demo.playLabel || demo.title}: ${demo.title}`);
+        play.addEventListener('click', async () => {
+          video.controls = true;
+          play.hidden = true;
+          video.focus();
+          try { await video.play(); }
+          catch (_) { video.controls = false; play.hidden = false; play.focus(); }
+        });
+        video.tabIndex = 0;
+        player.append(video, play);
         const summary = el('p', 'demo-summary', demo.summary);
         summary.id = 'demo-summary';
-        section.append(heading, video, summary);
+        section.append(heading, player, summary);
         li.append(section);
       }
 
@@ -2174,6 +2187,11 @@
       siteName = data.profile && (data.profile.siteName || data.profile.name);
       const brandName = $('.brand-name');
       if (brandName && siteName) brandName.textContent = siteName;
+      const notesLink = $('.nav-link[data-view="guestbook"]');
+      if (notesLink && data.guestbook) {
+        $('.nav-text', notesLink).textContent = data.guestbook.title;
+        notesLink.title = data.guestbook.title;
+      }
       applyEmail(data);
       applyResume(data);
       applyNavCounts(data);

@@ -20,9 +20,9 @@ const main = async () => {
     : action === 'approve' ? 'UPDATE guestbook_entries SET approved = 1 WHERE id = ?1' : 'DELETE FROM guestbook_entries WHERE id = ?1';
   if (remote) {
     // Only a validated integer is interpolated; visitor text never becomes SQL.
-    const result = spawnSync('npx', ['wrangler', 'd1', 'execute', 'portfolio', '--remote', '--command', sql.replace('?1', String(id))], { stdio: 'inherit' });
+    const result = spawnSync('npx', ['wrangler', 'd1', 'execute', 'portfolio', '--remote', '--command', sql.replace('?1', String(id))], { stdio: 'inherit', cwd: path.join(__dirname, '..') });
     if (result.error) throw new Error('Wrangler could not start. Check your Node/npm installation.');
-    process.exitCode = result.status || 0;
+    process.exitCode = Number.isInteger(result.status) ? result.status : 1;
     return;
   }
   const db = createLocalGuestbook(path.join(__dirname, '../.local/guestbook.sqlite'));

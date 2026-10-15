@@ -41,10 +41,12 @@ wrangler.toml     Worker configuration (no secrets)
 ## Running locally
 
 ```bash
-python3 -m http.server 8000
+node server.js
 ```
 
-Then open http://localhost:8000.
+Then open http://localhost:8787. Use Node 22.13+; the guestbook uses Node's built-in SQLite and needs no API key. See [guestbook setup and moderation](./docs/guestbook.md).
+
+For a static-only preview, `python3 -m http.server 8000` still serves the site at http://localhost:8000, but it cannot load or save local guestbook notes.
 
 For live AI chat, copy `.env.example` to `.env`, add `GEMINI_API_KEY`, and run `node --env-file=.env server.js`. Open http://localhost:8787. The API key stays on the server. See [assistant setup and hosting](./docs/assistant.md).
 

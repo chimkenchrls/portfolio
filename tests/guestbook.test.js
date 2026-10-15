@@ -97,6 +97,10 @@ test('demo configuration accepts local media with a transcript and rejects exter
   assert.equal(safeDemo({ ...demo, captions: null }), false);
   const data = structuredClone(require('../assets/data.js'));
   assert.deepEqual(validateData(data), []);
+  for (const project of data.projects.filter((item) => item.demo)) {
+    for (const key of ['src', 'poster', 'captions']) assert.ok(fs.statSync(path.join(__dirname, '..', project.demo[key])).size > 0, `${project.title}: ${key} is published`);
+    assert.match(fs.readFileSync(path.join(__dirname, '..', project.demo.captions), 'utf8'), /^WEBVTT\n/);
+  }
   data.now.updated = 'not a date';
   data.projects[0].demo = { ...demo, src: 'https://bad.example/video.mp4' };
   assert.ok(validateData(data).some((problem) => problem.startsWith('now:')));

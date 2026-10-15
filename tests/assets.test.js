@@ -203,7 +203,7 @@ test('Projects comes before Stack, in the page and in the nav', () => {
   const found = [...html.matchAll(/<section[^>]*\sid="([\w-]+)"/g)].map((m) => m[1]);
   assert.deepEqual(found, order);
   const links = [...html.matchAll(/class="nav-link"\s+href="\.\/([^"]*)"/g)].map((m) => m[1]);
-  assert.deepEqual(links, ['', '?view=links', '?view=blog', '?view=guestbook', '?view=more', '?view=projects', '?view=stack'], 'Menu: Home, Links, Blog, Guestbook. Explore: More about me, Projects, Stack');
+  assert.deepEqual(links, ['', '?view=links', '?view=blog', '?view=more', '?view=projects', '?view=stack', '?view=guestbook'], 'Menu: Home, Links, Blog. Explore: More about me, Projects, Stack, hello, world!');
 });
 
 test('sidebar footer: no status line or visitor counter; a chimken score row instead', () => {

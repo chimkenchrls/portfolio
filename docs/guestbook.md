@@ -13,9 +13,12 @@ filled bot-trap field. A submission token prevents a retry from creating a dupli
 
 ## Run locally
 
-Run `node server.js` and open `http://localhost:8787/?view=guestbook`. No Gemini or
-email key is needed for the guestbook. Node 22.5+ provides the built-in SQLite
-module; Node 22 may print its experimental-module warning. Notes persist in
+Run `node server.js` with Node 22.13+ and open `http://localhost:8787/?view=guestbook`.
+No Gemini or email key is needed for the guestbook. On Node 22.5–22.12, use
+`node --experimental-sqlite server.js` and add the same flag after `node` in the
+local moderation commands below. The [built-in SQLite module](https://nodejs.org/download/release/v22.23.3/docs/api/sqlite.html)
+was added in 22.5 and enabled without that flag in 22.13; Node 22 may still print
+its experimental-module warning. Notes persist in
 `.local/guestbook.sqlite`, which is ignored by Git and never publicly served.
 The frontend uses its same-origin API on localhost. A plain Python static server
 cannot accept guestbook notes; the page shows its retry state there.
@@ -63,10 +66,13 @@ actions, and no administrative credential is added to the site.
 ## Demo clips
 
 A project's optional `demo` contains `src`, `poster`, `captions`, `title`, and
-`summary`, all in `assets/data.js`. Media stays under `assets/projects/` and is
-shown on that project's case-study page with native playback controls. Playback
-does not start automatically; the player reads metadata initially so the duration
-and native controls are ready before the visitor presses play.
+`summary`, all in `assets/data.js`. Its optional `playLabel` changes the Play
+button text; when omitted, the button uses `title`. Media stays under
+`assets/projects/` and is shown on that project's case-study page with native
+playback controls. Playback
+does not start automatically; an accessible Play button sits over the poster.
+Pressing it starts the clip and shows the native playback controls. Only metadata
+loads initially.
 Use `null` for projects without a recording.
 
 The Ambiancy recording is a silent screen capture of the public player at
