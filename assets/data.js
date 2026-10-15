@@ -65,6 +65,7 @@ const PORTFOLIO_DATA = {
 
   projectsPage: {
     title: "Projects",
+    homeTitle: "Selected projects",
     intro:
       "Side projects and practical tools, with a focus on how they’re built, shipped, and run.",
   },
@@ -256,6 +257,8 @@ const PORTFOLIO_DATA = {
   projects: [
     {
       title: "Ambiancy",
+      summary: "An ambient sound mixer for building and sharing your own atmosphere.",
+      kind: "Sound mixer",
       demo: {
         src: "./assets/projects/ambiancy-demo.mp4",
         poster: "./assets/projects/ambiancy-demo.jpg",
@@ -310,6 +313,8 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "Pakisuyo Express",
+      summary: "A local delivery website with an order form, map pins, and a store directory.",
+      kind: "Delivery website",
       demo: null,
       role: "Independent developer",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
@@ -356,6 +361,8 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "OwlSet",
+      summary: "An Android app that turns client conversations into project scopes.",
+      kind: "Android app",
       demo: null,
       role: "Hackathon submission · Frontend and DevOps lead",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
@@ -403,6 +410,8 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "Thready",
+      summary: "Production management and computer vision for a local garment business.",
+      kind: "Capstone project",
       demo: null,
       role: "Thesis project · Frontend and DevOps lead",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
@@ -449,6 +458,8 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "AmIgo",
+      summary: "A Taglish Discord bot with conversation memory, study mode, and games.",
+      kind: "Discord bot",
       demo: null,
       role: "Independent developer",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
@@ -482,6 +493,7 @@ const PORTFOLIO_DATA = {
       // is as it happened (minus the book emoji). **bold** and `code` are supported.
       chat: {
         bot: "AmIgo",
+        previewScene: "banter",
         user: "ck",
         botAvatar: "./assets/projects/amigo-avatar.png", // the bot's picture
         userIcon: "chimken", // an icon from ./assets/icons/ for my messages

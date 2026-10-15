@@ -1308,20 +1308,39 @@ html.view-links .links-page-header {
    is the Projects section alone with the full cards; the More about me page
    (?view=more) is Outside the IDE and the terminal, which Home leaves out (only
    when the head script has run, so nothing is lost without JavaScript). */
-.projects-more {
+.projects-back {
+  display: none;
   margin-top: 20px;
   font-family: var(--font-mono);
   font-size: 12px;
   text-align: center;
 }
+html.view-projects .projects-back {
+  display: block;
+}
 /* Home: one quiet list of slim rows. Each row is a link to the project's full card. */
 html:not(.view-projects):not(.view-case) .project-list {
   gap: 0;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  overflow: hidden;
+}
+.project-list-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-muted);
+}
+.project-list-heading:empty {
+  display: none;
+}
+.project-list-heading h3 {
+  font-size: 14px;
+  font-weight: 400;
+}
+.project-list-count {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
 }
 .project-row + .project-row {
   border-top: 1px solid var(--border);
@@ -1329,9 +1348,11 @@ html:not(.view-projects):not(.view-case) .project-list {
 .project-row-link {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr) auto;
-  gap: 18px;
+  gap: 20px;
   align-items: center;
-  padding: 14px 20px;
+  margin-inline: -12px;
+  padding: 20px 12px;
+  border-radius: var(--radius-lg);
   transition: background-color var(--t-fast) ease;
 }
 .project-row-link:active {
@@ -1385,24 +1406,80 @@ html:not(.view-projects):not(.view-case) .project-list {
   font-size: 13.5px;
   color: var(--fg-muted);
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  line-clamp: 1;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 .project-kind {
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 13px;
   color: var(--fg-muted);
   white-space: nowrap;
 }
-@media (hover: hover) and (pointer: fine) {
-  .project-row-link:hover,
-  .project-more:hover {
-    background: var(--bg-alt);
-  }
+.project-hover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 35;
+  width: min(320px, calc(100vw - 24px));
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  animation: project-preview-in 120ms var(--ease) both;
+}
+.project-hover-stage {
+  position: relative;
+  aspect-ratio: 8 / 5;
+  background: var(--bg-alt);
+}
+.project-hover-stage > img,
+.project-hover-stage > video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+}
+.project-hover-stage > img { z-index: 1; }
+.project-hover-stage.is-avatar > img {
+  padding: 32px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.project-hover.is-chat {
+  width: min(360px, calc(100vw - 24px));
+}
+.project-hover-stage.is-chat {
+  aspect-ratio: auto;
+}
+.project-hover .project-hover-chat {
+  border: 0;
+  border-radius: 0;
+}
+.project-hover-chat .chat-log {
+  height: auto;
+  max-height: min(300px, calc(100vh - 120px));
+  overflow: hidden;
+}
+.project-hover-caption {
+  padding: 10px 12px;
+  font-size: 13px;
+}
+@keyframes project-preview-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .project-more:active {
-    scale: none;
+  .project-hover { animation: none; }
+}
+@media (hover: none), (pointer: coarse) {
+  .project-hover { display: none; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .project-row-link:hover {
+    background: var(--bg-alt);
   }
 }
 [data-home],
@@ -1442,26 +1519,6 @@ html.view-post #writing .divider {
   height: 1px;
   overflow: hidden;
   clip-path: inset(50%);
-}
-.project-row[hidden],
-.project-more[hidden] {
-  display: none;
-}
-.project-more {
-  min-height: 40px;
-  padding: 0 20px;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 500;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  transition:
-    background-color var(--t-fast) ease,
-    border-color var(--t-fast) ease,
-    scale 160ms ease-out;
-}
-.project-more:active {
-  scale: 0.97;
 }
 .project {
   padding: 24px;
@@ -3919,8 +3976,9 @@ html.at-cover:not(.intro-play) .intro-hint {
   }
   .project-row-link {
     grid-template-columns: 56px minmax(0, 1fr);
-    gap: 14px;
-    padding: 14px 16px;
+    gap: 4px 14px;
+    margin-inline: -8px;
+    padding: 18px 8px;
   }
   .project-thumb {
     width: 56px;
@@ -3931,7 +3989,8 @@ html.at-cover:not(.intro-play) .intro-hint {
     line-clamp: 2;
   }
   .project-kind {
-    display: none;
+    grid-column: 2;
+    font-size: 12px;
   }
   html.view-stack .stack-grid {
     grid-template-columns: 1fr;

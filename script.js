@@ -66,6 +66,17 @@
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
+  // Keep a pointer preview clear of the cursor and inside the viewport.
+  const projectPreviewPosition = ({ x, y, width, height, viewportWidth, viewportHeight }) => {
+    const gutter = 12;
+    const left = x + 20 + width <= viewportWidth - gutter ? x + 20 : x - width - 20;
+    const top = y + 24 + height <= viewportHeight - gutter ? y + 24 : y - height - 24;
+    return {
+      x: clamp(left, gutter, Math.max(gutter, viewportWidth - width - gutter)),
+      y: clamp(top, gutter, Math.max(gutter, viewportHeight - height - gutter)),
+    };
+  };
+
   // How long before a message appears, and how long the bot "types" first (ms).
   const chatTiming = (message) => {
     const length = String((message && message.text) || '').length;
@@ -1083,6 +1094,8 @@
       }
       if (!PROJECT_STATUSES.includes(pr.status)) errors.push(`${p}.status: one of ${PROJECT_STATUSES.join(', ')}`);
       if (!isOptionalText(pr.description)) errors.push(`${p}.description: text or null`);
+      if (!isOptionalText(pr.summary)) errors.push(`${p}.summary: text or null`);
+      if (!isOptionalText(pr.kind)) errors.push(`${p}.kind: text or null`);
       if (!Array.isArray(pr.tags)) errors.push(`${p}.tags: must be an array`);
       const links = pr.links || {};
       ['source', 'live'].forEach((k) => {
@@ -1090,6 +1103,7 @@
       });
       if (pr.chat !== undefined && pr.chat !== null) {
         const scenes = pr.chat.scenes;
+        if (!isOptionalText(pr.chat.previewScene)) errors.push(`${p}.chat.previewScene: text or null`);
         const sceneOk = (scene) => scene && Array.isArray(scene.messages) && scene.messages.length > 0
           && scene.messages.every((m) => m && ['user', 'bot', 'system'].includes(m.from) && isText(m.text));
         if (!isText(pr.chat.bot) || !Array.isArray(scenes) || !scenes.length || !scenes.every(sceneOk)) {
@@ -1221,7 +1235,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, guestbookProblems, guestbookPage, safeDemo,
+      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition,
     };
   }
   if (typeof document === 'undefined') return;
@@ -1426,6 +1440,7 @@
     };
 
     return {
+      message: messageEl,
       register: (box, chat) => pending.push([box, chat]),
       init: () => { pending.splice(0).forEach(([box, chat]) => start(box, chat)); },
     };
@@ -1639,8 +1654,7 @@
       return media;
     };
 
-    // Home: a slim row per project, linking to its full card on the Projects page
-    // (?view=projects). The first few rows show; "+ N more" reveals the rest.
+    // Home: every project as a slim row, linking to its detail page.
     // Where a project leads: its case study when it has one, else its full card.
     const projectLink = (project) => (project.caseStudy
       ? `./?view=case&p=${projectSlug(project.title).replace('project-', '')}`
@@ -1677,11 +1691,12 @@
       const line = el('span', 'project-line');
       line.append(el('h3', 'project-title', project.title), el('span', project.status === 'done' ? 'project-meta' : 'badge', project.meta));
       const main = el('span', 'project-main');
-      main.append(line, el('span', 'project-summary', project.description || 'Details coming soon.'));
+      main.append(line, el('span', 'project-summary', project.summary || project.description || 'Details coming soon.'));
       const link = el('a', 'project-row-link');
       link.href = projectLink(project);
+      link.dataset.projectPreview = projectSlug(project.title);
       link.append(thumb, main);
-      const tag = (project.tags || []).find(Boolean);
+      const tag = project.kind || (project.tags || []).find(Boolean);
       if (tag) link.append(el('span', 'project-kind', tag));
       const li = el('li', 'project-row');
       li.append(link);
@@ -1944,6 +1959,11 @@
     };
     const moreHeading = ({ more }) => pageHeading(more);
     const projectsHeading = ({ projectsPage }) => pageHeading(projectsPage, 'projects-page-intro');
+    const projectListHeading = ({ projectsPage, projects = [] }) => {
+      if (/\bview-/.test(root.className) || !projects.length) return [];
+      const count = el('span', 'project-list-count', String(projects.length).padStart(2, '0'));
+      return [el('h3', null, projectsPage.homeTitle || projectsPage.title), count];
+    };
     const stackHeading = ({ stackPage }) => pageHeading(stackPage, 'stack-page-intro');
     const blogHeading = ({ blogPage }) => pageHeading(blogPage, 'blog-page-intro');
     const guestbookHeading = ({ guestbook }) => {
@@ -2124,7 +2144,7 @@
       return writingRows(posts);
     };
 
-    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, writing, blogHeading, linksHeading, profileLinks, now, guestbookHeading, guestbook: guestbookShell };
+    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, writing, blogHeading, linksHeading, profileLinks, now, guestbookHeading, guestbook: guestbookShell };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -2216,21 +2236,6 @@
             // The cards did not exist yet when the browser looked for this anchor.
             const card = document.getElementById(window.location.hash.slice(1));
             if (card) card.scrollIntoView({ block: 'start' });
-          }
-          if (container.dataset.render === 'projects' && !/\bview-/.test(root.className)) {
-            // Home shows the first three rows; the pill reveals the rest in place.
-            const extra = [...container.children].slice(3);
-            const more = $('.project-more');
-            if (more && extra.length) {
-              extra.forEach((row) => { row.hidden = true; });
-              more.textContent = `+ ${extra.length} more`;
-              more.hidden = false;
-              more.addEventListener('click', () => {
-                extra.forEach((row) => { row.hidden = false; });
-                more.hidden = true;
-                $('a', extra[0]).focus();
-              }, { once: true });
-            }
           }
         } catch (error) {
           console.error(`[portfolio] failed to render ${container.dataset.render}`, error);
@@ -3501,6 +3506,143 @@
   })();
 
   /* ==========================================================================
+     15b. Home project previews — one mouse-following media layer
+     ========================================================================== */
+
+  const projectHover = (() => {
+    const init = (data) => {
+      const links = $$('.project-row-link');
+      if (!links.length || !data || !Array.isArray(data.projects)) return;
+      const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+      const projects = new Map(data.projects.map((project) => [projectSlug(project.title), project]));
+      const layer = el('div', 'project-hover');
+      layer.hidden = true;
+      layer.setAttribute('aria-hidden', 'true');
+      layer.inert = true;
+      const stage = el('div', 'project-hover-stage');
+      const image = el('img');
+      image.alt = '';
+      image.decoding = 'async';
+      const video = el('video');
+      video.muted = true;
+      video.defaultMuted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.preload = 'none';
+      video.hidden = true;
+      const conversation = el('div', 'chat project-hover-chat');
+      conversation.hidden = true;
+      const caption = el('p', 'project-hover-caption');
+      stage.append(image, video, conversation);
+      layer.append(stage, caption);
+      document.body.append(layer);
+      let active = null;
+      let suppressedLink = null;
+      let timer = null;
+      let frame = null;
+      let point = { x: 0, y: 0 };
+
+      const hide = () => {
+        window.clearTimeout(timer);
+        timer = null;
+        if (frame !== null) cancelAnimationFrame(frame);
+        frame = null;
+        active = null;
+        layer.hidden = true;
+        video.pause();
+        if (video.hasAttribute('src')) {
+          video.removeAttribute('src');
+          video.load();
+        }
+        video.hidden = true;
+        image.hidden = false;
+        conversation.hidden = true;
+        conversation.replaceChildren();
+      };
+      const paint = () => {
+        frame = null;
+        if (layer.hidden) return;
+        const { width, height } = layer.getBoundingClientRect();
+        const position = projectPreviewPosition({ ...point, width, height, viewportWidth: innerWidth, viewportHeight: innerHeight });
+        layer.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+      };
+      const schedule = () => {
+        if (frame === null && !layer.hidden && !prefersReducedMotion()) frame = requestAnimationFrame(paint);
+      };
+      const begin = (event, link, project) => {
+        if (event.pointerType === 'touch' || !finePointer.matches || suppressedLink === link || document.hidden || $('dialog[open]')) return;
+        point = { x: event.clientX, y: event.clientY };
+        if (active && active.link === link) { schedule(); return; }
+        hide();
+        const demo = safeDemo(project.demo) ? project.demo : null;
+        const shots = projectShots(project);
+        const scenes = !demo && project.chat && Array.isArray(project.chat.scenes) ? project.chat.scenes : [];
+        const scene = scenes.find((item) => item.label === project.chat.previewScene) || scenes[0];
+        const avatar = project.chat && SHOT_PATH.test(String(project.chat.botAvatar)) ? project.chat.botAvatar : null;
+        const picture = demo ? demo.poster : shots.length ? (shots.find((shot) => shot.kind === 'desktop') || shots[0]).src : avatar;
+        if (!picture && !scene) return;
+        active = { link, project };
+        timer = window.setTimeout(() => {
+          timer = null;
+          if (!active || active.link !== link) return;
+          layer.classList.toggle('is-chat', Boolean(scene));
+          stage.classList.toggle('is-chat', Boolean(scene));
+          stage.classList.toggle('is-avatar', !scene && !demo && !shots.length);
+          if (scene) {
+            const bar = el('div', 'chat-bar');
+            bar.append(el('span', 'chat-title', project.chat.bot), el('span', 'chat-scene', scene.label));
+            const log = el('div', 'chat-log');
+            scene.messages.filter((message) => message.from !== 'system').slice(0, 2)
+              .forEach((message) => log.append(chatReplay.message(message, project.chat)));
+            conversation.append(bar, log);
+            conversation.hidden = false;
+            image.hidden = true;
+          } else image.src = picture;
+          caption.textContent = project.title;
+          layer.hidden = false;
+          paint();
+          if (demo && !prefersReducedMotion()) {
+            video.poster = demo.poster;
+            video.src = demo.src;
+            video.hidden = false;
+            video.play().catch(() => { /* the poster remains if autoplay is refused */ });
+          }
+        }, 140);
+      };
+      video.addEventListener('playing', () => {
+        if (!layer.hidden && !video.paused && !prefersReducedMotion()) image.hidden = true;
+      });
+      video.addEventListener('error', () => {
+        if (!video.hasAttribute('src')) return;
+        video.hidden = true;
+        image.hidden = false;
+      });
+      links.forEach((link) => {
+        const project = projects.get(link.dataset.projectPreview);
+        if (!project) return;
+        link.addEventListener('pointerenter', (event) => begin(event, link, project));
+        link.addEventListener('pointermove', (event) => begin(event, link, project), { passive: true });
+        link.addEventListener('pointerleave', () => {
+          if (suppressedLink === link) suppressedLink = null;
+          if (active && active.link === link) hide();
+        });
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') suppressedLink = active && active.link;
+        hide();
+      });
+      document.addEventListener('pointerdown', hide, { passive: true });
+      document.addEventListener('visibilitychange', hide);
+      window.addEventListener('scroll', hide, { passive: true, capture: true });
+      window.addEventListener('resize', hide);
+      window.addEventListener('blur', hide);
+      finePointer.addEventListener('change', hide);
+      motionQuery.addEventListener('change', hide);
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      16. Image viewer — enlarges project shots and certificate photos
      ========================================================================== */
 
@@ -4372,11 +4514,25 @@
         layout.closeDrawer({ restoreFocus: false });
         fallback.hidden = Boolean(form && enabled);
         if (form && enabled) {
-          // Keep the page's height and the same live form, including its draft.
-          placeholder = el('div', 'contact-placeholder');
+          // Keep Home visually complete while the one live form is in the dialog.
+          placeholder = form.cloneNode(true);
+          placeholder.classList.add('contact-placeholder');
+          placeholder.inert = true;
           placeholder.setAttribute('aria-hidden', 'true');
-          placeholder.style.height = `${form.getBoundingClientRect().height}px`;
-          placeholder.style.marginTop = getComputedStyle(form).marginTop;
+          const ids = new Map();
+          $$('[id]', placeholder).forEach((node) => {
+            const old = node.id;
+            node.id = `contact-placeholder-${old}`;
+            ids.set(old, node.id);
+          });
+          $$('[for], [aria-describedby], [aria-labelledby], [aria-controls]', placeholder).forEach((node) => {
+            ['for', 'aria-describedby', 'aria-labelledby', 'aria-controls'].forEach((attribute) => {
+              if (!node.hasAttribute(attribute)) return;
+              node.setAttribute(attribute, node.getAttribute(attribute).split(/\s+/).map((id) => ids.get(id) || id).join(' '));
+            });
+          });
+          const values = $$('input, textarea, select', form);
+          $$('input, textarea, select', placeholder).forEach((field, index) => { field.value = values[index].value; });
           form.before(placeholder);
           stage.append(form);
         }
@@ -4718,6 +4874,7 @@
     githubGraph.init(data);
     photoDeck.init(data);
     terminal.init(data);
+    projectHover.init(data);
     shotViewer.init();
     chatReplay.init();
     portfolioAssistant.init(data);

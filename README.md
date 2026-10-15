@@ -54,6 +54,10 @@ For live AI chat, copy `.env.example` to `.env`, add `GEMINI_API_KEY`, and run `
 
 All content lives in [`assets/data.js`](./assets/data.js). Use `null` for anything that is not ready yet; the page shows a "coming soon" state in its place.
 
+Home's **Selected projects** list uses each project's optional `summary` and `kind` for its short description and type label, falling back to the full description and first tag. The count is derived from the project list, and every project is visible immediately. Full project cards and case studies keep their detailed descriptions.
+
+On devices with a fine pointer, hovering a Home project shows a small preview below the cursor, flipped inward near viewport edges. A project's `demo` plays silently while hovered; projects with `chat` show the first two nonsystem messages from `chat.previewScene` (matching a scene label, or the first scene by default). Other projects use the desktop screenshot or bot image. Leaving, scrolling, pressing Escape, or hiding the tab stops playback. Reduced motion shows the poster without playback or cursor-following motion; touch screens keep the ordinary project links.
+
 **Links** (`./?view=links`) sits above Blog in the sidebar. `linksPage` defines the heading and the Social/Work groups; each row reads its destination from `profile`. Set `profile.discordUrl`, `profile.tiktok` and `profile.facebook` to HTTPS profile URLs (or `null`). Discord copies `profile.discord` while its URL is missing. LinkedIn, GitHub, email and resume reuse the existing profile fields; missing destinations show a non-clickable "Coming soon" row.
 
 The **More about me** page (`./?view=more`) opens with `more.title`, the centered Outside the IDE photo deck, the profile name and role, and `more.intro`. Full-width Experience and Education rows reuse the same content as Home, followed by the `writing` list and terminal.
