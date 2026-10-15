@@ -4372,18 +4372,17 @@
           if (launcher) { launcher.style.opacity = ''; launcher.style.pointerEvents = ''; }
           return;
         }
-        const stable = root.classList.contains('stable-sidebar');
         const amount = prefersReducedMotion() ? (window.scrollY > 4 ? 1 : 0) : coverProgress(window.scrollY, hero.offsetHeight);
         const away = 1 - amount;
         root.classList.toggle('at-cover', window.scrollY <= 4);
         if (wide.matches) {
-          hero.style.translate = stable ? '0 0' : `${(-(parseFloat(getComputedStyle(main).marginLeft) || 0) / 2) * away}px 0`;
-          if (sidebar) sidebar.style.translate = stable ? '0 0' : `calc(${-100 * away}% - ${48 * away}px) 0`;
+          hero.style.translate = `${(-(parseFloat(getComputedStyle(main).marginLeft) || 0) / 2) * away}px 0`;
+          if (sidebar) sidebar.style.translate = `calc(${-100 * away}% - ${48 * away}px) 0`;
         } else {
           hero.style.translate = '';
           if (sidebar) sidebar.style.translate = '';
         }
-        if (topbar) topbar.style.translate = stable ? '0 0' : `0 ${-100 * away}%`;
+        if (topbar) topbar.style.translate = `0 ${-100 * away}%`;
         if (launcher) {
           launcher.style.opacity = String(amount);
           launcher.style.pointerEvents = amount > 0.6 ? '' : 'none';
@@ -4918,7 +4917,6 @@
         layout.closeDrawer({ restoreFocus: false });
         [...root.classList].filter((name) => name.startsWith('view-')).forEach((name) => root.classList.remove(name));
         root.classList.remove('at-cover', 'intro-play');
-        root.classList.add('stable-sidebar');
         root.classList.toggle('has-cover', route.view === 'home');
         if (route.view !== 'home') root.classList.add(`view-${route.view}`);
         render.changeView(data);

@@ -239,7 +239,7 @@ with sync_playwright() as pw:
     p.wait_for_function("!document.documentElement.classList.contains('intro-play')", timeout=5000)
     p.evaluate("window.scrollTo({ top: 0, behavior: 'instant' })")
     settle(p)
-    check("phone: navigation stays visible at the top after an internal Home visit", p.evaluate("Math.round(document.querySelector('.topbar').getBoundingClientRect().top)") == 0)
+    check("phone: navigation stays hidden at the top after an internal Home visit", p.evaluate("Math.round(document.querySelector('.topbar').getBoundingClientRect().bottom)") <= 0)
     ctx.close()
     b.close()
 finish()
