@@ -1,9 +1,9 @@
 # Now, Guestbook, and project demos
 
-`assets/data.js` holds the editable content. `now` appears only on More about me;
+`assets/data.js` holds the editable content. `now` is currently `null`, so the
+Now section is hidden. When enabled, it appears only on More about me;
 each item is a label and a short update. Use the date you actually edited it.
-The initial update describes this portfolio work, without assuming other current
-activities. Add learning or personal updates when you have something to share.
+Add learning or personal updates only when you have something current to share.
 
 The Guestbook is at `./?view=guestbook`. Visitors enter a name or nickname and a
 note, without an account or email address. Notes are plain text and stay pending

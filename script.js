@@ -1161,7 +1161,7 @@
     if (data.blogPage !== undefined) {
       if (!data.blogPage || !isText(data.blogPage.title) || !isText(data.blogPage.intro)) errors.push('blogPage: title and intro text required');
     }
-    if (data.now !== undefined) {
+    if (data.now != null) {
       if (!data.now || !isText(data.now.title) || !postDate(data.now.updated)) errors.push('now: title and update date required');
       checkList('now.items', data.now && data.now.items, (item, p) => {
         if (!isText(item.label) || !isText(item.text)) errors.push(`${p}: label and text required`);

@@ -35,14 +35,8 @@ const PORTFOLIO_DATA = {
       "Hey, I’m CK. I’m a computer science student building side projects and learning as I go.\n\nThis is a little space for thoughts between builds, and the places, things, and moments that recharge me away from the terminal.",
   },
 
-  // A small update on More about me. Add only things you are actually doing.
-  now: {
-    title: "Now",
-    updated: "2026-10-15",
-    items: [
-      { label: "Building", text: "This portfolio — adding visitor notes, project demos, and a little more personality." },
-    ],
-  },
+  // Optional current update on More about me; null keeps the section hidden.
+  now: null,
 
   guestbook: {
     title: "hello, world!",

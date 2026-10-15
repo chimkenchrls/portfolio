@@ -101,7 +101,7 @@ test('demo configuration accepts local media with a transcript and rejects exter
     for (const key of ['src', 'poster', 'captions']) assert.ok(fs.statSync(path.join(__dirname, '..', project.demo[key])).size > 0, `${project.title}: ${key} is published`);
     assert.match(fs.readFileSync(path.join(__dirname, '..', project.demo.captions), 'utf8'), /^WEBVTT\n/);
   }
-  data.now.updated = 'not a date';
+  data.now = { title: 'Now', updated: 'not a date', items: [] };
   data.projects[0].demo = { ...demo, src: 'https://bad.example/video.mp4' };
   assert.ok(validateData(data).some((problem) => problem.startsWith('now:')));
   assert.ok(validateData(data).some((problem) => problem.includes('.demo:')));
