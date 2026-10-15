@@ -793,6 +793,30 @@
     else if (text(message).length < 10) problems.message = 'Please write a little more.';
     return problems;
   };
+  const guestbookProblems = ({ name, message } = {}) => {
+    const problems = {};
+    if (typeof name !== 'string' || !name.trim() || name.trim().length > 60) problems.name = 'Please use a name of 1–60 characters.';
+    if (typeof message !== 'string' || !message.trim() || message.trim().length > 500) problems.message = 'Please write a note of 1–500 characters.';
+    return problems;
+  };
+  const guestbookPage = (value) => {
+    if (!value || !Array.isArray(value.entries) || value.entries.length > 20 || !Number.isSafeInteger(value.total) || value.total < value.entries.length) return null;
+    const entries = value.entries;
+    const ids = new Set();
+    for (const entry of entries) {
+      if (!entry || !Number.isSafeInteger(entry.id) || entry.id < 1 || ids.has(entry.id)
+        || Object.keys(guestbookProblems(entry)).length || typeof entry.createdAt !== 'string' || !Number.isFinite(Date.parse(entry.createdAt))) return null;
+      ids.add(entry.id);
+    }
+    if (value.nextCursor !== null && (!entries.length || value.nextCursor !== String(entries.at(-1).id))) return null;
+    return { entries: entries.map(({ id, name, message, createdAt }) => ({ id, name, message, createdAt })), total: value.total, nextCursor: value.nextCursor };
+  };
+  const safeDemo = (demo) => Boolean(demo && typeof demo === 'object'
+    && /^\.\/assets\/projects\/[\w.-]+\.(mp4|webm)$/.test(String(demo.src))
+    && /^\.\/assets\/projects\/[\w.-]+\.(jpg|png|webp)$/.test(String(demo.poster))
+    && /^\.\/assets\/projects\/[\w.-]+\.vtt$/.test(String(demo.captions))
+    && typeof demo.title === 'string' && demo.title.trim()
+    && typeof demo.summary === 'string' && demo.summary.trim());
   // Common slips in the big mail providers' domains, and what was meant.
   const EMAIL_TYPOS = {
     'gmail.com': ['gmial.com', 'gmai.com', 'gmal.com', 'gnail.com', 'gamil.com', 'gmaill.com', 'gmail.co', 'gmail.con', 'gmail.cm', 'gmail.cmo', 'gmail.comm'],
@@ -1047,6 +1071,7 @@
     checkList('projects', data.projects, (pr, p) => {
       if (!isText(pr.title)) errors.push(`${p}.title: required text`);
       if (!isText(pr.meta)) errors.push(`${p}.meta: required text`);
+      if (pr.demo != null && !safeDemo(pr.demo)) errors.push(`${p}.demo: local video, poster, captions, title and summary required`);
       if (!isOptionalText(pr.role)) errors.push(`${p}.role: text or null`);
       if (pr.caseStudy != null) {
         const study = pr.caseStudy;
@@ -1122,6 +1147,19 @@
     if (data.blogPage !== undefined) {
       if (!data.blogPage || !isText(data.blogPage.title) || !isText(data.blogPage.intro)) errors.push('blogPage: title and intro text required');
     }
+    if (data.now !== undefined) {
+      if (!data.now || !isText(data.now.title) || !postDate(data.now.updated)) errors.push('now: title and update date required');
+      checkList('now.items', data.now && data.now.items, (item, p) => {
+        if (!isText(item.label) || !isText(item.text)) errors.push(`${p}: label and text required`);
+      });
+    }
+    if (data.guestbook !== undefined) {
+      const config = data.guestbook || {};
+      for (const key of ['title', 'intro', 'nameLabel', 'messageLabel', 'submitLabel', 'sending', 'notice', 'empty', 'success', 'unavailable', 'failed', 'loading', 'notesLabel', 'retryLabel', 'moreLabel']) {
+        if (!isText(config[key])) errors.push(`guestbook.${key}: text required`);
+      }
+      if (config.endpoint !== null && !assistantEndpoint(config.endpoint, 'https://example.com/')) errors.push('guestbook.endpoint: a public endpoint or null');
+    }
     if (data.linksPage !== undefined) {
       const page = data.linksPage || {};
       if (!isText(page.title) || !isText(page.intro)) errors.push('linksPage: title and intro text required');
@@ -1183,7 +1221,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices,
+      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, guestbookProblems, guestbookPage, safeDemo,
     };
   }
   if (typeof document === 'undefined') return;
@@ -1711,6 +1749,36 @@
       }
       li.append(strip);
 
+      if (safeDemo(project.demo)) {
+        const demo = project.demo;
+        const section = el('section', 'project-demo');
+        section.id = 'demo';
+        const heading = el('h2', 'history-title', demo.title);
+        heading.id = 'demo-heading';
+        section.setAttribute('aria-labelledby', heading.id);
+        const video = el('video', 'demo-video');
+        video.controls = true;
+        video.playsInline = true;
+        video.preload = 'metadata';
+        video.poster = demo.poster;
+        video.width = 1280;
+        video.height = 800;
+        video.setAttribute('aria-describedby', 'demo-summary');
+        const source = el('source');
+        source.src = demo.src;
+        source.type = demo.src.endsWith('.webm') ? 'video/webm' : 'video/mp4';
+        const captions = el('track');
+        captions.kind = 'captions';
+        captions.srclang = 'en';
+        captions.label = 'English';
+        captions.src = demo.captions;
+        video.append(source, captions);
+        const summary = el('p', 'demo-summary', demo.summary);
+        summary.id = 'demo-summary';
+        section.append(heading, video, summary);
+        li.append(section);
+      }
+
       const media = projectMedia(project);
       if (media) {
         const frame = el('div', 'case-media');
@@ -1865,6 +1933,84 @@
     const projectsHeading = ({ projectsPage }) => pageHeading(projectsPage, 'projects-page-intro');
     const stackHeading = ({ stackPage }) => pageHeading(stackPage, 'stack-page-intro');
     const blogHeading = ({ blogPage }) => pageHeading(blogPage, 'blog-page-intro');
+    const guestbookHeading = ({ guestbook }) => {
+      const nodes = pageHeading(guestbook, 'guestbook-intro');
+      const title = nodes.find((node) => node.tagName === 'H1');
+      if (title) title.id = 'guestbook-heading';
+      return nodes;
+    };
+    const now = ({ now: content }) => {
+      if (!content || !Array.isArray(content.items) || !content.items.length) return [];
+      $('#now').hidden = false;
+      const head = el('div', 'now-head');
+      const heading = el('h2', 'history-title', content.title);
+      heading.id = 'now-heading';
+      head.append(heading);
+      if (postDate(content.updated)) {
+        const date = el('time', 'row-meta', postDate(content.updated));
+        date.dateTime = content.updated;
+        head.append(date);
+      }
+      const list = el('dl', 'now-list');
+      content.items.forEach((item) => {
+        const row = el('div', 'now-row');
+        row.append(el('dt', null, item.label), el('dd', null, item.text));
+        list.append(row);
+      });
+      return [head, list];
+    };
+    const guestbookShell = ({ guestbook: config }) => {
+      if (!config) return [];
+      const form = el('form', 'guestbook-form');
+      form.noValidate = true;
+      form.hidden = true;
+      [['name', config.nameLabel], ['message', config.messageLabel]].forEach(([key, text]) => {
+        const field = el('p', 'contact-field');
+        const label = el('label', null, text);
+        label.htmlFor = `guestbook-${key}`;
+        const input = el(key === 'message' ? 'textarea' : 'input');
+        input.id = `guestbook-${key}`;
+        input.name = key;
+        input.required = true;
+        input.maxLength = key === 'name' ? 60 : 500;
+        if (key === 'message') input.rows = 4;
+        else { input.type = 'text'; input.autocomplete = 'name'; }
+        input.setAttribute('aria-describedby', `${input.id}-error`);
+        const error = el('span', 'contact-error');
+        error.id = `${input.id}-error`;
+        field.append(label, input, error);
+        form.append(field);
+      });
+      const trap = el('p', 'contact-trap');
+      trap.setAttribute('aria-hidden', 'true');
+      const trapLabel = el('label', null, 'Leave this field empty');
+      trapLabel.htmlFor = 'guestbook-website';
+      const trapInput = el('input');
+      trapInput.id = 'guestbook-website';
+      trapInput.name = 'website';
+      trapInput.tabIndex = -1;
+      trapInput.autocomplete = 'off';
+      trap.append(trapLabel, trapInput);
+      const foot = el('div', 'guestbook-foot');
+      const button = el('button', 'contact-send', config.submitLabel);
+      button.type = 'submit';
+      foot.append(el('p', 'contact-note', config.notice), button);
+      const status = el('p', 'guestbook-submit-status');
+      status.setAttribute('role', 'status');
+      form.append(trap, foot, status);
+      const head = el('div', 'guestbook-list-head');
+      head.append(el('h2', 'history-title', config.notesLabel), el('span', 'guestbook-total'));
+      const list = el('ol', 'guestbook-list');
+      const state = el('p', 'guestbook-state', config.loading);
+      state.setAttribute('role', 'status');
+      const retry = el('button', 'guestbook-retry text-link', config.retryLabel);
+      retry.type = 'button';
+      retry.hidden = true;
+      const more = el('button', 'guestbook-more text-link', config.moreLabel);
+      more.type = 'button';
+      more.hidden = true;
+      return [form, head, list, state, retry, more];
+    };
     const linksHeading = ({ linksPage }) => {
       const nodes = pageHeading(linksPage, 'links-page-intro');
       const heading = nodes.find((node) => node.tagName === 'H1');
@@ -1954,7 +2100,6 @@
       return item;
     };
     const writingRows = (posts) => posts.length ? posts.map(writingEntry) : [pendingEl('li', 'No posts yet.')];
-    const blogPreview = ({ writing: posts = [] }) => writingRows(posts.slice(0, 3));
     const writing = ({ writing: posts = [] }) => {
       if (root.classList.contains('view-post')) {
         const slug = new URLSearchParams(window.location.search).get('p');
@@ -1966,7 +2111,7 @@
       return writingRows(posts);
     };
 
-    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, writing, blogHeading, blogPreview, linksHeading, profileLinks };
+    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, writing, blogHeading, linksHeading, profileLinks, now, guestbookHeading, guestbook: guestbookShell };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -1999,14 +2144,39 @@
       actions.append(link);
     };
 
+    const applyNavCounts = (data) => {
+      const list = (value) => Array.isArray(value) ? value : [];
+      const counts = {
+        links: list(data.linksPage && data.linksPage.groups).reduce((total, group) => total + list(group.items).filter((item) => {
+          const link = profileLink(data.profile || {}, item.key);
+          return link.href || link.copy;
+        }).length, 0),
+        projects: list(data.projects).length,
+        stack: list(data.stack).reduce((total, group) => total + list(group.items).length, 0),
+      };
+      const units = { links: 'link', projects: 'project', stack: 'tool' };
+      Object.entries(counts).forEach(([view, count]) => {
+        const link = $(`.nav-link[data-view="${view}"]`);
+        if (!link) return;
+        const label = $('.nav-text', link).textContent;
+        const badge = el('span', 'nav-count', String(count));
+        badge.setAttribute('aria-hidden', 'true');
+        link.append(badge);
+        link.setAttribute('aria-label', `${label}, ${count} ${units[view]}${count === 1 ? '' : 's'}`);
+      });
+    };
+
     const init = (data) => {
       const containers = $$('[data-render]');
       const errors = validateData(data);
       if (errors.length) console.warn('[portfolio] data.js problems:', errors);
       if (!data) { containers.forEach(showLoadError); return; }
       siteName = data.profile && (data.profile.siteName || data.profile.name);
+      const brandName = $('.brand-name');
+      if (brandName && siteName) brandName.textContent = siteName;
       applyEmail(data);
       applyResume(data);
+      applyNavCounts(data);
       // The heading says which list this is: the selected few at home, or all of them.
       // Each page numbers and names only the sections it shows.
       const head = (id, index, label) => {
@@ -2018,7 +2188,7 @@
       if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //'); head('writing', '02 //'); head('contact', '03 //', 'Terminal'); }
       else if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       else if (root.classList.contains('view-stack')) head('stack', '01 //');
-      else head('contact', '07 //');
+      else head('contact', '06 //');
       containers.forEach((container) => {
         const build = renderers[container.dataset.render];
         if (!build) return;
@@ -2054,6 +2224,7 @@
       if (root.classList.contains('view-stack') && data.stackPage) setTitle(data.stackPage.title);
       if (root.classList.contains('view-blog') && data.blogPage) setTitle(data.blogPage.title);
       if (root.classList.contains('view-links') && data.linksPage) setTitle(data.linksPage.title);
+      if (root.classList.contains('view-guestbook') && data.guestbook) setTitle(data.guestbook.title);
     };
 
     return { init };
@@ -4006,69 +4177,90 @@
       });
       document.body.append(hint);
 
-      // The intro plays once per load, and only when the page opens at the top.
-      if (!root.classList.contains('intro-play')) return;
       const rest = $$('.hero-text > :not(.hero-name)');
       const title = name.textContent;
-      if (window.scrollY > 4 || typeof name.animate !== 'function') { root.classList.remove('intro-play'); return; }
-      const running = [];
-      let timer = 0;
-      let played = false;
-      // Jump to the finished hero (also how a click skips the animation).
-      const finish = () => {
-        if (played) return;
-        played = true;
-        clearTimeout(timer);
-        document.removeEventListener('pointerdown', finish);
-        window.removeEventListener('keydown', finish);
-        running.forEach((animation) => animation.cancel());
-        $$('.intro-tiles').forEach((tiles) => tiles.remove());
-        photo.style.opacity = '';
-        name.textContent = title;
-        name.removeAttribute('aria-label');
-        name.style.opacity = '';
-        root.classList.remove('intro-play');
-      };
-      document.addEventListener('pointerdown', finish);
-      window.addEventListener('keydown', finish);
+      let stopIntro = () => {};
+      const playIntro = () => {
+        stopIntro();
+        if (prefersReducedMotion() || window.scrollY > 4 || typeof name.animate !== 'function') {
+          root.classList.remove('intro-play');
+          return;
+        }
+        root.classList.add('intro-play');
+        const running = [];
+        let timer = 0;
+        let played = false;
+        // Jump to the finished hero (also how a click skips the animation).
+        const finish = () => {
+          if (played) return;
+          played = true;
+          clearTimeout(timer);
+          document.removeEventListener('pointerdown', finish);
+          window.removeEventListener('keydown', finish);
+          running.forEach((animation) => animation.cancel());
+          $$('.intro-tiles').forEach((tiles) => tiles.remove());
+          photo.style.opacity = '';
+          name.textContent = title;
+          name.removeAttribute('aria-label');
+          name.style.opacity = '';
+          root.classList.remove('intro-play');
+        };
+        stopIntro = finish;
+        document.addEventListener('pointerdown', finish);
+        window.addEventListener('keydown', finish);
 
-      const time = introTimeline(Array.from(title.replace(/\s/g, '')).length, rest.length);
+        const time = introTimeline(Array.from(title.replace(/\s/g, '')).length, rest.length);
 
-      // 1. The photo: 64 page-coloured tiles drop away in a shuffled order.
-      const tiles = el('div', 'intro-tiles');
-      tiles.setAttribute('aria-hidden', 'true');
-      revealDelays(64, time.tileStep).forEach((delay) => {
-        const tile = document.createElement('span');
-        tiles.append(tile);
-        running.push(tile.animate([{ opacity: 1 }, { opacity: 0 }], { duration: time.tileFade, delay: 80 + delay, easing: 'steps(2, end)', fill: 'forwards' }));
-      });
-      photo.append(tiles);
-      photo.style.opacity = '1';
-
-      // 2. The name: each letter is already in place, so nothing shifts as it types.
-      name.setAttribute('aria-label', title);
-      name.textContent = '';
-      let letter = 0;
-      title.split(/(\s+)/).forEach((part) => {
-        if (!part) return;
-        if (/^\s+$/.test(part)) { name.append(' '); return; }
-        const word = el('span', 'intro-word');
-        word.setAttribute('aria-hidden', 'true');
-        Array.from(part).forEach((character) => {
-          const span = el('span', 'intro-char', character);
-          word.append(span);
-          running.push(span.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1, delay: time.nameStart + letter * time.nameStep, fill: 'forwards' }));
-          letter += 1;
+        // 1. The photo: 64 page-coloured tiles drop away in a shuffled order.
+        const tiles = el('div', 'intro-tiles');
+        tiles.setAttribute('aria-hidden', 'true');
+        revealDelays(64, time.tileStep).forEach((delay) => {
+          const tile = document.createElement('span');
+          tiles.append(tile);
+          running.push(tile.animate([{ opacity: 1 }, { opacity: 0 }], { duration: time.tileFade, delay: 80 + delay, easing: 'steps(2, end)', fill: 'forwards' }));
         });
-        name.append(word);
-      });
-      name.style.opacity = '1';
+        photo.append(tiles);
+        photo.style.opacity = '1';
 
-      // 3. Everything else rises into place, one line after another.
-      rest.forEach((node, index) => {
-        running.push(node.animate([{ opacity: 0, translate: '0 10px' }, { opacity: 1, translate: '0 0' }], { duration: 380, delay: time.restStart + index * time.restStep, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'both' }));
+        // 2. The name: each letter is already in place, so nothing shifts as it types.
+        name.setAttribute('aria-label', title);
+        name.textContent = '';
+        let letter = 0;
+        title.split(/(\s+)/).forEach((part) => {
+          if (!part) return;
+          if (/^\s+$/.test(part)) { name.append(' '); return; }
+          const word = el('span', 'intro-word');
+          word.setAttribute('aria-hidden', 'true');
+          Array.from(part).forEach((character) => {
+            const span = el('span', 'intro-char', character);
+            word.append(span);
+            running.push(span.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1, delay: time.nameStart + letter * time.nameStep, fill: 'forwards' }));
+            letter += 1;
+          });
+          name.append(word);
+        });
+        name.style.opacity = '1';
+
+        // 3. Everything else rises into place, one line after another.
+        rest.forEach((node, index) => {
+          running.push(node.animate([{ opacity: 0, translate: '0 10px' }, { opacity: 1, translate: '0 0' }], { duration: 380, delay: time.restStart + index * time.restStep, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'both' }));
+        });
+        timer = window.setTimeout(finish, time.end + 60);
+      };
+
+      // An explicit Home click returns to the cover and replays the same intro.
+      // Ordinary scrolling back to the top still leaves the completed hero alone.
+      const homeLink = $('.nav-link[data-section="home"]');
+      if (homeLink) homeLink.addEventListener('click', (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        layout.closeDrawer({ restoreFocus: false });
+        history.replaceState(null, '', homeLink.href);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+        sync();
+        playIntro();
       });
-      timer = window.setTimeout(finish, time.end + 60);
+      if (root.classList.contains('intro-play')) playIntro();
     };
     return { init };
   })();
@@ -4114,11 +4306,104 @@
      19f. Contact form — emails me through the Worker; falls back to the mail app
      ========================================================================== */
   const contactForm = (() => {
+    const initDialog = (form, enabled) => {
+      const trigger = $('.sidebar-contact');
+      const dialog = $('.contact-dialog');
+      if (!trigger || !dialog || typeof dialog.showModal !== 'function') return;
+      const stage = $('.contact-dialog-body', dialog);
+      const fallback = $('.contact-dialog-fallback', dialog);
+      const sidebar = $('#sidebar');
+      const wide = window.matchMedia('(min-width: 640px)');
+      let placeholder = null;
+      let returnFocus = null;
+      let pressedOutside = false;
+      const place = () => {
+        if (!dialog.open) return;
+        if (!wide.matches || !sidebar) {
+          dialog.removeAttribute('data-anchored');
+          return;
+        }
+        const edge = 16;
+        const panel = dialog.getBoundingClientRect();
+        const left = sidebar.getBoundingClientRect().right + 12;
+        if (left + panel.width > window.innerWidth - edge) {
+          dialog.removeAttribute('data-anchored');
+          return;
+        }
+        const top = Math.max(edge, Math.min(trigger.getBoundingClientRect().top, window.innerHeight - panel.height - edge));
+        dialog.style.setProperty('--contact-left', `${left}px`);
+        dialog.style.setProperty('--contact-top', `${top}px`);
+        dialog.setAttribute('data-anchored', '');
+      };
+      window.addEventListener('resize', place);
+      if (typeof ResizeObserver === 'function') {
+        const observer = new ResizeObserver(place);
+        observer.observe(dialog);
+        if (sidebar) observer.observe(sidebar);
+      }
+      const outside = (event) => {
+        const rect = dialog.getBoundingClientRect();
+        return event.clientX < rect.left || event.clientX > rect.right
+          || event.clientY < rect.top || event.clientY > rect.bottom;
+      };
+      trigger.addEventListener('click', (event) => {
+        if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        event.preventDefault();
+        if (dialog.open) return;
+        returnFocus = window.matchMedia('(max-width: 639.98px)').matches ? $('.menu-toggle') : trigger;
+        layout.closeDrawer({ restoreFocus: false });
+        fallback.hidden = Boolean(form && enabled);
+        if (form && enabled) {
+          // Keep the page's height and the same live form, including its draft.
+          placeholder = el('div', 'contact-placeholder');
+          placeholder.setAttribute('aria-hidden', 'true');
+          placeholder.style.height = `${form.getBoundingClientRect().height}px`;
+          placeholder.style.marginTop = getComputedStyle(form).marginTop;
+          form.before(placeholder);
+          stage.append(form);
+        }
+        document.body.classList.add('contact-open');
+        // The close button receives focus; fields wait for the visitor's choice.
+        dialog.showModal();
+        place();
+      });
+      $('.contact-dialog-close', dialog).addEventListener('click', () => dialog.close());
+      dialog.addEventListener('keydown', (event) => {
+        event.stopPropagation();
+        if (event.key !== 'Tab') return;
+        const focusable = $$('a[href], button, input, textarea, select, [tabindex]', dialog)
+          .filter((node) => !node.disabled && node.tabIndex >= 0 && node.getClientRects().length > 0);
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      });
+      dialog.addEventListener('pointerdown', (event) => { pressedOutside = outside(event); });
+      dialog.addEventListener('click', (event) => {
+        if (event.target === dialog && pressedOutside && outside(event)) dialog.close();
+      });
+      dialog.addEventListener('close', () => {
+        if (placeholder) { placeholder.replaceWith(form); placeholder = null; }
+        document.body.classList.remove('contact-open');
+        dialog.removeAttribute('data-anchored');
+        if (returnFocus && returnFocus.isConnected) returnFocus.focus({ preventScroll: true });
+        returnFocus = null;
+        pressedOutside = false;
+      });
+    };
+
     const init = (data) => {
       const form = $('.contact-form');
       const endpoint = assistantEndpoint(data && data.contact && data.contact.endpoint, window.location.href);
+      initDialog(form, Boolean(endpoint));
       if (!form || !endpoint) return;
       const fields = { name: $('#contact-name', form), email: $('#contact-email', form), message: $('#contact-message', form) };
+      const lastName = $('#contact-last-name', form);
       const trap = $('#contact-website', form);
       const button = $('.contact-send', form);
       const status = $('.contact-status', form);
@@ -4126,7 +4411,16 @@
       form.hidden = false;
       let sending = false;
 
-      const values = () => ({ name: fields.name.value, email: fields.email.value, message: fields.message.value });
+      const values = () => ({
+        name: [fields.name.value.trim(), lastName ? lastName.value.trim() : ''].filter(Boolean).join(' '),
+        email: fields.email.value,
+        message: fields.message.value,
+      });
+      const problemsFor = () => {
+        const problems = contactProblems(values());
+        if (!fields.name.value.trim()) problems.name = 'Please enter your first name.';
+        return problems;
+      };
       const mark = (problems) => {
         Object.entries(fields).forEach(([key, field]) => {
           const problem = problems[key] || '';
@@ -4138,10 +4432,16 @@
       // Once a field has been flagged, clear the flag as soon as it is put right.
       Object.entries(fields).forEach(([key, field]) => {
         field.addEventListener('input', () => {
-          if (field.getAttribute('aria-invalid') !== 'true' || contactProblems(values())[key]) return;
+          if (field.getAttribute('aria-invalid') !== 'true' || problemsFor()[key]) return;
           field.removeAttribute('aria-invalid');
           $(`#contact-${key}-error`, form).textContent = '';
         });
+      });
+      if (lastName) lastName.addEventListener('input', () => {
+        if (fields.name.getAttribute('aria-invalid') === 'true' && !problemsFor().name) {
+          fields.name.removeAttribute('aria-invalid');
+          $('#contact-name-error', form).textContent = '';
+        }
       });
       // "Did you mean …@gmail.com?" under the email field; one click applies it.
       const suggest = $('.contact-suggest', form);
@@ -4170,7 +4470,7 @@
         event.preventDefault();
         if (sending) return;
         const message = values();
-        const problems = contactProblems(message);
+        const problems = problemsFor();
         mark(problems);
         offer();
         const first = Object.keys(fields).find((key) => problems[key]);
@@ -4212,6 +4512,143 @@
           button.textContent = 'Send';
         }
       });
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
+     19g. Guestbook — public notes, published only after the owner reviews them
+     ========================================================================== */
+  const guestbook = (() => {
+    const init = (data) => {
+      if (!root.classList.contains('view-guestbook') || !data || !data.guestbook) return;
+      const config = data.guestbook;
+      const form = $('.guestbook-form');
+      if (!form) return;
+      const local = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname);
+      const endpoint = assistantEndpoint(config.endpoint === null ? null : local ? './api/guestbook' : config.endpoint, window.location.href);
+      const list = $('.guestbook-list');
+      const state = $('.guestbook-state');
+      const retry = $('.guestbook-retry');
+      const more = $('.guestbook-more');
+      const status = $('.guestbook-submit-status');
+      const submit = $('.contact-send', form);
+      const fields = { name: $('#guestbook-name'), message: $('#guestbook-message') };
+      const seen = new Set();
+      let cursor = null;
+      let loaded = false;
+      let fetching = false;
+      let sending = false;
+      let submission = null;
+      const values = () => ({ name: fields.name.value.trim(), message: fields.message.value.trim() });
+      const request = async (url, options = {}) => {
+        const controller = new AbortController();
+        const timer = window.setTimeout(() => controller.abort(), 15000);
+        try {
+          const response = await fetch(url, { ...options, credentials: 'omit', signal: controller.signal });
+          const body = response.headers.get('content-type')?.includes('application/json') ? await response.json() : null;
+          if (!response.ok) throw { status: response.status, body };
+          return body;
+        } finally { clearTimeout(timer); }
+      };
+      const entryEl = (entry) => {
+        const item = el('li', 'guestbook-entry');
+        const head = el('div', 'guestbook-entry-head');
+        const date = el('time', 'row-meta', new Date(entry.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }));
+        date.dateTime = entry.createdAt;
+        head.append(el('h3', null, entry.name), date);
+        item.append(head, el('p', 'guestbook-message', entry.message));
+        return item;
+      };
+      const load = async (before = null) => {
+        if (fetching || !endpoint) return;
+        fetching = true;
+        list.setAttribute('aria-busy', 'true');
+        state.textContent = config.loading;
+        retry.hidden = true;
+        more.disabled = true;
+        try {
+          const url = new URL(endpoint);
+          if (before) url.searchParams.set('before', before);
+          const page = guestbookPage(await request(url.href));
+          if (!page) throw new Error('invalid response');
+          if (!before) { list.replaceChildren(); seen.clear(); }
+          let firstNew = null;
+          page.entries.forEach((entry) => {
+            if (seen.has(entry.id)) return;
+            seen.add(entry.id);
+            const item = entryEl(entry);
+            if (!firstNew) firstNew = item;
+            list.append(item);
+          });
+          cursor = page.nextCursor;
+          $('.guestbook-total').textContent = String(page.total);
+          state.textContent = page.total ? '' : config.empty;
+          more.hidden = !cursor;
+          form.hidden = false;
+          loaded = true;
+          if (before && firstNew) { firstNew.tabIndex = -1; firstNew.focus({ preventScroll: true }); }
+        } catch {
+          state.textContent = config.unavailable;
+          retry.hidden = false;
+        } finally {
+          fetching = false;
+          more.disabled = false;
+          list.removeAttribute('aria-busy');
+        }
+      };
+      const mark = (problems) => Object.entries(fields).forEach(([key, field]) => {
+        $(`#guestbook-${key}-error`).textContent = problems[key] || '';
+        if (problems[key]) field.setAttribute('aria-invalid', 'true');
+        else field.removeAttribute('aria-invalid');
+      });
+      Object.entries(fields).forEach(([key, field]) => field.addEventListener('input', () => {
+        if (field.getAttribute('aria-invalid') === 'true' && !guestbookProblems(values())[key]) {
+          field.removeAttribute('aria-invalid');
+          $(`#guestbook-${key}-error`).textContent = '';
+        }
+      }));
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (sending || !loaded) return;
+        const note = values();
+        const problems = guestbookProblems(note);
+        mark(problems);
+        const first = Object.keys(fields).find((key) => problems[key]);
+        if (first) { status.textContent = ''; fields[first].focus(); return; }
+        const key = JSON.stringify(note);
+        if (!submission || submission.key !== key) {
+          const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), (value) => value.toString(16).padStart(2, '0')).join('');
+          submission = { key, id };
+        }
+        sending = true;
+        submit.disabled = true;
+        submit.textContent = config.sending;
+        status.textContent = '';
+        try {
+          const result = await request(endpoint, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...note, website: $('#guestbook-website').value, submissionId: submission.id }),
+          });
+          if (!result || result.ok !== true || result.pending !== true) throw new Error('invalid response');
+          form.reset();
+          submission = null;
+          status.textContent = config.success;
+        } catch (error) {
+          const code = error.body && error.body.code;
+          const field = code === 'INVALID_NAME' ? 'name' : code === 'INVALID_MESSAGE' ? 'message' : null;
+          if (field && typeof error.body.error === 'string') { mark({ [field]: error.body.error }); fields[field].focus(); }
+          status.textContent = config.failed;
+        } finally {
+          sending = false;
+          submit.disabled = false;
+          submit.textContent = config.submitLabel;
+        }
+      });
+      retry.addEventListener('click', () => load(loaded ? cursor : null));
+      more.addEventListener('click', () => load(cursor));
+      if (endpoint) load();
+      else state.textContent = config.unavailable;
     };
     return { init };
   })();
@@ -4271,6 +4708,7 @@
     cover.init();
     clickBurst.init();
     contactForm.init(data);
+    guestbook.init(data);
     scrollAids.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());

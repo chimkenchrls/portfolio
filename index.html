@@ -97,7 +97,7 @@
         }
         // The Projects, Stack and More about me pages (?view=projects|stack|more)
         // are this same file showing only their own sections; no cover, no intro.
-        var view = /[?&]view=(projects|more|stack|case|post|blog|links)(&|$)/.exec(window.location.search);
+        var view = /[?&]view=(projects|more|stack|case|post|blog|links|guestbook)(&|$)/.exec(window.location.search);
         if (view) {
           root.classList.add("view-" + view[1]);
           return;
@@ -159,7 +159,7 @@
         <a class="brand" href="#home" aria-label="Kenneth Charles • home">
           <span class="brand-mark" aria-hidden="true">CK</span>
           <span class="brand-name" aria-hidden="true"
-            >Kenneth Charles Valdez</span
+            >Kenneth Charles</span
           >
         </a>
         <button
@@ -173,19 +173,17 @@
         </button>
       </div>
 
-      <button
-        class="copy-email"
-        type="button"
+      <a
+        class="sidebar-contact"
+        href="mailto:charleskenneth129@gmail.com"
         data-email
-        data-copy="charleskenneth129@gmail.com"
-        aria-label="Copy email address charleskenneth129@gmail.com"
-        title="Copy email"
+        aria-haspopup="dialog"
+        aria-controls="contact-dialog"
+        title="Contact"
       >
-        <span class="icon icon-copy" aria-hidden="true"></span
-        ><span class="nav-text" data-copy-label
-          >charleskenneth129@gmail.com</span
-        >
-      </button>
+        <span class="icon icon-email" aria-hidden="true"></span
+        ><span class="nav-text">Contact</span>
+      </a>
 
       <nav class="nav" aria-label="Sections">
         <p class="nav-label">Menu</p>
@@ -193,7 +191,7 @@
           <li>
             <a
               class="nav-link"
-              href="./#home"
+              href="./"
               data-section="home"
               title="Home (1)"
               ><span class="icon icon-home" aria-hidden="true"></span
@@ -219,6 +217,11 @@
               ><span class="icon icon-blog" aria-hidden="true"></span
               ><span class="nav-text">Blog</span></a
             >
+          </li>
+          <li>
+            <a class="nav-link" href="./?view=guestbook" data-view="guestbook" title="Guestbook">
+              <span class="icon icon-guestbook" aria-hidden="true"></span><span class="nav-text">Guestbook</span>
+            </a>
           </li>
         </ul>
         <p class="nav-label">Explore</p>
@@ -488,16 +491,9 @@
         <div class="links-groups" data-render="profileLinks"></div>
       </section>
 
-      <section class="section" id="blog" aria-labelledby="blog-heading">
-        <div class="divider">
-          <span class="divider-line"></span>
-          <h2 class="divider-label" id="blog-heading">
-            <span class="divider-index" aria-hidden="true">06 //</span> Blog
-          </h2>
-          <span class="divider-line"></span>
-        </div>
-        <ul class="writing-list" data-render="blogPreview"></ul>
-        <p class="blog-more"><a class="text-link" href="./?view=blog">View all posts</a></p>
+      <section class="section guestbook-page" id="guestbook" aria-labelledby="guestbook-heading">
+        <header class="guestbook-page-header" data-render="guestbookHeading"></header>
+        <div data-render="guestbook"></div>
       </section>
 
       <section class="section" id="outside" aria-labelledby="outside-heading">
@@ -536,6 +532,10 @@
         <div data-render="personal"></div>
       </section>
 
+      <section class="section now-section" id="now" aria-labelledby="now-heading" hidden>
+        <div data-render="now"></div>
+      </section>
+
       <section class="section more-background" id="background" aria-label="Experience and education">
         <div class="timeline-block">
           <h2 class="history-title" id="more-experience-heading">Experience</h2>
@@ -563,7 +563,7 @@
         <div class="divider">
           <span class="divider-line"></span>
           <h2 class="divider-label" id="contact-heading">
-            <span class="divider-index" aria-hidden="true">07 //</span> Get in
+            <span class="divider-index" aria-hidden="true">06 //</span> Get in
             touch
           </h2>
           <span class="divider-line"></span>
@@ -656,12 +656,12 @@
           <h3 class="block-title">Send a message</h3>
           <div class="contact-row">
             <p class="contact-field">
-              <label for="contact-name">Name</label>
+              <label for="contact-name">First name</label>
               <input
                 id="contact-name"
                 name="name"
                 type="text"
-                autocomplete="name"
+                autocomplete="given-name"
                 maxlength="80"
                 required
                 aria-describedby="contact-name-error"
@@ -669,22 +669,32 @@
               <span class="contact-error" id="contact-name-error"></span>
             </p>
             <p class="contact-field">
-              <label for="contact-email">Email</label>
+              <label for="contact-last-name">Last name</label>
               <input
-                id="contact-email"
-                name="email"
-                type="email"
-                autocomplete="email"
-                inputmode="email"
-                maxlength="200"
-                spellcheck="false"
-                required
-                aria-describedby="contact-email-error"
+                id="contact-last-name"
+                name="lastName"
+                type="text"
+                autocomplete="family-name"
+                maxlength="80"
               />
-              <span class="contact-error" id="contact-email-error"></span>
-              <button class="contact-suggest" type="button" hidden></button>
             </p>
           </div>
+          <p class="contact-field">
+            <label for="contact-email">Email</label>
+            <input
+              id="contact-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              inputmode="email"
+              maxlength="200"
+              spellcheck="false"
+              required
+              aria-describedby="contact-email-error"
+            />
+            <span class="contact-error" id="contact-email-error"></span>
+            <button class="contact-suggest" type="button" hidden></button>
+          </p>
           <p class="contact-field">
             <label for="contact-message">Message</label>
             <textarea
@@ -721,6 +731,21 @@
         <p>© <span class="footer-year">2026</span> Kenneth Charles</p>
       </footer>
     </main>
+
+    <dialog class="contact-dialog" id="contact-dialog" aria-labelledby="contact-dialog-title">
+      <div class="contact-dialog-header">
+        <h2 id="contact-dialog-title">Contact</h2>
+        <button class="contact-dialog-close" type="button" aria-label="Close contact" autofocus>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <path d="m6 6 12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </div>
+      <div class="contact-dialog-body"></div>
+      <p class="contact-dialog-fallback" hidden>
+        <a class="text-link" data-email href="mailto:charleskenneth129@gmail.com">Email me</a>
+      </p>
+    </dialog>
 
     <button
       class="assistant-launcher"

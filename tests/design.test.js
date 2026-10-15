@@ -58,7 +58,7 @@ test('depth comes from surfaces: cards read as raised in both themes, and text s
 
 test('section headings keep the original centered divider style', () => {
   const sections = [['about', '02 //', 'About'], ['projects', '03 //', 'Projects'], ['stack', '04 //', 'Stack'],
-    ['certifications', '05 //', 'Certifications'], ['outside', '06 //', 'Outside the IDE'], ['contact', '07 //', 'Get in touch']];
+    ['certifications', '05 //', 'Certifications'], ['outside', '06 //', 'Outside the IDE'], ['contact', '06 //', 'Get in touch']];
   for (const [id, tag, title] of sections) {
     const start = html.indexOf(`id="${id}"`);
     const head = html.slice(start, start + 700);

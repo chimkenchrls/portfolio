@@ -26,6 +26,13 @@
   --status: #2f9e5b;
   /* Depth: cards sit on a slightly tinted surface with a soft shadow. */
   --surface: #ffffff;
+  /* Static grain for the framed sidebar and contact dialog. */
+  --grain: url("./assets/grain.png");
+  --panel-frame: color-mix(in srgb, var(--surface) 93%, var(--fg));
+  --panel-edge: color-mix(in srgb, var(--surface) 86%, var(--fg));
+  --panel-shine: color-mix(in srgb, var(--surface) 84%, white);
+  --control-start: color-mix(in srgb, var(--surface) 98%, white);
+  --control-end: color-mix(in srgb, var(--surface) 96%, var(--fg));
   /* chimken is a white chicken in both themes */
   --chimken-line: #0a0a0a;
   --chimken-body: #ffffff;
@@ -271,6 +278,9 @@ dd {
 .icon-blog {
   --icon: url("./assets/icons/blog.svg");
 }
+.icon-guestbook {
+  --icon: url("./assets/icons/guestbook.svg");
+}
 .icon-links { --icon: url("./assets/icons/links.svg"); }
 .icon-discord { --icon: url("./assets/icons/discord.svg"); }
 .icon-tiktok { --icon: url("./assets/icons/tiktok.svg"); }
@@ -337,18 +347,33 @@ dd {
   flex-direction: column;
   gap: 14px;
   width: var(--sidebar-w);
-  padding: 14px 12px 0;
+  padding: 18px 16px 0;
   overflow-y: auto;
   scrollbar-width: none;
   background: var(--surface);
-  border-radius: 21px;
-  /* A floating card in a frame: 5px of page colour, then a hairline. */
+  background-image: var(--grain), linear-gradient(var(--panel-frame), var(--bg-alt));
+  border: 1px solid var(--panel-edge);
+  border-radius: 26px;
+  isolation: isolate;
   box-shadow:
-    0 0 0 5px var(--bg),
-    0 0 0 6px var(--border);
+    inset 0 1px 0 var(--panel-shine),
+    var(--shadow-lift);
   transition:
     width var(--t) var(--ease),
     padding var(--t) var(--ease);
+}
+/* An inset panel leaves the textured five-pixel frame visible. */
+.sidebar::before,
+.contact-dialog::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  z-index: -1;
+  background: var(--grain), var(--surface);
+  border: 1px solid var(--panel-edge);
+  border-radius: 21px;
+  box-shadow: inset 0 1px 0 var(--panel-shine);
+  pointer-events: none;
 }
 .main {
   margin-left: calc(var(--sidebar-w) + 36px);
@@ -474,8 +499,8 @@ dd {
 .sidebar-icon:active {
   scale: 0.94;
 }
-/* Pills: copy email at the top, chat at the bottom. */
-.copy-email,
+/* Pills: contact at the top, chat at the bottom. */
+.sidebar-contact,
 .sidebar-chat {
   display: flex;
   flex: none;
@@ -495,15 +520,17 @@ dd {
     opacity var(--t-fast) ease,
     scale 160ms ease-out;
 }
-.copy-email:active,
+.sidebar-contact:active,
 .sidebar-chat:active {
   scale: 0.98;
 }
-.copy-email {
-  gap: 8px;
-  padding: 0 12px;
-  font-size: 11.5px;
-  letter-spacing: -0.01em;
+.sidebar-contact {
+  height: 46px;
+  font-size: 14px;
+  font-weight: 400;
+  background: linear-gradient(var(--control-start), var(--control-end));
+  border-color: var(--panel-edge);
+  box-shadow: inset 0 1px 0 var(--panel-shine), 0 2px 3px rgb(0 0 0 / 6%), 0 5px 10px rgb(0 0 0 / 4%);
 }
 .sidebar-chat {
   color: var(--bg);
@@ -556,6 +583,30 @@ dd {
 .nav-link.is-active {
   color: var(--fg);
   background: var(--bg-alt);
+}
+.nav-link[aria-current] {
+  background: linear-gradient(var(--control-start), var(--control-end));
+  border-color: var(--panel-edge);
+  box-shadow: inset 0 1px 0 var(--panel-shine), 0 1px 2px rgb(0 0 0 / 4%);
+}
+.nav-link {
+  color: var(--fg);
+  font-weight: 400;
+}
+.nav-link .icon {
+  color: var(--fg-muted);
+}
+.nav-link.is-active .icon,
+.nav-link[aria-current] .icon {
+  color: var(--fg);
+}
+.nav-count {
+  flex: none;
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 /* Sits at the bottom of the sidebar, just above the footer rows. */
 .game-trigger {
@@ -690,13 +741,18 @@ body.is-rail .poke-emote {
     color: var(--fg);
     background: var(--bg-alt);
   }
+  .nav-link:hover {
+    background: linear-gradient(var(--control-start), var(--control-end));
+    border-color: var(--panel-edge);
+    box-shadow: inset 0 1px 0 var(--panel-shine), 0 1px 2px rgb(0 0 0 / 4%);
+  }
   .collapse-toggle:hover,
   .theme-toggle:hover,
   .sidebar-icon:hover {
     color: var(--fg);
     background: var(--bg-alt);
   }
-  .copy-email:hover,
+  .sidebar-contact:hover,
   .poke-button:hover {
     background: var(--bg-alt);
     border-color: color-mix(in srgb, var(--fg) 18%, var(--border));
@@ -713,7 +769,7 @@ body.is-rail .poke-emote {
   .collapse-toggle:active,
   .theme-toggle:active,
   .sidebar-icon:active,
-  .copy-email:active,
+  .sidebar-contact:active,
   .sidebar-chat:active,
   .poke-button:active {
     scale: none;
@@ -723,13 +779,13 @@ body.is-rail .poke-emote {
 /* 8. Rail mode (tablet, or desktop collapsed) — body.is-rail set by JS ===== */
 body.is-rail .sidebar {
   width: var(--rail-w);
-  padding: 12px 8px 0;
+  padding: 12px 7px 0;
   align-items: center;
 }
 body.is-rail .main {
   margin-left: calc(var(--rail-w) + 36px);
 }
-body.is-rail :is(.nav-label, .nav-text, .score-row, .brand-name, .sidebar-zone, .poke-count, .sidebar-icon) {
+body.is-rail :is(.nav-label, .nav-text, .nav-count, .score-row, .brand-name, .sidebar-zone, .poke-count, .sidebar-icon) {
   display: none;
 }
 body.is-rail .brand-mark {
@@ -740,7 +796,7 @@ body.is-rail .sidebar-head {
   gap: 10px;
   padding: 6px 0 0;
 }
-body.is-rail :is(.nav-link, .game-trigger, .copy-email, .sidebar-chat) {
+body.is-rail :is(.nav-link, .game-trigger, .sidebar-contact, .sidebar-chat) {
   justify-content: center;
   width: 40px;
   height: 40px;
@@ -1353,12 +1409,15 @@ html:not(.view-projects):not(.view-case) .project-list {
 html.view-projects .main > .section:not(#projects),
 html.view-case .main > .section:not(#projects),
 html.view-stack .main > .section:not(#stack),
-html.view-more .main > .section:not(#personal):not(#background):not(#writing):not(#outside):not(#contact),
+html.view-more .main > .section:not(#personal):not(#now):not(#background):not(#writing):not(#outside):not(#contact),
+html.view-guestbook .main > .section:not(#guestbook),
 html.view-post .main > .section:not(#writing),
 html.view-blog .main > .section:not(#writing),
 html.view-links .main > .section:not(#links),
-html.view-more .contact-form,
+html.view-more #contact .contact-form,
 html.has-cover #personal,
+html.has-cover #now,
+html.has-cover #guestbook,
 html.has-cover #links,
 html.has-cover #background,
 html.has-cover #writing,
@@ -1383,16 +1442,6 @@ html.view-post #writing .divider {
   height: 1px;
   overflow: hidden;
   clip-path: inset(50%);
-}
-html.view-more .nav-link[data-view="more"],
-html.view-links .nav-link[data-view="links"],
-html.view-blog .nav-link[data-view="blog"],
-html.view-post .nav-link[data-view="blog"],
-html.view-projects .nav-link[data-view="projects"],
-html.view-case .nav-link[data-view="projects"],
-html.view-stack .nav-link[data-view="stack"] {
-  color: var(--fg);
-  background: var(--bg-alt);
 }
 .project-row[hidden],
 .project-more[hidden] {
@@ -2118,6 +2167,119 @@ html.view-stack .nav-link[data-view="stack"] {
   transform: rotate(-25deg);
 }
 
+/* Now and Guestbook — plain updates and visitor notes. */
+.now-head,
+.guestbook-list-head,
+.guestbook-entry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.now-head {
+  margin-bottom: 12px;
+}
+.now-list {
+  margin: 0;
+}
+.now-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 20px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.now-row dt {
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.now-row dd {
+  margin: 0;
+}
+.guestbook-page {
+  max-width: 660px;
+}
+.guestbook-intro {
+  max-width: 50ch;
+  margin-top: 14px;
+  color: var(--fg-muted);
+  font-size: 16px;
+}
+.guestbook-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 36px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid var(--border);
+}
+.guestbook-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.guestbook-list-head {
+  margin: 36px 0 8px;
+}
+.guestbook-total {
+  color: var(--fg-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.guestbook-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.guestbook-entry {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+}
+.guestbook-entry-head h3 {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 550;
+  overflow-wrap: anywhere;
+}
+.guestbook-message {
+  margin-top: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.guestbook-state {
+  color: var(--fg-muted);
+  margin-top: 20px;
+}
+.guestbook-submit-status:empty,
+.guestbook-state:empty {
+  display: none;
+}
+.guestbook-retry,
+.guestbook-more {
+  min-height: 44px;
+  margin-top: 12px;
+  font-size: 13px;
+}
+.project-demo {
+  margin-top: 32px;
+}
+.demo-video {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 14px;
+  aspect-ratio: 8 / 5;
+  background: var(--bg-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.demo-summary {
+  margin-top: 10px;
+  color: var(--fg-muted);
+  font-size: 13px;
+}
+
 /* More about me — personal introduction and a flat list of writing. */
 .more-page-header {
   display: none;
@@ -2295,10 +2457,6 @@ html.view-more .outside-intro {
   button.profile-link:hover {
     background: var(--bg-alt);
   }
-}
-.blog-more {
-  margin-top: 20px;
-  font-size: 13px;
 }
 .writing-read-time {
   margin-top: 12px;
@@ -2713,7 +2871,111 @@ html.view-more .outside-intro {
   color: var(--t-fg);
   border-color: var(--t-muted);
 }
-/* Contact form: under the terminal, for anyone who would rather just write. */
+/* Contact dialog: the sidebar opens the same form used on Home. */
+body.contact-open {
+  overflow: hidden;
+}
+.contact-dialog {
+  position: fixed;
+  width: min(420px, calc(100% - 32px));
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 22px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  color: var(--fg);
+  background: var(--grain), linear-gradient(var(--panel-frame), var(--bg-alt));
+  border: 1px solid var(--panel-edge);
+  border-radius: 26px;
+  isolation: isolate;
+  box-shadow: inset 0 1px 0 var(--panel-shine), var(--shadow-lift);
+}
+.contact-dialog[data-anchored] {
+  inset: var(--contact-top) auto auto var(--contact-left);
+  margin: 0;
+}
+.contact-dialog::backdrop {
+  background: rgb(0 0 0 / 8%);
+}
+.contact-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.contact-dialog-header h2 {
+  font-size: 18px;
+  font-weight: 550;
+  letter-spacing: -0.03em;
+}
+.contact-dialog-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -8px -8px -8px 0;
+  border-radius: 50%;
+}
+.contact-dialog .contact-form {
+  gap: 10px;
+  margin-top: 0;
+}
+.contact-dialog .contact-row {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.contact-dialog .contact-field {
+  gap: 4px;
+}
+.contact-dialog .contact-field label {
+  color: var(--fg-muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.contact-dialog .contact-field input,
+.contact-dialog .contact-field textarea {
+  padding: 7px 10px;
+  background: var(--bg);
+  border-color: var(--panel-edge);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 3%);
+}
+.contact-dialog .contact-field textarea {
+  height: 96px;
+  min-height: 96px;
+}
+.contact-dialog .contact-foot {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.contact-dialog .contact-note {
+  font-size: 11px;
+  line-height: 1.5;
+}
+.contact-dialog .contact-send {
+  width: auto;
+  min-width: 76px;
+  height: 40px;
+  padding: 0 20px;
+  color: var(--fg);
+  font-weight: 400;
+  background: linear-gradient(var(--control-start), var(--control-end));
+  border: 1px solid var(--panel-edge);
+  box-shadow: inset 0 1px 0 var(--panel-shine), 0 2px 3px rgb(0 0 0 / 6%), 0 5px 10px rgb(0 0 0 / 4%);
+}
+.contact-dialog .block-title {
+  display: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .contact-dialog-close:hover {
+    background: var(--bg-alt);
+  }
+}
+
+/* Contact form: flat on Home, shared with the sidebar dialog. */
 .contact-form {
   display: grid;
   gap: 16px;
@@ -3318,7 +3580,7 @@ html.at-cover .assistant-launcher {
   opacity: 0;
   pointer-events: none;
 }
-/* The intro, once per load: script.js reveals each part of the hero in turn. */
+/* The intro, on load or a Home click: script.js reveals the hero in turn. */
 html.intro-play .hero-photo,
 html.intro-play .hero-name,
 html.intro-play .hero-text > :not(.hero-name) {
@@ -3473,6 +3735,15 @@ html.at-cover:not(.intro-play) .intro-hint {
 }
 
 @media (max-width: 639.98px) {
+  .now-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .guestbook-foot {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
   .certification-grid {
     grid-template-columns: 1fr;
   }

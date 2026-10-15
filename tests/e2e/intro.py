@@ -1,5 +1,5 @@
-"""Cover: the hero is its own opening screen. It assembles once on load; the sidebar only arrives
-after the hero has scrolled away, and leaves again (with no replay) when the visitor scrolls back up."""
+"""Cover: the hero assembles on load and on an explicit sidebar Home click. The sidebar arrives
+after scrolling, and leaves again (with no replay) when the visitor scrolls back up."""
 import os
 from playwright.sync_api import sync_playwright
 from common import check, finish, offline_api
@@ -86,7 +86,23 @@ with sync_playwright() as pw:
     p.keyboard.press("3")
     p.wait_for_timeout(1500)
     check("and a section shortcut brings the sidebar with it", p.evaluate(STATE)["sidebarLeft"] == 18)
+    for attempt in range(2):
+        p.click('.nav-link[data-section="home"]')
+        s = p.evaluate(STATE)
+        check(f"sidebar Home replays the intro (visit {attempt + 1})", s["y"] == 0 and s["cover"] and s["play"] and s["tiles"] == 1 and p.evaluate("location.hash") == "", str(s))
+        p.wait_for_function("!document.documentElement.classList.contains('intro-play')", timeout=5000)
+        check("a replay cleans up its tiles and restores the full name", p.locator(".intro-tiles").count() == 0 and p.get_attribute(".hero-name", "aria-label") is None)
+        p.evaluate("document.getElementById('about').scrollIntoView({ block: 'start', behavior: 'instant' })")
+        settle(p)
     check("no errors", not errors, "; ".join(errors))
+    ctx.close()
+
+    ctx, p, errors = page(b, url=PLAIN + "?view=links")
+    p.click('.nav-link[data-section="home"]')
+    p.wait_for_selector('.intro-tiles')
+    s = p.evaluate(STATE)
+    check("sidebar Home from another page opens the cover with its intro", s["cover"] and s["play"] and s["y"] == 0 and p.evaluate("location.search + location.hash") == "", str(s))
+    check("no errors returning Home", not errors, "; ".join(errors))
     ctx.close()
 
     ctx, p, errors = page(b)
@@ -111,7 +127,7 @@ with sync_playwright() as pw:
     p.evaluate("document.getElementById('stack').scrollIntoView({ block: 'start', behavior: 'instant' })")
     p.wait_for_timeout(300)
     check("(before the reload: deep in the page, with a section in the address)", p.evaluate("scrollY") > 1500 and p.evaluate("location.hash") == "#projects")
-    p.reload(); p.wait_for_load_state("domcontentloaded")
+    p.reload(wait_until="domcontentloaded")
     p.wait_for_timeout(250)
     s = p.evaluate(STATE)
     check("a reload goes back to the top and drops the #section", s["y"] == 0 and p.evaluate("location.hash") == "" and p.evaluate("location.pathname") == "/", str(s))
@@ -122,7 +138,7 @@ with sync_playwright() as pw:
     check("and finishes as usual, still at the top (no late jump back down)", s["title"] == "1" and s["y"] == 0 and s["cover"], str(s))
     p.click(".intro-hint")
     p.wait_for_timeout(1300)
-    p.reload(); p.wait_for_load_state("domcontentloaded")
+    p.reload(wait_until="domcontentloaded")
     p.wait_for_timeout(250)
     check("a reload from further down the page (no #section) also starts at the hero", p.evaluate(STATE)["y"] == 0 and p.evaluate(STATE)["play"])
     check("no errors on reload", not errors, "; ".join(errors))
@@ -138,6 +154,9 @@ with sync_playwright() as pw:
     p.evaluate("window.scrollTo(0, 120)")
     p.wait_for_timeout(200)
     check("reduced motion: it switches as soon as scrolling starts, with no glide", p.evaluate(STATE)["sidebarLeft"] == 18 and p.evaluate("Math.round(document.querySelector('.hero-photo').getBoundingClientRect().left)") == p.evaluate("Math.round(document.querySelector('.about-bio').getBoundingClientRect().left)"))
+    p.click('.nav-link[data-section="home"]')
+    s = p.evaluate(STATE)
+    check("reduced motion: sidebar Home returns to the finished hero", s["y"] == 0 and s["cover"] and not s["play"] and s["tiles"] == 0 and s["photo"] == "1" and s["title"] == "1", str(s))
     ctx.close()
 
     # Cursor and click burst.
@@ -213,6 +232,11 @@ with sync_playwright() as pw:
     p.evaluate("document.getElementById('about').scrollIntoView({ block: 'start', behavior: 'instant' })")
     settle(p)
     check("phone: in About they are back", p.evaluate("Math.round(document.querySelector('.topbar').getBoundingClientRect().top)") == 0 and p.eval_on_selector(".assistant-launcher", "n => getComputedStyle(n).opacity") == "1")
+    p.click('.menu-toggle')
+    p.click('.nav-link[data-section="home"]')
+    s = p.evaluate(STATE)
+    check("phone: sidebar Home closes the drawer and replays the intro", s["cover"] and s["play"] and s["tiles"] == 1 and not p.locator("body.drawer-open").count(), str(s))
+    p.wait_for_function("!document.documentElement.classList.contains('intro-play')", timeout=5000)
     p.evaluate("window.scrollTo({ top: 0, behavior: 'instant' })")
     settle(p)
     check("phone: and gone again at the top", p.evaluate("Math.round(document.querySelector('.topbar').getBoundingClientRect().bottom)") <= 0)

@@ -7,12 +7,14 @@ const { pipeline } = require('node:stream/promises');
 const { createReadStream } = require('node:fs');
 const data = require('./assets/data.js');
 const { ChatError, validateMessages, generateReply, createLimiter } = require('./server/chat.js');
+const { validateGuestbook, listGuestbook, saveGuestbook } = require('./server/guestbook.js');
+const { createLocalGuestbook } = require('./server/guestbook-local.js');
 
 const ROOT = __dirname;
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
   '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp',
-  '.woff2': 'font/woff2', '.pdf': 'application/pdf', '.mp4': 'video/mp4', '.webm': 'video/webm', '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2', '.pdf': 'application/pdf', '.mp4': 'video/mp4', '.webm': 'video/webm', '.vtt': 'text/vtt; charset=utf-8', '.ico': 'image/x-icon',
 };
 const readBody = (req) => new Promise((resolve, reject) => {
   let size = 0;
@@ -38,6 +40,8 @@ const createPortfolioServer = (options = {}) => {
   const dailyLimit = Number(options.dailyLimit ?? process.env.DAILY_CHAT_LIMIT ?? 100);
   if (!Number.isInteger(dailyLimit) || dailyLimit < 1) throw new Error('DAILY_CHAT_LIMIT must be a positive integer.');
   const allow = createLimiter({ dailyLimit });
+  const allowGuestbook = createLimiter({ dailyLimit: 50 });
+  let guestbookDb = options.guestbookDb || null;
   let active = 0;
   const server = http.createServer(async (req, res) => {
     const json = (status, body) => {
@@ -48,6 +52,27 @@ const createPortfolioServer = (options = {}) => {
     };
     try {
       const url = new URL(req.url, 'http://portfolio.local');
+      if (url.pathname === '/api/guestbook') {
+        const origin = req.headers.origin || (req.method === 'GET' ? `http://${req.headers.host}` : null);
+        if (!origin || !allowedOrigins.has(origin)) throw new ChatError(403, 'ORIGIN_DENIED', 'This origin is not allowed.');
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Vary', 'Origin');
+        if (req.method === 'OPTIONS') {
+          res.writeHead(204, { 'Access-Control-Allow-Methods': 'GET, POST', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600' });
+          res.end();
+          return;
+        }
+        if (!['GET', 'POST'].includes(req.method)) { res.setHeader('Allow', 'GET, POST, OPTIONS'); throw new ChatError(405, 'METHOD_NOT_ALLOWED', 'Use GET or POST.'); }
+        if (!guestbookDb) guestbookDb = createLocalGuestbook(options.guestbookFile || path.join(ROOT, '.local/guestbook.sqlite'));
+        if (req.method === 'GET') { json(200, await listGuestbook(guestbookDb, url.searchParams.get('before'))); return; }
+        if (!/^application\/json(?:\s*;|$)/i.test(req.headers['content-type'] || '')) throw new ChatError(415, 'INVALID_CONTENT_TYPE', 'Use application/json.');
+        const note = validateGuestbook(await readBody(req));
+        if (note.spam) { json(200, { ok: true, pending: true }); return; }
+        if (!allowGuestbook(req.socket.remoteAddress)) throw new ChatError(429, 'RATE_LIMIT', 'Please wait before leaving another note.');
+        await saveGuestbook(guestbookDb, note);
+        json(200, { ok: true, pending: true });
+        return;
+      }
       if (url.pathname === '/api/chat') {
         const origin = req.headers.origin;
         if (!origin || !allowedOrigins.has(origin)) throw new ChatError(403, 'ORIGIN_DENIED', 'This origin is not allowed.');
@@ -102,6 +127,7 @@ const createPortfolioServer = (options = {}) => {
   });
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
+  server.on('close', () => { if (guestbookDb && !options.guestbookDb) guestbookDb.close(); });
   return server;
 };
 

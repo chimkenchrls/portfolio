@@ -35,6 +35,34 @@ const PORTFOLIO_DATA = {
       "Hey, I’m CK. I’m a computer science student building side projects and learning as I go.\n\nThis is a little space for thoughts between builds, and the places, things, and moments that recharge me away from the terminal.",
   },
 
+  // A small update on More about me. Add only things you are actually doing.
+  now: {
+    title: "Now",
+    updated: "2026-10-15",
+    items: [
+      { label: "Building", text: "This portfolio — adding a guestbook, project demos, and a little more personality." },
+    ],
+  },
+
+  guestbook: {
+    title: "Guestbook",
+    intro: "You found my little corner of the internet. Leave a note before you go.",
+    endpoint: "https://kenchrls-api.kenchrls.workers.dev/api/guestbook",
+    nameLabel: "Name or nickname",
+    messageLabel: "Your note",
+    submitLabel: "Sign the guestbook",
+    sending: "Sending…",
+    notice: "Notes are public after I review them. No account or email needed.",
+    empty: "No notes yet. You can leave the first one.",
+    success: "Thanks for stopping by! Your note will appear here after I review it.",
+    unavailable: "The guestbook couldn’t load. Please try again in a moment.",
+    failed: "Your note wasn’t sent. Your draft is still here — please try again.",
+    loading: "Loading notes…",
+    notesLabel: "Notes",
+    retryLabel: "Try again",
+    moreLabel: "Load more",
+  },
+
   projectsPage: {
     title: "Projects",
     intro:
@@ -77,7 +105,7 @@ const PORTFOLIO_DATA = {
     ],
   },
 
-  // Posts appear on Blog, Home and More about me. Leave body and date null until a post is
+  // Posts appear on Blog and More about me. Leave body and date null until a post is
   // ready. Set both (date: YYYY-MM-DD; body: paragraphs separated by blank lines)
   // to publish it at ./?view=post&p=<slug>. Text is displayed literally.
   writing: [
@@ -228,6 +256,13 @@ const PORTFOLIO_DATA = {
   projects: [
     {
       title: "Ambiancy",
+      demo: {
+        src: "./assets/projects/ambiancy-demo.mp4",
+        poster: "./assets/projects/ambiancy-demo.jpg",
+        captions: "./assets/projects/ambiancy-demo.vtt",
+        title: "Ambiancy in action",
+        summary: "A silent walkthrough: start Rainy café, adjust the rain volume, set a 15-minute sleep timer, copy the mix link, and pause playback.",
+      },
       role: "Independent developer",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
       // line starts a new paragraph. Use null for a part that is not written yet.
@@ -274,6 +309,7 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "Pakisuyo Express",
+      demo: null,
       role: "Independent developer",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
       // line starts a new paragraph. Use null for a part that is not written yet.
@@ -319,6 +355,7 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "OwlSet",
+      demo: null,
       role: "Hackathon submission · Frontend and DevOps lead",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
       // line starts a new paragraph. Use null for a part that is not written yet.
@@ -365,6 +402,7 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "Thready",
+      demo: null,
       role: "Thesis project · Frontend and DevOps lead",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
       // line starts a new paragraph. Use null for a part that is not written yet.
@@ -410,6 +448,7 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "AmIgo",
+      demo: null,
       role: "Independent developer",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
       // line starts a new paragraph. Use null for a part that is not written yet.

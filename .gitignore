@@ -34,4 +34,6 @@ playwright-report/
 .wrangler/
 .dev.vars
 .vercel
+.local/
+.impeccable/review/
 .env*

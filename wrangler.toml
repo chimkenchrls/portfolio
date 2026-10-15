@@ -19,6 +19,7 @@ CONTACT_TO = "kennethcharles291@gmail.com"
 CONTACT_FROM = "Portfolio <onboarding@resend.dev>"
 # Emails allowed per day (Resend's free plan allows 100).
 CONTACT_DAILY_LIMIT = "50"
+GUESTBOOK_DAILY_LIMIT = "50"
 
 [[d1_databases]]
 binding = "DB"

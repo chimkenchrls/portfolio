@@ -38,6 +38,7 @@ const portfolioContext = (data) => ({
   stack: data.stack.map(({ category, items }) => ({ category, items: items.map(({ name }) => name) })),
   certifications: data.certifications.map(({ title, issuer, status, date }) => ({ title, issuer, status, date })),
   outsideIntro: data.outsideIntro,
+  now: data.now || null,
 });
 
 const systemInstruction = (data) => [

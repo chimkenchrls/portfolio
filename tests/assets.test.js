@@ -30,10 +30,8 @@ test('index.html has one section per nav target', () => {
   for (const id of ['home', 'about', 'stack', 'projects', 'certifications', 'contact']) {
     assert.match(html, new RegExp(`<section[^>]*id="${id}"`), `section #${id} missing`);
   }
-  // The sidebar links Home; Explore opens the More about me, Projects and Stack pages.
-  for (const id of ['home']) {
-    assert.match(html, new RegExp(`<a[^>]*class="nav-link"[^>]*href="\\./#${id}"`), `nav link #${id} missing`);
-  }
+  // Home opens the cover without a section hash, so its intro can play again.
+  assert.match(html, /<a[^>]*class="nav-link"[^>]*href="\.\/"[^>]*data-section="home"/, 'Home opens the cover');
 });
 
 test('hero photo is web-sized (it is the LCP element)', () => {
@@ -76,9 +74,9 @@ test('quick jump is replaced by the chimken game', () => {
   assert.doesNotMatch(read('style.css'), /quick-jump/);
 });
 
-test('sidebar shows the full name on desktop; rail keeps the CK mark', () => {
+test('sidebar shows the public name on desktop; rail keeps the CK mark', () => {
   const html = read('index.html');
-  assert.match(html, /class="brand-name"[^>]*>Kenneth Charles Valdez</);
+  assert.match(html, /class="brand-name"[^>]*>Kenneth Charles</);
   assert.match(html, /<a[^>]*class="brand"[^>]*aria-label="Kenneth Charles/);
   assert.match(html, /class="brand-mark"[^>]*>CK</);
   assert.match(html, /class="topbar-brand"[^>]*>Kenneth Charles</);
@@ -201,11 +199,11 @@ test('the GitHub panel reserves its space instead of popping in', () => {
 
 test('Projects comes before Stack, in the page and in the nav', () => {
   const html = read('index.html');
-  const order = ['home', 'about', 'projects', 'stack', 'certifications', 'links', 'blog', 'outside', 'personal', 'background', 'writing', 'contact'];
+  const order = ['home', 'about', 'projects', 'stack', 'certifications', 'links', 'guestbook', 'outside', 'personal', 'now', 'background', 'writing', 'contact'];
   const found = [...html.matchAll(/<section[^>]*\sid="([\w-]+)"/g)].map((m) => m[1]);
   assert.deepEqual(found, order);
-  const links = [...html.matchAll(/class="nav-link"\s+href="\.\/([^"]+)"/g)].map((m) => m[1]);
-  assert.deepEqual(links, ['#home', '?view=links', '?view=blog', '?view=more', '?view=projects', '?view=stack'], 'Menu: Home, Links, Blog. Explore: More about me, Projects, Stack');
+  const links = [...html.matchAll(/class="nav-link"\s+href="\.\/([^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(links, ['', '?view=links', '?view=blog', '?view=guestbook', '?view=more', '?view=projects', '?view=stack'], 'Menu: Home, Links, Blog, Guestbook. Explore: More about me, Projects, Stack');
 });
 
 test('sidebar footer: no status line or visitor counter; a chimken score row instead', () => {

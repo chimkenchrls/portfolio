@@ -7,10 +7,12 @@
 // Deploy steps: docs/assistant.md.
 import chat from '../server/chat.js';
 import contact from '../server/contact.js';
+import guestbook from '../server/guestbook.js';
 import data from '../assets/data.js';
 
 const { ChatError, validateMessages, generateReply, createLimiter } = chat;
 const { validateContact, canReceiveMail, sendContact } = contact;
+const { validateGuestbook, listGuestbook, saveGuestbook } = guestbook;
 
 const MAX_BODY = 32768; // bytes, same as server.js
 const MAX_POKES_PER_REQUEST = 20;
@@ -33,6 +35,7 @@ const perMinute = (limit, now = Date.now) => {
 };
 const allowPoke = perMinute(40);
 const allowContact = perMinute(3);
+const allowGuestbook = perMinute(2);
 
 const origins = (env) => new Set(String(env.ALLOWED_ORIGINS || '').split(',').map((origin) => origin.trim()).filter(Boolean));
 
@@ -108,10 +111,25 @@ const handleContact = async (request, env, ip) => {
   return { ok: true };
 };
 
+const handleGuestbook = async (request, env, ip) => {
+  if (!['GET', 'POST'].includes(request.method)) throw Object.assign(new ChatError(405, 'METHOD_NOT_ALLOWED', 'Use GET or POST.'), { allow: 'GET, POST, OPTIONS' });
+  if (!env.DB) throw new ChatError(503, 'NOT_CONFIGURED', 'The guestbook is not connected yet.');
+  if (request.method === 'GET') return listGuestbook(env.DB, new URL(request.url).searchParams.get('before'));
+  const note = validateGuestbook(await readJson(request));
+  if (note.spam) return { ok: true, pending: true };
+  const busy = () => Object.assign(new ChatError(429, 'RATE_LIMIT', 'Please wait a minute before leaving another note.'), { retryAfter: '60' });
+  if (!allowGuestbook(ip)) throw busy();
+  const used = await add(env.DB, `guestbook:${new Date().toISOString().slice(0, 10)}`, 1);
+  if (used > (Number(env.GUESTBOOK_DAILY_LIMIT) || 50)) throw busy();
+  await saveGuestbook(env.DB, note);
+  return { ok: true, pending: true };
+};
+
 const ROUTES = {
   '/api/chat': { handle: handleChat, methods: 'POST' },
   '/api/pokes': { handle: handlePokes, methods: 'GET, POST' },
   '/api/contact': { handle: handleContact, methods: 'POST' },
+  '/api/guestbook': { handle: handleGuestbook, methods: 'GET, POST' },
 };
 
 export default {
