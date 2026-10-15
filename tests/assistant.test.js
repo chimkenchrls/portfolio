@@ -221,7 +221,7 @@ test('on desktop the chat opens from the sidebar and the floating CK is hidden',
   assert.ok(sidebar.indexOf('class="sidebar-chat"') < sidebar.indexOf('class="poke"'), '"Chat with me" sits above the poke row');
   assert.match(sidebar, /class="poke-button"[^>]*aria-label="Poke CK"/);
   assert.match(sidebar, /class="poke-label">Total pokes</, 'the counter is labelled');
-  assert.match(fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8'), /total === null \? 'Your pokes' : 'Total pokes'/, 'without the shared counter it is honestly labelled as the visitor’s own');
+  assert.match(fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8'), /pokeEndpoint \? 'Total pokes' : 'Your pokes'/, 'the configured shared counter keeps its label while loading or unavailable');
 });
 
 test('the shared poke total is only trusted when the server sends a real count', () => {

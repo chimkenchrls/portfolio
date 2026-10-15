@@ -52,7 +52,7 @@ Then point the site at it in `assets/data.js` and publish as usual:
 
 `ALLOWED_ORIGINS` in `wrangler.toml` lists the exact site origins that may call the API (no trailing slash). It currently allows `https://kenchrls.vercel.app` (the public site) and `https://chimkenchrls.github.io` (the GitHub Pages copy). Add a custom domain there, comma-separated, and run `npx wrangler deploy` again. After editing facts in `assets/data.js`, redeploy the Worker too, since it bundles that file.
 
-Limits: 8 chat requests per visitor per minute, `DAILY_CHAT_LIMIT` (default 100) Gemini requests per day across everyone, stored in D1 so it survives restarts; up to 20 pokes per request and 40 poke requests per visitor per minute. The page batches quick taps into one request. While `pokes.endpoint` is `null`, each visitor only sees their own count ("Your pokes"); once it is set the sidebar shows the shared total ("Total pokes").
+Limits: 8 chat requests per visitor per minute, `DAILY_CHAT_LIMIT` (default 100) Gemini requests per day across everyone, stored in D1 so it survives restarts; up to 20 pokes per request and 40 poke requests per visitor per minute. The page batches quick taps into one request. While `pokes.endpoint` is `null`, each visitor only sees their own count ("Your pokes"); once it is set the sidebar keeps the label "Total pokes". Until the first valid shared total arrives, the count shows "—" rather than substituting the visitor's personal count.
 
 To try the Worker locally: `npx wrangler d1 execute portfolio --local --file worker/schema.sql`, then `npx wrangler dev`. Local runs read `GEMINI_API_KEY` from `.env` or `.dev.vars` (both ignored by Git).
 

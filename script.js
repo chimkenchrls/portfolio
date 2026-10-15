@@ -4063,10 +4063,10 @@
       let total = null;
       let unsent = 0;
       let flushTimer = 0;
-      const shownPokes = () => (total === null ? pokes : total).toLocaleString('en-US');
+      const shownPokes = () => pokeEndpoint && total === null ? '—' : (total === null ? pokes : total).toLocaleString('en-US');
       const showPokes = () => {
         if (pokeValue) pokeValue.textContent = shownPokes();
-        if (pokeLabel) pokeLabel.textContent = total === null ? 'Your pokes' : 'Total pokes';
+        if (pokeLabel) pokeLabel.textContent = pokeEndpoint ? 'Total pokes' : 'Your pokes';
       };
       const pokeRequest = (options) => fetch(pokeEndpoint, { credentials: 'omit', ...options })
         .then((response) => (response.ok ? response.json() : null))

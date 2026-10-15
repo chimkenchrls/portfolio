@@ -459,7 +459,8 @@ test('stack page: each tool lists the projects whose tags name it, and nothing l
   assert.deepEqual(uses('React 18.3'), ['Ambiancy'], 'React Native is a different thing');
   assert.deepEqual(uses('Vite'), ['Ambiancy', 'Pakisuyo Express']);
   assert.deepEqual(uses('Vitest'), ['Ambiancy']);
-  for (const unused of ['Git', 'GitHub', 'Azure', 'Java', 'Python']) assert.deepEqual(uses(unused), [], `${unused}: no project tag names it`);
+  assert.deepEqual(uses('Azure'), ['Thready']);
+  for (const unused of ['Git', 'GitHub', 'Java', 'Python']) assert.deepEqual(uses(unused), [], `${unused}: no project tag names it`);
   assert.deepEqual(stackUses('Vite', null), []);
   assert.deepEqual(stackUses('', data.projects), []);
 });

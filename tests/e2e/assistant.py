@@ -3,12 +3,18 @@
 Chat requests are intercepted, so no Gemini key or Node server is needed."""
 import json
 import os
+import re
+from pathlib import Path
 from playwright.sync_api import sync_playwright
 from common import URL, check, finish, offline_api
 
 SHOTS = os.environ.get("SHOTS")
 calls = []
 mode = {"next": "ok"}
+source = Path('/site/assets/data.js')
+if not source.exists():
+    source = Path(__file__).resolve().parents[2] / 'assets/data.js'
+src = source.read_text()
 
 
 def answer(route):
@@ -23,6 +29,8 @@ def answer(route):
 def open_page(b, width=1280, height=900, **opts):
     ctx = b.new_context(viewport={"width": width, "height": height}, **opts)
     offline_api(ctx)
+    local_data = re.sub(r'pokes: \{ endpoint: [^}]+\}', 'pokes: { endpoint: null }', src)
+    ctx.route("**/assets/data.js*", lambda r: r.fulfill(content_type="text/javascript", body=local_data))
     ctx.route("**/api/chat", answer)
     ctx.route("**/github-contributions-api.jogruber.de/**", lambda r: r.abort())
     p = ctx.new_page(); errors = []
@@ -185,25 +193,34 @@ with sync_playwright() as pw:
 
     # Shared poke counter ---------------------------------------------------------
     # data.js is served with the counter switched on; the API itself is intercepted.
-    server = {"total": 1000, "posts": []}
+    server = {"total": 1000, "posts": [], "down": True}
     def pokes_api(route):
+        if server['down']:
+            route.fulfill(status=503, json={'error': 'Unavailable'})
+            return
         if route.request.method == "POST":
             count = json.loads(route.request.post_data)["count"]
             server["posts"].append(count); server["total"] += count
         route.fulfill(status=200, content_type="application/json", body=json.dumps({"total": server["total"]}))
     ctx = b.new_context(viewport={"width": 1280, "height": 900})
     offline_api(ctx)
-    src = open("/site/assets/data.js").read()
-    import re
-    patched = re.sub(r'pokes: \{ endpoint: [^}]+\}', 'pokes: { endpoint: "http://localhost:8000/api/pokes" }', src)
-    assert 'localhost:8000/api/pokes' in patched, "pokes setting not found in data.js"
+    poke_url = URL.split('#')[0].split('?')[0].rstrip('/') + '/api/pokes'
+    patched = re.sub(r'pokes: \{ endpoint: [^}]+\}', 'pokes: { endpoint: ' + json.dumps(poke_url) + ' }', src)
+    assert poke_url in patched, "pokes setting not found in data.js"
     ctx.route("**/assets/data.js*", lambda r: r.fulfill(status=200, content_type="text/javascript", body=patched))
     ctx.route("**/api/pokes", pokes_api)
     ctx.route("**/github-contributions-api.jogruber.de/**", lambda r: r.abort())
     p = ctx.new_page(); errors = []
     p.on("pageerror", lambda e: errors.append(str(e)))
+    p.add_init_script("localStorage.setItem('ck-pokes', '99')")
     p.goto(URL); p.wait_for_load_state("networkidle")
-    p.wait_for_function("document.querySelector('.poke-label').textContent === 'Total pokes'")
+    check("an unavailable shared counter keeps Total pokes and does not show the personal count", p.inner_text('.poke-label') == 'Total pokes' and p.inner_text('.poke-value') == '—')
+    p.click('.poke-button')
+    check("a poke during an outage keeps the shared count unavailable", p.inner_text('.poke-label') == 'Total pokes' and p.inner_text('.poke-value') == '—')
+    p.wait_for_timeout(1600)
+    server['down'] = False
+    p.reload(); p.wait_for_load_state('networkidle')
+    p.wait_for_function("document.querySelector('.poke-value').textContent === '1,000'")
     check("with a server the sidebar shows everyone's total", p.inner_text(".poke-value").strip() == "1,000")
     for _ in range(3): p.click(".poke-button")
     check("a poke shows at once, before the server answers", p.inner_text(".poke-value").strip() == "1,003" and server["posts"] == [])
