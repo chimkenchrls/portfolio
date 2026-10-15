@@ -2541,11 +2541,27 @@ html.view-more .outside-intro {
 }
 .writing-entry {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px 28px;
-  align-items: baseline;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
   padding-block: 24px;
   border-bottom: 1px solid var(--border);
+}
+.writing-entry.has-thumbnail {
+  grid-template-columns: 136px minmax(0, 1fr);
+}
+.writing-thumbnail {
+  display: block;
+  width: 136px;
+  height: 96px;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.writing-copy > .writing-date {
+  display: block;
+  margin-bottom: 8px;
 }
 .writing-entry:first-child {
   border-top: 1px solid var(--border);
@@ -3928,8 +3944,13 @@ html.at-cover:not(.intro-play) .intro-hint {
     margin-left: 0;
     padding: 28px 16px 24px;
   }
-  .writing-entry {
-    grid-template-columns: minmax(0, 1fr);
+  .writing-entry.has-thumbnail {
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .writing-thumbnail {
+    width: 88px;
+    height: 80px;
   }
   html.view-more .outside {
     padding-inline: 0;

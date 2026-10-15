@@ -108,6 +108,7 @@ const PORTFOLIO_DATA = {
       slug: "keep-going",
       title: 'if (everythingFallsApart) print("keep going..");',
       excerpt: "On finding a small next step when things don’t go as planned.",
+      thumbnail: "./assets/blog/keep-going.png",
       date: null,
       body: null,
     },

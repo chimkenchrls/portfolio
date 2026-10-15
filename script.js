@@ -1209,6 +1209,7 @@
         slugs.add(post.slug);
         if (!isText(post.title) || !isText(post.excerpt)) errors.push(`${p}: title and excerpt text required`);
         if (!isOptionalText(post.body)) errors.push(`${p}.body: text or null`);
+        if (post.thumbnail != null && !/^\.\/assets\/blog\/[\w.-]+\.(png|jpe?g|webp|svg)$/.test(String(post.thumbnail))) errors.push(`${p}.thumbnail: a file in ./assets/blog/ or null`);
         if (post.date !== null && !postDate(post.date)) errors.push(`${p}.date: YYYY-MM-DD or null`);
         if (isText(post.body) && !postDate(post.date)) errors.push(`${p}: a finished post needs a publication date`);
       });
@@ -2137,6 +2138,17 @@
     const writingEntry = (post) => {
       const ready = publishedPost(post);
       const item = el('li', `writing-entry${ready ? '' : ' is-upcoming'}`);
+      if (post.thumbnail) {
+        const image = el('img', 'writing-thumbnail');
+        image.src = post.thumbnail;
+        image.alt = '';
+        image.width = 136;
+        image.height = 96;
+        image.loading = 'lazy';
+        image.decoding = 'async';
+        item.classList.add('has-thumbnail');
+        item.append(image);
+      }
       const heading = el('h3', 'writing-title');
       if (ready) {
         const link = el('a', 'writing-link', post.title);
@@ -2144,9 +2156,9 @@
         heading.append(link);
       } else heading.textContent = post.title;
       const copy = el('div', 'writing-copy');
-      copy.append(heading, el('p', 'writing-excerpt', post.excerpt));
+      copy.append(ready ? postTime(post) : el('span', 'writing-date', 'Coming soon'), heading, el('p', 'writing-excerpt', post.excerpt));
       if (ready) copy.append(el('p', 'writing-read-time', `~${postReadTime(post.body)} min read`));
-      item.append(copy, ready ? postTime(post) : el('span', 'writing-date', 'Coming soon'));
+      item.append(copy);
       return item;
     };
     const writingRows = (posts) => posts.length ? posts.map(writingEntry) : [pendingEl('li', 'No posts yet.')];
@@ -2233,7 +2245,8 @@
       head('projects', '03 //', 'Projects');
       head('stack', '04 //', 'Stack');
       head('contact', '06 //', 'Get in touch');
-      if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //', 'Outside the IDE'); head('writing', '02 //', 'Writing'); head('contact', '03 //', 'Terminal'); }
+      head('writing', '02 //', data.blogPage.title);
+      if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //', 'Outside the IDE'); head('contact', '03 //', 'Terminal'); }
       if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       if (root.classList.contains('view-stack')) head('stack', '01 //', 'Stack');
       const page = Object.entries({ more: data.more, projects: data.projectsPage, stack: data.stackPage, blog: data.blogPage, links: data.linksPage, guestbook: data.guestbook })
