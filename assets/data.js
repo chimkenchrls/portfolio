@@ -40,7 +40,8 @@ const PORTFOLIO_DATA = {
 
   guestbook: {
     title: "hello, world!",
-    intro: "You found my little corner of the internet. Leave a note before you go.",
+    intro:
+      "You found my little corner of the internet. Leave a note before you go.",
     endpoint: "https://kenchrls-api.kenchrls.workers.dev/api/guestbook",
     nameLabel: "Name or nickname",
     messageLabel: "Your note",
@@ -50,7 +51,8 @@ const PORTFOLIO_DATA = {
     empty: "No notes yet. You can leave the first one.",
     success: "Thanks for stopping by! Your note is waiting for review.",
     unavailable: "The notes couldn’t load. Please try again in a moment.",
-    failed: "Your note wasn’t sent. Your draft is still here — please try again.",
+    failed:
+      "Your note wasn’t sent. Your draft is still here — please try again.",
     loading: "Loading notes…",
     notesLabel: "Notes",
     retryLabel: "Try again",
@@ -197,6 +199,7 @@ const PORTFOLIO_DATA = {
         { name: "GitHub Actions", icon: "githubactions", color: "#2088FF" },
         { name: "Docker + Compose", icon: "docker", color: "#2496ED" },
         { name: "Azure", icon: "microsoftazure", color: "#0078D4" },
+        { name: "Cloudflare", icon: "cloudflare", color: "#F38020" },
         { name: "Caddy 2", icon: "caddy", color: "#1F88C0" },
       ],
     },
@@ -234,6 +237,7 @@ const PORTFOLIO_DATA = {
       category: "AI & Machine Learning",
       items: [
         { name: "Ultralytics (YOLOv8)", icon: "ultralytics", color: "#111F68" },
+        { name: "Hugging Face", icon: "huggingface", color: "#FFD21E" },
       ],
     },
     {
@@ -252,7 +256,8 @@ const PORTFOLIO_DATA = {
   projects: [
     {
       title: "Ambiancy",
-      summary: "An ambient sound mixer for building and sharing your own atmosphere.",
+      summary:
+        "An ambient sound mixer for building and sharing your own atmosphere.",
       kind: "Sound mixer",
       demo: {
         src: "./assets/projects/ambiancy-demo.mp4",
@@ -260,7 +265,8 @@ const PORTFOLIO_DATA = {
         captions: "./assets/projects/ambiancy-demo.vtt",
         title: "Ambiancy in action",
         playLabel: "Play demo",
-        summary: "A silent walkthrough: start Rainy café, adjust the rain volume, set a 15-minute sleep timer, copy the mix link, and pause playback.",
+        summary:
+          "A silent walkthrough: start Rainy café, adjust the rain volume, set a 15-minute sleep timer, copy the mix link, and pause playback.",
       },
       role: "Independent developer",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
@@ -308,7 +314,8 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "Pakisuyo Express",
-      summary: "A local delivery website with an order form, map pins, and a store directory.",
+      summary:
+        "A local delivery website with an order form, map pins, and a store directory.",
       kind: "Delivery website",
       demo: null,
       role: "Independent developer",
@@ -356,7 +363,8 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "OwlSet",
-      summary: "An Android app that turns client conversations into project scopes.",
+      summary:
+        "An Android app that turns client conversations into project scopes.",
       kind: "Android app",
       demo: null,
       role: "Hackathon submission · Frontend and DevOps lead",
@@ -405,7 +413,8 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "Thready",
-      summary: "Production management and computer vision for a local garment business.",
+      summary:
+        "Production management and computer vision for a local garment business.",
       kind: "Capstone project",
       demo: null,
       role: "Thesis project · Frontend and DevOps lead",
@@ -443,6 +452,9 @@ const PORTFOLIO_DATA = {
         "MySQL 8",
         "Docker Compose",
         "Cloudflare Tunnel",
+        "Cloudflare",
+        "Caddy 2",
+        "Azure",
         "Tailscale",
       ],
       links: { source: null, live: null },
@@ -453,7 +465,8 @@ const PORTFOLIO_DATA = {
     },
     {
       title: "AmIgo",
-      summary: "A Taglish Discord bot with conversation memory, study mode, and games.",
+      summary:
+        "A Taglish Discord bot with conversation memory, study mode, and games.",
       kind: "Discord bot",
       demo: null,
       role: "Independent developer",
