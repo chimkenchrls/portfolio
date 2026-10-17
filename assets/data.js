@@ -426,7 +426,7 @@ const PORTFOLIO_DATA = {
         built:
           "A Next.js, TypeScript and Tailwind frontend, a Node.js backend, a MySQL 8 database, and a separate Python service that runs a YOLO model for garment counting. It covers production planning, orders, assigning several employees to a step, a quality-control role with reason codes, and sign-in hardening such as one-time codes, a single active session and login lockout. I led the frontend and the infrastructure.",
         ships:
-          "Six containers run under Docker Compose: Caddy, a Cloudflare Tunnel connector, the frontend, the backend, MySQL and the counting service. Only Caddy publishes a port, and it is bound to the private network. Employees reach the app through the Cloudflare Tunnel, which only connects outward, so no inbound port is open to the internet. Admins reach it over Tailscale.\n\nEvery pull request runs four checks: frontend lint, tests and a dependency audit; backend tests and audit; Python tests for the counting service with the model mocked, so no GPU is needed; and validation of the Compose files. On a push to main, once all four pass, a self-hosted GitHub Actions runner on the production server pulls the commit, rebuilds and restarts the stack, and waits for the health checks. There is no SSH access from outside.",
+          "The app runs on an Arm64 Ubuntu 24.04 virtual machine on Azure. Six containers run there under Docker Compose: Caddy, a Cloudflare Tunnel connector, the frontend, the backend, MySQL and the counting service. Only Caddy publishes a port, and it is bound to the private network. Employees reach the app through the Cloudflare Tunnel, which only connects outward, so no inbound port is open to the internet. Admins reach it over Tailscale.\n\nEvery pull request runs four checks: frontend lint, tests and a dependency audit; backend tests and audit; Python tests for the counting service with the model mocked, so no GPU is needed; and validation of the Compose files. On a push to main, once all four pass, a self-hosted GitHub Actions runner on the production server pulls the commit, rebuilds and restarts the stack, and waits for the health checks. There is no SSH access from outside.",
         learned:
           "A deploy that changed only the Caddy configuration reported success while the site kept serving the old configuration, because the running container never re-read the file. From the outside it looked like a broken certificate.\n\nSeparately, after Caddy was recreated, the tunnel container could no longer find it and the public site returned 502 errors until it retried. Both containers are now restarted on every deploy, in that order, whether or not they changed.",
         pipeline: {
@@ -434,7 +434,7 @@ const PORTFOLIO_DATA = {
           flow: [
             { name: "Pull request", note: "four checks" },
             { name: "Merge to main", note: "all checks green" },
-            { name: "Self-hosted runner", note: "on the production server" },
+            { name: "Self-hosted runner", note: "on the Azure VM" },
             { name: "Compose rebuild", note: "six containers" },
             { name: "Health checks", note: "before the deploy passes" },
           ],
