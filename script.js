@@ -2259,6 +2259,49 @@
     };
 
     // A "Resume" button joins "Email me" once data.js points at a PDF.
+    // From the hero only: the hero fades back, the Resume button grows into a sheet of
+    // paper that flies to where the resume sits, and the resume fades in on it.
+    // A click or key press during it skips to the end.
+    const openResume = (event) => {
+      if (event.button || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || prefersReducedMotion()) return;
+      if (root.classList.contains('resume-opening')) { event.preventDefault(); return; }
+      event.preventDefault();
+      const button = event.currentTarget;
+      const from = button.getBoundingClientRect();
+      const paper = el('div', 'resume-fly');
+      Object.assign(paper.style, { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, borderRadius: getComputedStyle(button).borderRadius });
+      document.body.append(paper);
+      root.classList.add('resume-opening', 'resume-hold');
+      const animations = [paper.animate([{ opacity: 0, transform: 'scale(0.96)' }, { opacity: 1, transform: 'scale(1.04)' }], { duration: 200, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'forwards' })];
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        window.removeEventListener('pointerdown', skip, true);
+        window.removeEventListener('keydown', skip, true);
+        root.classList.remove('resume-hold');
+        const main = $('#main');
+        const end = () => { root.classList.remove('resume-opening'); paper.remove(); };
+        main.addEventListener('transitionend', end, { once: true });
+        setTimeout(end, 400); // in case the transition never fires
+      };
+      const skip = () => { animations.forEach((animation) => animation.finish()); };
+      window.addEventListener('pointerdown', skip, true);
+      window.addEventListener('keydown', skip, true);
+      animations[0].finished.then(() => {
+        navigation.go('./?view=resume');
+        $('#main').classList.remove('page-in');
+        const sheet = $('.resume-sheet');
+        if (!sheet || done) { finish(); return; }
+        const to = sheet.getBoundingClientRect();
+        const fly = paper.animate([
+          { left: `${from.left}px`, top: `${from.top}px`, width: `${from.width}px`, height: `${from.height}px`, borderRadius: paper.style.borderRadius, transform: 'scale(1.04)' },
+          { left: `${to.left}px`, top: `${to.top}px`, width: `${to.width}px`, height: `${Math.min(to.height, window.innerHeight - to.top)}px`, borderRadius: getComputedStyle(sheet).borderRadius, transform: 'none' },
+        ], { duration: 480, easing: 'cubic-bezier(0.32, 0.72, 0, 1)', fill: 'forwards' });
+        animations.push(fly);
+        fly.finished.then(finish, finish);
+      }, finish);
+    };
     const applyResume = (data) => {
       const { profile = {} } = data;
       const href = safeResume(profile.resume);
@@ -2266,8 +2309,10 @@
       if (!href || !actions) return;
       const link = el('a', 'btn btn-secondary', 'Resume');
       // The Resume page when there is one; otherwise straight to the PDF.
-      if (data.resumePage) link.href = './?view=resume';
-      else {
+      if (data.resumePage) {
+        link.href = './?view=resume';
+        link.addEventListener('click', openResume);
+      } else {
         link.href = href;
         link.target = '_blank';
         link.rel = 'noopener noreferrer';

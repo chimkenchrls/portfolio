@@ -121,11 +121,11 @@ const PORTFOLIO_DATA = {
         title: "Projects",
         items: [
           {
-            heading: "Thready: An AI-Enhanced Web Based Production Management System",
+            heading: "Thready: An AI-Enhanced Web-Based Production Management System",
             bullets: [
               { label: "Role", text: "Frontend Developer | DevOps Lead" },
               "Deployed the Docker Compose stack to an Azure VM, with GitHub Actions CI/CD that redeploys through a self-hosted runner on every merge.",
-              "Set up automated CI/CD workflows using GitHub Actions to streamline build testing and release deployments.",
+              "Exposed the app through a Cloudflare Tunnel, with no web ports open on the VM and admin access over Tailscale.",
             ],
           },
           {
@@ -143,10 +143,10 @@ const PORTFOLIO_DATA = {
         items: [
           {
             bullets: [
-              "AI Engineering for Developers — DataCamp",
+              "Champion — STI College Lucena Local CodeFest Competition Tagisan ng Talino 2026",
+              "Associate AI Engineering for Developers — DataCamp",
               "Linux Essentials — Cisco Networking Academy (In Progress)",
               "Networking Basics — Cisco Networking Academy (In Progress)",
-              "Champion — STI College Lucena Local CodeFest Competition Tagisan ng Talino 2026",
             ],
           },
         ],
