@@ -5037,6 +5037,11 @@
 
       const show = (route, { replay = false, scroll = null } = {}) => {
         const wasLit = nav.lit();
+        // Back to Home's cover from another page: the sidebar slides away instead of vanishing (CSS).
+        if (route.view === 'home' && !root.classList.contains('has-cover') && !prefersReducedMotion()) {
+          root.classList.add('cover-returning');
+          setTimeout(() => root.classList.remove('cover-returning'), 520);
+        }
         document.dispatchEvent(new Event('portfolio:navigate'));
         $$('dialog[open]').forEach((dialog) => dialog.close());
         $$('video', main).forEach((video) => video.pause());
@@ -5059,10 +5064,10 @@
         else window.scrollTo({ top: 0, behavior: 'instant' });
         cover.refresh();
         if (replay && route.view === 'home' && !route.hash) cover.replay();
-        // The highlight slides to the new link and the page fades up; Home's cover has its own intro.
+        // The highlight slides to the new link and the page fades up, unless Home's intro replays.
         nav.slideFrom(wasLit);
         main.classList.remove('page-in');
-        if (!prefersReducedMotion() && !root.classList.contains('at-cover')) {
+        if (!prefersReducedMotion() && !(replay && root.classList.contains('at-cover'))) {
           void main.offsetWidth; // restart the fade on quick successive changes
           main.classList.add('page-in');
         }

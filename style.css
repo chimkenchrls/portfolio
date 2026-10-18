@@ -1488,6 +1488,21 @@ html.resume-opening .topbar {
 html.resume-opening .assistant-launcher {
   transition: opacity 480ms ease;
 }
+/* The way back: returning to Home's cover from another page, the sidebar slides
+   out (and only then hides), the top bar slides up and CK fades out. */
+html.cover-returning .sidebar {
+  transition:
+    width var(--t) var(--ease),
+    padding var(--t) var(--ease),
+    translate 480ms cubic-bezier(0.32, 0.72, 0, 1),
+    visibility 0s linear 480ms;
+}
+html.cover-returning .topbar {
+  transition: translate 480ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+html.cover-returning .assistant-launcher {
+  transition: opacity 300ms ease;
+}
 /* Printing the Resume page prints only the sheet. */
 @media print {
   html.view-resume body * {
