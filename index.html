@@ -97,7 +97,7 @@
         }
         // The Projects, Stack and More about me pages (?view=projects|stack|more)
         // are this same file showing only their own sections; no cover, no intro.
-        var view = /[?&]view=(projects|more|stack|case|post|blog|links|guestbook)(&|$)/.exec(window.location.search);
+        var view = /[?&]view=(projects|more|stack|case|post|blog|links|guestbook|resume)(&|$)/.exec(window.location.search);
         if (view) {
           root.classList.add("view-" + view[1]);
           return;
@@ -485,6 +485,11 @@
       </section>
 
       <header class="more-page-header" data-render="moreHeading"></header>
+
+      <section class="section" id="resume" aria-labelledby="resume-heading">
+        <header class="resume-page-header" data-render="resumeHeading"></header>
+        <div class="resume-layout" data-render="resume"></div>
+      </section>
 
       <section class="section" id="links" aria-labelledby="links-heading">
         <header class="links-page-header" data-render="linksHeading"></header>

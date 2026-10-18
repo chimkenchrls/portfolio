@@ -1323,6 +1323,155 @@ html.view-stack .github-panel {
   color: var(--fg-muted);
 }
 
+/* Resume page (?view=resume): the resume as a sheet of paper, the PDF beside it.
+   The sheet is paper in both themes, so its colours are its own. */
+html.view-resume .resume-page-header {
+  padding-top: 16px;
+  margin-bottom: 32px;
+}
+.resume-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  align-items: start;
+  gap: 32px;
+}
+.resume-side {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 32px;
+  display: grid;
+  gap: 10px;
+}
+.resume-intro {
+  margin-bottom: 8px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fg-muted);
+}
+.resume-side .btn {
+  justify-content: center;
+}
+.resume-sheet {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 44px 48px 48px;
+  color: #1d1d1f;
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: var(--shadow);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.resume-sheet a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: #b8b8bd;
+}
+.resume-sheet ::selection {
+  color: #ffffff;
+  background: #1d1d1f;
+}
+.resume-top {
+  padding-bottom: 14px;
+  text-align: center;
+  border-bottom: 1px solid #1d1d1f;
+}
+.resume-name {
+  font-size: clamp(22px, 3.4vw, 30px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.resume-role {
+  margin-top: 4px;
+  font-size: 16px;
+}
+.resume-place {
+  margin-top: 10px;
+  color: #55555a;
+}
+.resume-contact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 14px;
+  margin-top: 2px;
+}
+.resume-part {
+  padding-block: 16px 2px;
+  border-bottom: 1px solid #d9d9dc;
+}
+.resume-part:last-child {
+  border-bottom: 0;
+}
+.resume-part-title {
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.resume-part > p {
+  margin-bottom: 12px;
+}
+.resume-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 16px;
+  margin-top: 6px;
+}
+.resume-item-head span,
+.resume-sub {
+  color: #55555a;
+}
+.resume-bullets {
+  margin: 4px 0 12px;
+  padding-left: 18px;
+  list-style: disc;
+}
+.resume-bullets li + li {
+  margin-top: 2px;
+}
+@media (max-width: 860px) {
+  .resume-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+  .resume-side {
+    position: static;
+    grid-column: 1;
+    grid-template-columns: 1fr 1fr;
+  }
+  .resume-intro {
+    grid-column: 1 / -1;
+  }
+  .resume-sheet {
+    grid-row: 2;
+    padding: 28px 20px 24px;
+  }
+}
+/* Printing the Resume page prints only the sheet. */
+@media print {
+  html.view-resume body * {
+    visibility: hidden;
+  }
+  html.view-resume .resume-sheet,
+  html.view-resume .resume-sheet * {
+    visibility: visible;
+  }
+  html.view-resume .resume-sheet {
+    position: absolute;
+    inset: 0 0 auto;
+    border: 0;
+    box-shadow: none;
+  }
+}
+
 /* 15. Projects ============================================================ */
 .project-list {
   display: grid;
@@ -1537,6 +1686,8 @@ html.view-guestbook .main > .section:not(#guestbook),
 html.view-post .main > .section:not(#writing),
 html.view-blog .main > .section:not(#writing),
 html.view-links .main > .section:not(#links),
+html.view-resume .main > .section:not(#resume),
+html:not(.view-resume) #resume,
 html.view-more #contact .contact-form,
 html.has-cover #personal,
 html.has-cover #now,
@@ -3981,10 +4132,10 @@ html.at-cover:not(.intro-play) .intro-hint {
     margin-left: 0;
     padding: 28px 16px 24px;
   }
-  html:is(.view-more, .view-projects, .view-stack, .view-blog, .view-links, .view-guestbook, .view-case, .view-post) .main {
+  html:is(.view-more, .view-projects, .view-stack, .view-blog, .view-links, .view-guestbook, .view-case, .view-post, .view-resume) .main {
     padding-top: 16px;
   }
-  html .main :is(.more-page-header, .projects-page-header, .stack-page-header, .blog-page-header, .links-page-header) {
+  html .main :is(.more-page-header, .projects-page-header, .stack-page-header, .blog-page-header, .links-page-header, .resume-page-header) {
     padding-top: 0;
   }
   .writing-entry.has-thumbnail {

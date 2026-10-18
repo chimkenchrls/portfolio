@@ -78,6 +78,81 @@ const PORTFOLIO_DATA = {
       "Notes on building things, learning as I go, and life beyond the terminal.",
   },
 
+  // The Resume page (./?view=resume): the PDF's wording as a sheet on the page, with
+  // the PDF to download beside it. Keep it in step with assets/resume.pdf. The phone
+  // number stays off the public page; it is only in the PDF. Bullets are text, or
+  // { label, text } for a bold lead-in.
+  resumePage: {
+    title: "Resume",
+    intro: "The same resume as the PDF, to read here. Download it to send or print.",
+    website: "https://kenchrls.vercel.app",
+    summary:
+      "A 4th-year Computer Science student at STI College Lucena with foundations in software development, cloud deployment, and CI/CD automation. Seeking a DevOps or Software Engineering internship to apply technical skills, gain industry experience, and contribute to reliable, scalable systems.",
+    sections: [
+      {
+        title: "Education",
+        items: [
+          {
+            heading: "Bachelor of Science in Computer Science",
+            aside: "Expected Graduation: 2027",
+            sub: "STI College Lucena — Lucena City, Philippines",
+            bullets: [
+              { label: "Cumulative GWA", text: "1.66 (As of SY 2025-2026 2nd Term)" },
+              { label: "Relevant Coursework", text: "Network Technology, Operating Systems, Data Structures & Algorithms, Software Engineering, Information Assurance & Security, and Artificial Intelligence." },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Technical Skills",
+        items: [
+          {
+            bullets: [
+              { label: "Cloud Platforms", text: "Microsoft Azure, Cloudflare Workers, Cloudflare Tunnel, Vercel" },
+              { label: "DevOps Tools", text: "Docker, Docker Compose, Git, GitHub Actions, CI/CD" },
+              { label: "Operating Systems & Scripting", text: "Linux (Fedora), Bash, Python" },
+              { label: "Frontend Development", text: "TypeScript, Next.js, React, Tailwind CSS, Vite" },
+              { label: "Backend Development", text: "Java, PHP, MySQL, Node.js" },
+            ],
+          },
+        ],
+      },
+      {
+        title: "Projects",
+        items: [
+          {
+            heading: "Thready: An AI-Enhanced Web Based Production Management System",
+            bullets: [
+              { label: "Role", text: "Frontend Developer | DevOps Lead" },
+              "Deployed the Docker Compose stack to an Azure VM, with GitHub Actions CI/CD that redeploys through a self-hosted runner on every merge.",
+              "Set up automated CI/CD workflows using GitHub Actions to streamline build testing and release deployments.",
+            ],
+          },
+          {
+            heading: "Pakisuyo Express: An Ordering Site for a Local Delivery Service",
+            bullets: [
+              { label: "Role", text: "Independent Developer" },
+              "Built an ordering site to replace a manual Messenger order process for a Sariaya local delivery service. It has a validated order form, a delivery-area check and a directory of 150+ stores.",
+              "Set up GitHub Actions CI with Playwright and Lighthouse gates, Netlify preview deploys, and production deploys of tested commits only.",
+            ],
+          },
+        ],
+      },
+      {
+        title: "Certifications & Awards",
+        items: [
+          {
+            bullets: [
+              "AI Engineering for Developers — DataCamp",
+              "Linux Essentials — Cisco Networking Academy (In Progress)",
+              "Networking Basics — Cisco Networking Academy (In Progress)",
+              "Champion — STI College Lucena Local CodeFest Competition Tagisan ng Talino 2026",
+            ],
+          },
+        ],
+      },
+    ],
+  },
   linksPage: {
     title: "Links",
     intro: "Find me online, or get in touch.",

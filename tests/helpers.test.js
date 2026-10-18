@@ -19,6 +19,7 @@ test('in-place routes stay in this document and preserve relative deployment pat
   assert.equal(portfolioRoute('./?view=post&p=unknown', base, data).view, 'blog');
   for (const href of ['https://elsewhere.example/', './assets/resume.pdf', '../', './?view=unknown', 'mailto:a@example.com', 'javascript:alert(1)']) assert.equal(portfolioRoute(href, base, data), null, href);
   assert.equal(portfolioRoute('./index.html?view=links', base, data).view, 'links');
+  assert.equal(portfolioRoute('./?view=resume', base, data).view, 'resume');
 });
 
 test('project previews follow below the pointer and flip clear of viewport edges', () => {
@@ -424,7 +425,7 @@ test('pages: Projects and More about me are views of the same file, without the 
   const root = path.join(__dirname, '..');
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-  assert.match(html, /view=\(projects\|more\|stack\|case\|post\|blog\|links\|guestbook\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
+  assert.match(html, /view=\(projects\|more\|stack\|case\|post\|blog\|links\|guestbook\|resume\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
   assert.match(css, /html\.view-more \.main > \.section:not\(#personal\):not\(#now\):not\(#background\):not\(#writing\):not\(#outside\):not\(#contact\),/, 'More about me includes Now alongside photos, bio, background, writing and terminal');
   assert.match(css, /html\.has-cover #outside,\s*html\.has-cover #contact :is\(\.contact-intro, \.terminal, \.terminal-chips\) \{\s*display: none;/, 'Home leaves those two out, but only when the head script ran');
   assert.doesNotMatch(html, /class="project-more"/, 'all projects are shown without an expansion button');
@@ -489,3 +490,17 @@ test('case studies: every project has a role and a study, with nothing private i
   assert.equal(projectSlug('Pakisuyo Express').replace('project-', ''), 'pakisuyo-express', 'the address is ?view=case&p=pakisuyo-express');
 });
 
+
+test('resume page: the PDF\'s sections, with the phone number kept off the public page', () => {
+  const data = require('../assets/data.js');
+  const page = data.resumePage;
+  assert.deepEqual(page.sections.map((s) => s.title), ['Education', 'Technical Skills', 'Projects', 'Certifications & Awards']);
+  assert.doesNotMatch(JSON.stringify(page), /\+63|\b09\d{2}|\d{3}\s?\d{3}\s?\d{3,4}\b/, 'no phone number');
+  for (const section of page.sections) for (const item of section.items) for (const bullet of item.bullets) {
+    assert.ok(typeof bullet === 'string' || (typeof bullet.label === 'string' && typeof bullet.text === 'string'), section.title);
+  }
+  const fs = require('node:fs');
+  const html = fs.readFileSync(require('node:path').join(__dirname, '..', 'index.html'), 'utf8');
+  assert.match(html, /view=\(projects\|more\|stack\|case\|post\|blog\|links\|guestbook\|resume\)/);
+  assert.doesNotMatch(html, /class="nav-link"[^>]*data-view="resume"/, 'no sidebar link: reached from the hero button');
+});

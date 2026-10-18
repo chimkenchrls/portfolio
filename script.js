@@ -865,7 +865,7 @@
     if (url.origin !== current.origin || url.username || url.password
       || ![current.pathname, directory, `${directory}index.html`].includes(url.pathname)) return null;
     let view = url.searchParams.get('view') || 'home';
-    if (!['home', 'more', 'projects', 'stack', 'case', 'post', 'blog', 'links', 'guestbook'].includes(view)) return null;
+    if (!['home', 'more', 'projects', 'stack', 'case', 'post', 'blog', 'links', 'guestbook', 'resume'].includes(view)) return null;
     let slug = url.searchParams.get('p');
     if (view === 'case' && !(data.projects || []).some((project) => project.caseStudy && projectSlug(project.title) === `project-${slug}`)) view = 'projects';
     if (view === 'post' && !(data.writing || []).some((post) => post.slug === slug && publishedPost(post))) view = 'blog';
@@ -2062,25 +2062,89 @@
       more.hidden = true;
       return [form, head, list, state, retry, more];
     };
+    const resumeHeading = ({ resumePage }) => {
+      const nodes = pageHeading(resumePage);
+      const heading = nodes.find((node) => node.tagName === 'H1');
+      if (heading) heading.id = 'resume-heading';
+      return nodes;
+    };
+    // The resume as a sheet of paper, with the PDF to download or open beside it.
+    const resume = ({ resumePage: page, profile = {} }) => {
+      if (!page) return [];
+      const sheet = el('article', 'resume-sheet');
+      const top = el('header', 'resume-top');
+      top.append(el('h2', 'resume-name', profile.name), el('p', 'resume-role', profile.title));
+      const contact = el('p', 'resume-contact');
+      const email = typeof profile.email === 'string' ? profile.email.trim() : '';
+      const contactLinks = [
+        safeUrl(`mailto:${email}`) && [`mailto:${email}`, email],
+        ...[profile.linkedin, profile.github, page.website].map((url) => safeUrl(url) && [safeUrl(url), safeUrl(url).replace(/^https:\/\/(www\.)?/, '').replace(/\/$/, '')]),
+      ].filter(Boolean);
+      contactLinks.forEach(([href, text]) => contact.append(href.startsWith('mailto:') ? Object.assign(el('a', null, text), { href }) : externalLink(href, text, '')));
+      top.append(el('p', 'resume-place', profile.location), contact);
+      sheet.append(top);
+      const part = (title) => {
+        const section = el('section', 'resume-part');
+        section.append(el('h3', 'resume-part-title', title));
+        sheet.append(section);
+        return section;
+      };
+      if (page.summary) part('About me').append(el('p', null, page.summary));
+      (page.sections || []).forEach((section) => {
+        const box = part(section.title);
+        (section.items || []).forEach((item) => {
+          if (item.heading) {
+            const head = el('div', 'resume-item-head');
+            head.append(el('strong', null, item.heading));
+            if (item.aside) head.append(el('span', null, item.aside));
+            box.append(head);
+          }
+          if (item.sub) box.append(el('p', 'resume-sub', item.sub));
+          const list = el('ul', 'resume-bullets');
+          (item.bullets || []).forEach((bullet) => {
+            const li = el('li');
+            if (bullet && typeof bullet === 'object') li.append(el('strong', null, `${bullet.label}: `), bullet.text);
+            else li.textContent = bullet;
+            list.append(li);
+          });
+          if (list.children.length) box.append(list);
+        });
+      });
+
+      const side = el('aside', 'resume-side');
+      if (page.intro) side.append(el('p', 'resume-intro', page.intro));
+      const pdf = safeResume(profile.resume);
+      if (pdf) {
+        const download = el('a', 'btn btn-primary', 'Download PDF');
+        download.href = pdf;
+        download.setAttribute('download', '');
+        const open = externalLink(pdf, 'Open PDF', 'btn btn-secondary');
+        side.append(download, open);
+      }
+      return [side, sheet];
+    };
     const linksHeading = ({ linksPage }) => {
       const nodes = pageHeading(linksPage, 'links-page-intro');
       const heading = nodes.find((node) => node.tagName === 'H1');
       if (heading) heading.id = 'links-heading';
       return nodes;
     };
-    const profileLinks = ({ linksPage, profile = {} }) => (linksPage ? linksPage.groups : []).map((group, groupIndex) => {
+    const profileLinks = ({ linksPage, profile = {}, resumePage }) => (linksPage ? linksPage.groups : []).map((group, groupIndex) => {
       const section = el('section', 'links-group');
       const heading = el('h2', 'history-title', group.title);
       heading.id = `links-group-${groupIndex}`;
       section.setAttribute('aria-labelledby', heading.id);
       const list = el('ul', 'links-list');
       group.items.forEach((item) => {
-        const { href, copy, detail } = profileLink(profile, item.key);
+        const link = profileLink(profile, item.key);
+        const { copy, detail } = link;
+        // The resume row opens the Resume page, which has the PDF on it.
+        const href = item.key === 'resume' && link.href && resumePage ? './?view=resume' : link.href;
         const active = href || copy;
         const row = el(href ? 'a' : copy ? 'button' : 'div', `profile-link${active ? '' : ' is-unavailable'}`);
         if (href) {
           row.href = href;
-          if (!href.startsWith('mailto:')) { row.target = '_blank'; row.rel = 'noopener noreferrer'; }
+          if (!href.startsWith('mailto:') && !href.startsWith('./?')) { row.target = '_blank'; row.rel = 'noopener noreferrer'; }
         } else if (copy) {
           row.type = 'button';
           row.dataset.copy = copy;
@@ -2173,7 +2237,7 @@
       return writingRows(posts);
     };
 
-    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, writing, blogHeading, linksHeading, profileLinks, now, guestbookHeading, guestbook: guestbookShell };
+    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, writing, blogHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -2195,14 +2259,19 @@
     };
 
     // A "Resume" button joins "Email me" once data.js points at a PDF.
-    const applyResume = ({ profile = {} }) => {
+    const applyResume = (data) => {
+      const { profile = {} } = data;
       const href = safeResume(profile.resume);
       const actions = $('.hero-actions');
       if (!href || !actions) return;
       const link = el('a', 'btn btn-secondary', 'Resume');
-      link.href = href;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
+      // The Resume page when there is one; otherwise straight to the PDF.
+      if (data.resumePage) link.href = './?view=resume';
+      else {
+        link.href = href;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+      }
       actions.append(link);
     };
 
@@ -2249,7 +2318,7 @@
       if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //', 'Outside the IDE'); head('contact', '03 //', 'Terminal'); }
       if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       if (root.classList.contains('view-stack')) head('stack', '01 //', 'Stack');
-      const page = Object.entries({ more: data.more, projects: data.projectsPage, stack: data.stackPage, blog: data.blogPage, links: data.linksPage, guestbook: data.guestbook })
+      const page = Object.entries({ more: data.more, projects: data.projectsPage, stack: data.stackPage, blog: data.blogPage, links: data.linksPage, guestbook: data.guestbook, resume: data.resumePage })
         .find(([view]) => root.classList.contains(`view-${view}`));
       const slug = new URLSearchParams(window.location.search).get('p');
       if (root.classList.contains('view-case')) setTitle(data.projects.find((project) => projectSlug(project.title) === `project-${slug}`).title);
