@@ -21,7 +21,7 @@ with sync_playwright() as p:
         check(f"{name}: pipeline drawn in How it ships", page.locator(".case-part:nth-child(3) .diagram-node").count() == 5)
         check(f"{name}: no source link for a private repository", page.locator(".case-page a", has_text="source").count() == 0)
         check(f"{name}: only Projects is shown", page.locator(".main > .section:visible").count() == 1)
-        check(f"{name}: links back", page.locator(".case-back").get_attribute("href") == "./?view=projects")
+        check(f"{name}: links back", page.locator(".case-page .case-back").get_attribute("href") == "./?view=projects")
         check(f"{name}: no sideways scroll", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
         check(f"{name}: no errors", not errors, str(errors))
         if SHOTS:

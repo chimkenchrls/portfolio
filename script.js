@@ -2482,6 +2482,17 @@
         });
       } else setActive(SECTIONS[0].id);
     };
+    // The link lit right now, so a page change can slide the highlight from it.
+    const lit = () => links.find((link) => link.matches('[aria-current], .is-active'));
+    const slideFrom = (old) => {
+      const now = lit();
+      if (!old || !now || old === now || prefersReducedMotion()) return;
+      now.style.setProperty('--nav-from', `${old.getBoundingClientRect().top - now.getBoundingClientRect().top}px`);
+      now.classList.remove('nav-slide');
+      void now.offsetWidth; // restart the animation if it is still running
+      now.classList.add('nav-slide');
+      now.addEventListener('animationend', () => now.classList.remove('nav-slide'), { once: true });
+    };
     const init = () => {
       sync();
       if (!('IntersectionObserver' in window)) return;
@@ -2507,7 +2518,7 @@
       }, { passive: true });
     };
 
-    return { init, jumpTo, sync };
+    return { init, jumpTo, sync, lit, slideFrom };
   })();
 
   /* ==========================================================================
@@ -4911,6 +4922,7 @@
       window.addEventListener('scroll', () => positions.set(current, window.scrollY), { passive: true });
 
       const show = (route, { replay = false, scroll = null } = {}) => {
+        const wasLit = nav.lit();
         document.dispatchEvent(new Event('portfolio:navigate'));
         $$('dialog[open]').forEach((dialog) => dialog.close());
         $$('video', main).forEach((video) => video.pause());
@@ -4933,6 +4945,13 @@
         else window.scrollTo({ top: 0, behavior: 'instant' });
         cover.refresh();
         if (replay && route.view === 'home' && !route.hash) cover.replay();
+        // The highlight slides to the new link and the page fades up; Home's cover has its own intro.
+        nav.slideFrom(wasLit);
+        main.classList.remove('page-in');
+        if (!prefersReducedMotion() && !root.classList.contains('at-cover')) {
+          void main.offsetWidth; // restart the fade on quick successive changes
+          main.classList.add('page-in');
+        }
       };
       visit = (href, options = {}) => {
         const route = portfolioRoute(href, window.location.href, data);

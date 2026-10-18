@@ -600,6 +600,52 @@ dd {
 .nav-link[aria-current] .icon {
   color: var(--fg);
 }
+/* On a page change the highlight slides here from the link that was lit before
+   (--nav-from is that link's offset, set by script.js). */
+.nav-link.nav-slide {
+  position: relative;
+  isolation: isolate;
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+.nav-link.nav-slide::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  background: linear-gradient(var(--control-start), var(--control-end));
+  border: 1px solid var(--panel-edge);
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 var(--panel-shine), 0 1px 2px rgb(0 0 0 / 4%);
+  animation: nav-slide 260ms cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+.nav-link.nav-slide.is-active::before {
+  background: var(--bg-alt);
+  border-color: transparent;
+  box-shadow: none;
+}
+@keyframes nav-slide {
+  from {
+    translate: 0 var(--nav-from, 0);
+  }
+}
+/* ...and the page column fades up into place. */
+.main.page-in {
+  animation: page-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .main.page-in,
+  .nav-link.nav-slide::before {
+    animation: none;
+  }
+}
 .nav-count {
   flex: none;
   color: var(--fg-muted);

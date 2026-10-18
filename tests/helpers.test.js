@@ -488,3 +488,4 @@ test('case studies: every project has a role and a study, with nothing private i
   assert.ok(validateData(bad).some((e) => e.startsWith('projects[0].caseStudy')));
   assert.equal(projectSlug('Pakisuyo Express').replace('project-', ''), 'pakisuyo-express', 'the address is ?view=case&p=pakisuyo-express');
 });
+
