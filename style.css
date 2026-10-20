@@ -640,10 +640,33 @@ dd {
     translate: 0 8px;
   }
 }
+/* On every other page the new page shows through page-coloured tiles that drop
+   away in a shuffled order (script.js: navigation). Under the sidebar and top bar. */
+.page-tiles {
+  position: fixed;
+  bottom: 0;
+  z-index: 20;
+  display: grid;
+  grid-auto-rows: 40px;
+  overflow: hidden;
+  pointer-events: none;
+}
+.page-tiles span {
+  background: var(--bg);
+  animation: tile-drop 100ms steps(1, end) both;
+}
+@keyframes tile-drop {
+  to {
+    opacity: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .main.page-in,
   .nav-link.nav-slide::before {
     animation: none;
+  }
+  .page-tiles {
+    display: none;
   }
 }
 .nav-count {

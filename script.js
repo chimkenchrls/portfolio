@@ -189,6 +189,15 @@
     return delays;
   };
 
+  // A section label part-way through decoding (progress 0–1): characters settle left to
+  // right and the rest flicker through random glyphs; spaces stay so words keep their shape.
+  const DECODE_GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/#_*+';
+  const decodeText = (text, progress, random = Math.random) => {
+    const chars = Array.from(String(text));
+    const settled = Math.floor(Math.min(1, Math.max(0, Number(progress) || 0)) * chars.length);
+    return chars.map((c, i) => (i < settled || /\s/.test(c) ? c : DECODE_GLYPHS[Math.floor(random() * DECODE_GLYPHS.length)])).join('');
+  };
+
   const isTypingTarget = (el) => {
     if (!el) return false;
     if (el.isContentEditable) return true;
@@ -888,6 +897,11 @@
   const pokeEmote = (count) => POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length];
   // Five pokes inside two seconds make him dizzy.
   const pokeDizzy = (stamps, now) => stamps.filter((at) => now - at >= 0 && now - at <= 2000).length >= 5;
+  // A hard fling also makes him dizzy: the page travelled over 2.5 screens in half a second.
+  const scrollFling = (samples, now, viewportHeight) => {
+    const ys = samples.filter(({ at }) => now - at >= 0 && now - at <= 500).map(({ y }) => y);
+    return ys.length > 1 && Math.max(...ys) - Math.min(...ys) > 2.5 * viewportHeight;
+  };
   // The saved poke count, however storage hands it back.
   const pokeCount = (stored) => {
     const n = Math.floor(Number(stored));
@@ -1237,7 +1251,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, joinParts, postDate, publishedPost, postReadTime, profileLink,
+      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, decodeText, joinParts, postDate, publishedPost, postReadTime, profileLink,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -1250,7 +1264,7 @@
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, scrollFling, contactProblems, emailSuggestion, projectSlug, stackUses,
       skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
@@ -2291,6 +2305,7 @@
       animations[0].finished.then(() => {
         navigation.go('./?view=resume');
         $('#main').classList.remove('page-in');
+        $$('.page-tiles').forEach((tiles) => tiles.remove());
         const sheet = $('.resume-sheet');
         if (!sheet || done) { finish(); return; }
         const to = sheet.getBoundingClientRect();
@@ -3140,6 +3155,54 @@
   })();
 
   /* ==========================================================================
+     10b. Label decode — section labels flicker into place once per page visit
+     ========================================================================== */
+
+  const labelDecode = (() => {
+    let observer = null;
+    const running = new Map(); // label → finish
+    const play = (label) => {
+      // A second start must not take the half-decoded text for the real one.
+      if (running.has(label)) running.get(label)();
+      const node = [...label.childNodes].reverse().find((child) => child.nodeType === Node.TEXT_NODE && child.textContent.trim());
+      if (!node) return;
+      const text = node.textContent;
+      // Screen readers get the real heading while it flickers.
+      label.setAttribute('aria-label', text.trim());
+      const start = performance.now();
+      let timer = 0;
+      const finish = () => {
+        clearInterval(timer);
+        running.delete(label);
+        node.textContent = text;
+        label.removeAttribute('aria-label');
+      };
+      const step = () => {
+        const progress = (performance.now() - start) / 480;
+        if (progress >= 1) finish();
+        else node.textContent = decodeText(text, progress);
+      };
+      running.set(label, finish);
+      timer = window.setInterval(step, 40);
+      step();
+    };
+    const init = () => {
+      running.forEach((finish) => finish());
+      if (observer) observer.disconnect();
+      if (prefersReducedMotion() || !('IntersectionObserver' in window)) return;
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          observer.unobserve(entry.target);
+          play(entry.target);
+        });
+      }, { threshold: 0.1, rootMargin: '0px 0px -10% 0px' });
+      $$('#main .divider-label').forEach((label) => observer.observe(label));
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      11. Pixel photo — 8×8 tiles dissolve profile.jpg into light.jpg
      ========================================================================== */
 
@@ -3922,6 +3985,8 @@
       let pointerFrame = 0;
       let direction = 4;
       let pointerAt = -Infinity;
+      let scrollAt = -Infinity;
+      let scrollDirection = 7;
       let activeAt = 0;
       let mood = { name: 'idle', at: 0 };
       let spoken = config.greeting; // the full text of the speech bubble
@@ -3948,6 +4013,7 @@
         let pose = dialog.open ? assistantPose(mood.name, now - mood.at, still()) : null;
         if (!pose) {
           if (still()) pose = { direction: 4, reaction: null };
+          else if (now - scrollAt < 700 && scrollAt > pointerAt + 150) pose = { direction: scrollDirection, reaction: null };
           else if (now - pointerAt < 1800) pose = { direction, reaction: null };
           else if (dialog.open && now - activeAt > 40000) pose = { direction: 4, reaction: MASCOT_REACTION.sleepy };
           else pose = mascotIdle(now);
@@ -4233,19 +4299,31 @@
         }
         showPokes();
         recent = [...recent.filter((at) => now - at <= 2000), now];
-        const dizzy = pokeDizzy(recent, now);
-        const lasts = dizzy ? DIZZY_MS : 1100;
-        if (dizzy) { recent = []; dizzyUntil = now + DIZZY_MS; }
-        pokeFace = dizzy ? MASCOT_REACTION.sleepy : pokeReaction(pokes);
-        pokeUntil = now + lasts;
+        if (pokeDizzy(recent, now)) { reel(sprite, host, now); return true; }
+        pokeFace = pokeReaction(pokes);
+        pokeUntil = now + 1100;
         paint();
-        window.setTimeout(paint, lasts + 20);
+        window.setTimeout(paint, 1120);
         if (still() || typeof sprite.animate !== 'function') return true;
         // WAAPI, so a quick second poke restarts the squash cleanly.
         sprite.style.transformOrigin = '50% 100%';
-        sprite.animate(dizzy ? sway : squash, dizzy ? { duration: DIZZY_MS - 300, easing: 'ease-in-out' } : spring);
-        showEmote(host, dizzy ? 'dizzy' : pokeEmote(pokes), dizzy ? DIZZY_MS : 900);
+        sprite.animate(squash, spring);
+        showEmote(host, pokeEmote(pokes), 900);
         return true;
+      };
+      // Dizzy (five quick pokes or a hard fling): the swirl, a sway, the sleepy face,
+      // and 1.6 seconds in which pokes are ignored.
+      const reel = (sprite, host, now) => {
+        recent = [];
+        dizzyUntil = now + DIZZY_MS;
+        pokeFace = MASCOT_REACTION.sleepy;
+        pokeUntil = dizzyUntil;
+        paint();
+        window.setTimeout(paint, DIZZY_MS + 20);
+        if (still() || typeof sprite.animate !== 'function') return;
+        sprite.style.transformOrigin = '50% 100%';
+        sprite.animate(sway, { duration: DIZZY_MS - 300, easing: 'ease-in-out' });
+        showEmote(host, 'dizzy', DIZZY_MS);
       };
       launcher.addEventListener('click', () => {
         if (!openedOnce) { open(launcher); return; }
@@ -4313,7 +4391,14 @@
           paint();
         });
       };
-      const lookAtPointer = (event) => lookAt(event.clientX, event.clientY, event.pointerType === 'touch');
+      // Browsers send a pointermove when the page scrolls under a still cursor; that is not a look.
+      let lastPointer = '';
+      const lookAtPointer = (event) => {
+        const at = `${event.clientX},${event.clientY}`;
+        if (event.type === 'pointermove' && at === lastPointer) return;
+        lastPointer = at;
+        lookAt(event.clientX, event.clientY, event.pointerType === 'touch');
+      };
       window.addEventListener('pointermove', lookAtPointer, { passive: true });
       window.addEventListener('pointerdown', lookAtPointer, { passive: true });
       // A scrolling finger stops sending pointer events, but still sends touch moves,
@@ -4324,6 +4409,32 @@
       };
       window.addEventListener('touchstart', lookAtTouch, { passive: true });
       window.addEventListener('touchmove', lookAtTouch, { passive: true });
+      // He looks the way the page scrolls (once the cursor or finger has been still for a
+      // moment, so a swipe keeps his eyes on the finger), and a hard fling makes him dizzy.
+      // Only a wheel or finger counts as a fling, not a jump to a section.
+      let lastY = window.scrollY;
+      let travel = [];
+      let handAt = -Infinity;
+      const byHand = () => { handAt = performance.now(); };
+      window.addEventListener('wheel', byHand, { passive: true });
+      window.addEventListener('touchmove', byHand, { passive: true });
+      window.addEventListener('scroll', () => {
+        const y = window.scrollY;
+        const now = performance.now();
+        if (y === lastY || still() || dialog.open || document.hidden) { lastY = y; return; }
+        const way = y > lastY ? 7 : 1;
+        const fresh = now - scrollAt > 700 || way !== scrollDirection;
+        scrollDirection = way;
+        // Where it started counts too, so one long jump is measured in full.
+        travel = [...travel.filter(({ at }) => now - at <= 500), { at: now, y: lastY }, { at: now, y }];
+        lastY = y;
+        scrollAt = now;
+        if (now - handAt < 300 && now >= dizzyUntil && scrollFling(travel, now, window.innerHeight)) {
+          travel = [];
+          const [sprite, host] = launcher.getClientRects().length || !pokeSprite ? [sprites[0], launcher] : [pokeSprite, poke];
+          reel(sprite, host, now);
+        } else if (fresh) paint();
+      }, { passive: true });
       document.addEventListener('visibilitychange', syncMotion);
       motionQuery.addEventListener('change', () => { finishTyping(); syncMotion(); });
       window.visualViewport?.addEventListener('resize', fitViewport);
@@ -5054,6 +5165,7 @@
         chatReplay.init();
         projectHover.init(data);
         guestbook.init(data);
+        labelDecode.init();
         nav.sync();
         cover.refresh();
         main.focus({ preventScroll: true });
@@ -5064,13 +5176,35 @@
         else window.scrollTo({ top: 0, behavior: 'instant' });
         cover.refresh();
         if (replay && route.view === 'home' && !route.hash) cover.replay();
-        // The highlight slides to the new link and the page fades up, unless Home's intro replays.
+        // The highlight slides to the new link and the new page shows through dropping tiles,
+        // unless Home's intro replays; back on Home's cover the hero fades up instead.
         nav.slideFrom(wasLit);
         main.classList.remove('page-in');
+        $$('.page-tiles').forEach((old) => old.remove());
         if (!prefersReducedMotion() && !(replay && root.classList.contains('at-cover'))) {
-          void main.offsetWidth; // restart the fade on quick successive changes
-          main.classList.add('page-in');
+          if (!root.classList.contains('at-cover')) dissolve();
+          else {
+            void main.offsetWidth; // restart the fade on quick successive changes
+            main.classList.add('page-in');
+          }
         }
+      };
+      // Page-coloured 40px tiles over the visible page column drop away in a shuffled order.
+      const dissolve = () => {
+        const box = main.getBoundingClientRect();
+        const top = Math.max(0, box.top);
+        const columns = Math.ceil(box.width / 40);
+        const count = columns * Math.ceil((window.innerHeight - top) / 40);
+        const tiles = el('div', 'page-tiles');
+        tiles.setAttribute('aria-hidden', 'true');
+        Object.assign(tiles.style, { left: `${box.left}px`, top: `${top}px`, width: `${box.width}px`, gridTemplateColumns: `repeat(${columns}, 40px)` });
+        revealDelays(count, 260 / count).forEach((delay) => {
+          const tile = document.createElement('span');
+          tile.style.animationDelay = `${Math.round(delay)}ms`;
+          tiles.append(tile);
+        });
+        document.body.append(tiles);
+        window.setTimeout(() => tiles.remove(), 460);
       };
       visit = (href, options = {}) => {
         const route = portfolioRoute(href, window.location.href, data);
@@ -5145,6 +5279,7 @@
     clipboard.init();
     pixelPhoto.init();
     reveal.init();
+    labelDecode.init();
     githubGraph.init(data);
     photoDeck.init(data);
     terminal.init(data);

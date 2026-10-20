@@ -504,3 +504,14 @@ test('resume page: the PDF\'s sections, with the phone number kept off the publi
   assert.match(html, /view=\(projects\|more\|stack\|case\|post\|blog\|links\|guestbook\|resume\)/);
   assert.doesNotMatch(html, /class="nav-link"[^>]*data-view="resume"/, 'no sidebar link: reached from the hero button');
 });
+
+test('decodeText: settles left to right, keeps spaces, ends on the real text', () => {
+  const { decodeText } = require('../script.js');
+  const zero = () => 0; // always the first glyph, 'A'
+  assert.equal(decodeText(' About', 0, zero), ' AAAAA', 'nothing settled yet; the leading space stays');
+  assert.equal(decodeText(' About', 0.5, zero), ' AbAAA', 'the first half has settled');
+  assert.equal(decodeText(' About', 1), ' About');
+  assert.equal(decodeText(' About', 7), ' About', 'past the end is still the real text');
+  assert.equal(decodeText('A B', NaN, zero), 'A A', 'bad progress counts as the start');
+  assert.equal(decodeText('', 0.5), '');
+});

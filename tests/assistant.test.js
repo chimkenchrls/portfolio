@@ -254,3 +254,13 @@ test('five pokes inside two seconds make him dizzy; slower poking never does', (
   assert.equal(pokeDizzy([0, 1, 2, 3, 4, 5000], 5000), false, 'old pokes are forgotten');
   assert.equal(pokeDizzy([], 0), false);
 });
+
+test('scrollFling: more than 2.5 screens inside half a second', () => {
+  const { scrollFling } = require('../script.js');
+  assert.equal(scrollFling([{ at: 0, y: 0 }, { at: 400, y: 2600 }], 400, 1000), true);
+  assert.equal(scrollFling([{ at: 0, y: 0 }, { at: 400, y: 2400 }], 400, 1000), false, 'not far enough');
+  assert.equal(scrollFling([{ at: 0, y: 0 }, { at: 600, y: 3000 }], 600, 1000), false, 'too slow: the first sample is forgotten');
+  assert.equal(scrollFling([{ at: 0, y: 3000 }, { at: 300, y: 0 }], 300, 1000), true, 'flinging up counts too');
+  assert.equal(scrollFling([{ at: 0, y: 0 }], 0, 1000), false);
+  assert.equal(scrollFling([], 0, 1000), false);
+});
