@@ -36,7 +36,7 @@ with sync_playwright() as p:
     page.evaluate("""() => { window.seen = []; const l = document.querySelector('#projects .divider-label');
       new MutationObserver(() => seen.push([l.textContent.trim(), l.getAttribute('aria-label')])).observe(l, { subtree: true, characterData: true, attributes: true });
       l.scrollIntoView(); }""")
-    page.wait_for_timeout(700)
+    page.wait_for_function("document.querySelector('#projects .divider-label').textContent.trim() === '03 // Projects' && seen.length > 1", timeout=2000)
     seen = page.evaluate("seen")
     check("a label flickers through other characters while it decodes", any(text != "03 // Projects" for text, _ in seen), str(seen))
     check("screen readers get the real heading meanwhile", all(label == "Projects" for text, label in seen if text != "03 // Projects"), str(seen))
@@ -45,12 +45,11 @@ with sync_playwright() as p:
     face = "document.querySelector('.poke-button .assistant-sprite').style.backgroundPosition"
     page.mouse.move(700, 400)
     page.wait_for_timeout(400)
+    looks = lambda cell: page.wait_for_function(f"{face} === '{cell}'", timeout=600) and True
     page.mouse.wheel(0, 200)
-    page.wait_for_timeout(80)
-    check("CK looks down while the page scrolls down", page.evaluate(face) == "50% 100%", page.evaluate(face))
+    check("CK looks down while the page scrolls down", looks("50% 100%"), page.evaluate(face))
     page.mouse.wheel(0, -200)
-    page.wait_for_timeout(80)
-    check("and up while it scrolls up", page.evaluate(face) == "50% 0%", page.evaluate(face))
+    check("and up while it scrolls up", looks("50% 0%"), page.evaluate(face))
     page.evaluate("scrollTo({ top: 0, behavior: 'instant' })")
     page.wait_for_timeout(800)
     for _ in range(6):
