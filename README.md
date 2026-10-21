@@ -4,16 +4,18 @@
 
 Personal portfolio of Kenneth Charles Valdez, a BS Computer Science student and aspiring DevOps engineer.
 
-Live site: https://chimkenchrls.github.io/portfolio/
+Live site: https://kenchrls.vercel.app
+
+GitHub Pages mirror: https://chimkenchrls.github.io/portfolio/
 
 ## Overview
 
-A static site written in plain HTML, CSS, and vanilla JavaScript. It has no framework, no build step, and no runtime dependencies. Every push to `main` is tested and deployed to GitHub Pages by GitHub Actions.
+A static site written in plain HTML, CSS, and vanilla JavaScript. It has no framework or runtime dependencies. Deployment stages the runtime files and versions the CSS/JS URLs. Vercel deploys from the connected GitHub repository; GitHub Actions tests every push to `main` and publishes a GitHub Pages mirror.
 
 ## Features
 
 - Responsive layout: sidebar on desktop, icon rail on tablet, drawer on mobile
-- Light and dark themes that follow the system setting
+- Dark theme by default, with a saved light/dark toggle
 - Project showcase with desktop and mobile screenshots
 - Live GitHub contribution calendar
 - Floating pixel character with a Gemini portfolio chat (optional private Node server)
@@ -33,7 +35,7 @@ tests/            Unit tests (node:test)
 tests/e2e/        Browser checks (Playwright, run locally)
 server.js         Optional local site + Gemini server (Node.js 22+)
 server/chat.js    Portfolio grounding, input validation, and provider requests
-worker/           Cloudflare Worker: chat + shared poke counter (free hosting)
+worker/           Cloudflare Worker: chat, pokes, contact, and moderated notes
 wrangler.toml     Worker configuration (no secrets)
 .github/          CI/CD workflow
 ```
@@ -60,6 +62,19 @@ For live AI chat, copy `.env.example` to `.env`, add `GEMINI_API_KEY`, and run `
 
 All content lives in [`assets/data.js`](./assets/data.js). Use `null` for anything that is not ready yet; the page shows a "coming soon" state in its place.
 
+Common edits in that file:
+
+| Change | Where to edit |
+| --- | --- |
+| Add a tool to Stack | `stack[].items`; put its SVG in `assets/icons/stack/` and use the filename without `.svg` as `icon` |
+| Show a project beside a tool on Stack | Add the matching tool name to that project's `tags`; project links are derived automatically |
+| Update the short Home project description | The project's `summary` and `kind` |
+| Add a blog thumbnail | The post's `thumbnail`, using a relative image path in `assets/blog/` |
+| Publish a blog post | Set both `writing[].date` and `writing[].body` |
+| Update the resume | Keep `resumePage` and `assets/resume.pdf` in step |
+
+Visitor notes are stored in the database, not in `data.js`. See the [review and moderation commands](./docs/guestbook.md) to approve or remove them.
+
 Home's **Selected projects** list uses each project's optional `summary` and `kind` for its short description and type label, falling back to the full description and first tag. The count is derived from the project list, and every project is visible immediately. Full project cards and case studies keep their detailed descriptions.
 
 On devices with a fine pointer, hovering a Home project shows a small preview below the cursor, flipped inward near viewport edges. A project's `demo` plays silently while hovered; projects with `chat` show the first two nonsystem messages from `chat.previewScene` (matching a scene label, or the first scene by default). Other projects use the desktop screenshot or bot image. Leaving, scrolling, pressing Escape, or hiding the tab stops playback. Reduced motion shows the poster without playback or cursor-following motion; touch screens keep the ordinary project links.
@@ -68,7 +83,7 @@ On devices with a fine pointer, hovering a Home project shows a small preview be
 
 The **More about me** page (`./?view=more`) opens with `more.title`, the centered Outside the IDE photo deck, the profile name and role, and `more.intro`. Full-width Experience and Education rows reuse the same content as Home, followed by the `writing` list and terminal.
 
-**Blog** (`./?view=blog`) sits below Home in the sidebar, with its title and introduction in `blogPage`. Home previews the first three entries in `writing`; Blog and More about me show the full list. Each entry has a unique lowercase `slug`, `title`, `excerpt`, `date` and `body`. Leave `date` and `body` as `null` for an upcoming post; it has no link until both are filled. To publish, set a real `YYYY-MM-DD` date and the finished body text (separate paragraphs with blank lines). The post opens at `./?view=post&p=<slug>` with a back link to Blog. Reading time is estimated from the body at 200 words per minute. Text is rendered literally, without HTML or Markdown. Unknown or unfinished post URLs show Blog.
+**Blog** (`./?view=blog`) sits below Links in the sidebar, with its title and introduction in `blogPage`. Blog and More about me show the full `writing` list; Home has no blog preview. Each entry has a unique lowercase `slug`, `title`, `excerpt`, `date` and `body`, plus an optional `thumbnail` image from `assets/blog/`. Leave `date` and `body` as `null` for an upcoming post; it has no link until both are filled. To publish, set a real `YYYY-MM-DD` date and the finished body text (separate paragraphs with blank lines). The post opens at `./?view=post&p=<slug>` with a back link to Blog. Reading time is estimated from the body at 200 words per minute. Text is rendered literally, without HTML or Markdown. Unknown or unfinished post URLs show Blog.
 
 The photo deck fans out around the active photo, with up to three neighbors on either side and a clickable position dot per photo. Tap/click, swipe, or use Enter/arrow keys to shuffle; holding reveals color. `outsideHint` controls the hint text, and `outside` supplies the photos. The Live Photo plays only when active, on screen and motion is allowed.
 
@@ -97,7 +112,9 @@ tests/e2e/run.sh
 3. HTML validation (`html-validate`)
 4. Offline link and asset check (`lychee`)
 
-Pushes to `main` that pass every check are deployed to GitHub Pages. Only the runtime files (`index.html`, `style.css`, `script.js`, `assets/`) are published.
+Vercel deploys pushes to `main` through the connected repository. GitHub Pages deploys after the workflow checks pass. Both publish only the runtime files (`index.html`, `style.css`, `script.js`, `assets/`).
+
+The Cloudflare Worker is deployed separately with `npx wrangler deploy`; pushing the website does not update its API. For guestbook database setup and live moderation, follow [the guestbook guide](./docs/guestbook.md). For chat, contact, and the shared poke counter, see [API setup](./docs/assistant.md).
 
 ## Contact
 
