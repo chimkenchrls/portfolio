@@ -75,6 +75,8 @@ Common edits in that file:
 
 Visitor notes are stored in the database, not in `data.js`. See the [review and moderation commands](./docs/guestbook.md) to approve or remove them.
 
+The public resume page and downloadable PDF omit phone numbers. When replacing `assets/resume.pdf`, remove private contact details and embedded document metadata before publishing; keep a separate private copy for direct applications.
+
 Home's **Selected projects** list uses each project's optional `summary` and `kind` for its short description and type label, falling back to the full description and first tag. The count is derived from the project list, and every project is visible immediately. Full project cards and case studies keep their detailed descriptions.
 
 On devices with a fine pointer, hovering a Home project shows a small preview below the cursor, flipped inward near viewport edges. A project's `demo` plays silently while hovered; projects with `chat` show the first two nonsystem messages from `chat.previewScene` (matching a scene label, or the first scene by default). Other projects use the desktop screenshot or bot image. Leaving, scrolling, pressing Escape, or hiding the tab stops playback. Reduced motion shows the poster without playback or cursor-following motion; touch screens keep the ordinary project links.

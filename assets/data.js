@@ -79,8 +79,8 @@ const PORTFOLIO_DATA = {
   },
 
   // The Resume page (./?view=resume): the PDF's wording as a sheet on the page, with
-  // the PDF to download beside it. Keep it in step with assets/resume.pdf. The phone
-  // number stays off the public page; it is only in the PDF. Bullets are text, or
+  // the PDF to download beside it. Keep it in step with assets/resume.pdf. Keep
+  // phone numbers out of both the public page and downloadable PDF. Bullets are text, or
   // { label, text } for a bold lead-in.
   resumePage: {
     title: "Resume",
