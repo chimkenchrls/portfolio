@@ -63,6 +63,8 @@ with sync_playwright() as pw:
     page.locator('.project-open').first.click()
     page.wait_for_url('**view=case&p=ambiancy')
     check('project links open a case study in place', page.locator('.case-name').inner_text() == 'Ambiancy' and page.evaluate('shellProof.origin === performance.timeOrigin'))
+    page.wait_for_function('document.querySelector(".sr-status").textContent === document.title')
+    check('page changes are announced to screen readers', 'Ambiancy' in page.locator('.sr-status').text_content())
     page.click('.case-back:visible')
     check('returning restores the same project cards', page.evaluate('cachedCard === document.querySelector(".project")'))
     page.go_back()

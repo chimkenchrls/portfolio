@@ -5169,6 +5169,7 @@
         nav.sync();
         cover.refresh();
         main.focus({ preventScroll: true });
+        announce(document.title);
         let target = null;
         try { if (route.hash) target = document.getElementById(decodeURIComponent(route.hash.slice(1))); } catch { /* malformed fragment */ }
         if (scroll !== null) window.scrollTo({ top: scroll, behavior: 'instant' });
