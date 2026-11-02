@@ -22,6 +22,13 @@ with sync_playwright() as p:
         check(f"{name}: no source link for a private repository", page.locator(".case-page a", has_text="source").count() == 0)
         check(f"{name}: only Projects is shown", page.locator(".main > .section:visible").count() == 1)
         check(f"{name}: links back", page.locator(".case-page .case-back").get_attribute("href") == "./?view=projects")
+        check(f"{name}: names the next project, Thready leads to AmIgo", "AmIgo" in page.locator(".case-next").inner_text())
+        page.click(".case-next")
+        page.wait_for_url("**/?view=case&p=amigo")
+        check(f"{name}: the next link opens that case study at the top", page.locator(".case-name").inner_text() == "AmIgo" and page.evaluate("scrollY") == 0)
+        check(f"{name}: the last project wraps to the first", "Ambiancy" in page.locator(".case-next").inner_text())
+        page.go_back()
+        page.wait_for_url("**/?view=case&p=thready")
         check(f"{name}: no sideways scroll", page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"))
         check(f"{name}: no errors", not errors, str(errors))
         if SHOTS:

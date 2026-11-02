@@ -866,6 +866,12 @@
   };
   // A project's anchor on the all-projects page, e.g. "project-pakisuyo-express".
   const projectSlug = (title) => `project-${String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
+  // The project after this one with a case study, wrapping round; null when there is no other.
+  const nextProject = (projects, current) => {
+    const studied = projects.filter((project) => project.caseStudy);
+    if (studied.length < 2) return null;
+    return studied[(studied.indexOf(current) + 1) % studied.length];
+  };
   // Only this document's public views are eligible for in-place navigation.
   const portfolioRoute = (href, base, data = {}) => {
     let url, current;
@@ -1251,7 +1257,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, safeResume, scrollProgress, computeTiles, revealDelays, decodeText, joinParts, postDate, publishedPost, postReadTime, profileLink,
+      SECTIONS, padCount, safeUrl, safeResume, nextProject, scrollProgress, computeTiles, revealDelays, decodeText, joinParts, postDate, publishedPost, postReadTime, profileLink,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -1740,7 +1746,7 @@
       if (root.classList.contains('view-case')) {
         const wanted = `project-${new URLSearchParams(window.location.search).get('p')}`;
         const one = items.find((project) => project.caseStudy && projectSlug(project.title) === wanted);
-        if (one) return [caseArticle(one, stack)];
+        if (one) return [caseArticle(one, stack, nextProject(items, one))];
         // An unknown ?p= is the Projects page.
         root.classList.replace('view-case', 'view-projects');
       }
@@ -1772,7 +1778,7 @@
       return rows.size ? part : null;
     };
     // A case study page: a plain article on the page, no card.
-    const caseArticle = (project, stack) => {
+    const caseArticle = (project, stack, next) => {
       setTitle(project.title);
       const li = el('li', 'case-page');
       const back = el('a', 'case-back', '← All projects');
@@ -1848,6 +1854,12 @@
       li.append(caseStudyEl(project.caseStudy));
       const built = builtWith(project, stack);
       if (built) li.lastChild.append(built);
+      if (next) {
+        const link = el('a', 'case-next');
+        link.href = projectLink(next);
+        link.append(el('span', 'case-next-label', 'Next project'), el('span', 'case-next-name', `${next.title} →`));
+        li.append(link);
+      }
       return li;
     };
     const projectCard = (project) => {

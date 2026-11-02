@@ -515,3 +515,11 @@ test('decodeText: settles left to right, keeps spaces, ends on the real text', (
   assert.equal(decodeText('A B', NaN, zero), 'A A', 'bad progress counts as the start');
   assert.equal(decodeText('', 0.5), '');
 });
+
+test('nextProject walks the case studies in order and wraps round', () => {
+  const { nextProject } = require('../script.js');
+  const [a, b, c] = [{ caseStudy: {} }, { caseStudy: null }, { caseStudy: {} }];
+  assert.equal(nextProject([a, b, c], a), c, 'skips a project without a case study');
+  assert.equal(nextProject([a, b, c], c), a, 'the last wraps to the first');
+  assert.equal(nextProject([a, b], a), null, 'no other case study, no link');
+});

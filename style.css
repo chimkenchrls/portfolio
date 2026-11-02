@@ -1980,6 +1980,25 @@ html.view-post #writing .divider {
   gap: 40px;
   margin-top: 44px;
 }
+.case-next {
+  display: grid;
+  gap: 4px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+  text-decoration: none;
+}
+.case-next-label {
+  font-size: 14px;
+  color: var(--fg-muted);
+}
+.case-next-name {
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.case-next:hover .case-next-label {
+  color: var(--fg);
+}
 .case-part {
   display: grid;
   gap: 12px;
