@@ -31,7 +31,7 @@ jobs:
         run: node --check script.js && node --check assets/data.js
 
       - name: Validate HTML
-        run: npx --yes html-validate@9 index.html
+        run: npx --yes html-validate@9 index.html 404.html
 
       - name: Check links and asset paths
         uses: lycheeverse/lychee-action@v2
@@ -59,7 +59,7 @@ jobs:
       - name: Stage runtime files only
         run: |
           mkdir _site
-          cp -r index.html style.css script.js assets _site/
+          cp -r index.html 404.html style.css script.js assets _site/
 
       - name: Cache-bust CSS/JS with the commit SHA
         run: bash .github/scripts/cache-bust.sh _site "${GITHUB_SHA::7}"

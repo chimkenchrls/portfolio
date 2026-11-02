@@ -195,6 +195,6 @@ test('the Worker config holds no secret and the site never ships the Worker', ()
   assert.doesNotMatch(toml, /(?:GEMINI|RESEND)_API_KEY\s*=/, 'keys are Worker secrets, not vars');
   assert.match(toml, /CONTACT_TO = "[^"]+@[^"]+"/);
   const yml = fs.readFileSync(path.join(root, '.github', 'workflows', 'deploy.yml'), 'utf8');
-  assert.match(yml, /cp -r index\.html style\.css script\.js assets _site\//, 'only the static files are published to Pages');
+  assert.match(yml, /cp -r index\.html 404\.html style\.css script\.js assets _site\//, 'only the static files are published to Pages');
   assert.match(fs.readFileSync(path.join(root, 'worker', 'schema.sql'), 'utf8'), /CREATE TABLE IF NOT EXISTS counters/);
 });

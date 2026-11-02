@@ -29,3 +29,13 @@ test('deploy workflow runs cache-bust on the staged site', () => {
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'deploy.yml'), 'utf8');
   assert.match(yml, /bash \.github\/scripts\/cache-bust\.sh _site "\$\{GITHUB_SHA::7\}"/);
 });
+
+test('the 404 page is published by both hosts and works from any path', () => {
+  const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'));
+  const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'deploy.yml'), 'utf8');
+  assert.match(vercel.buildCommand, /cp -r [^&]*\b404\.html\b/);
+  assert.match(yml, /cp -r [^\n]*\b404\.html\b/);
+  const html = fs.readFileSync(path.join(ROOT, '404.html'), 'utf8');
+  assert.match(html, /<a href="https:\/\/kenchrls\.vercel\.app\/">/);
+  assert.doesNotMatch(html.replace(/<!--[\s\S]*?-->/g, ''), /(?:href|src)="(?!https:)|url\("(?!https:)/, 'relative URLs break on nested paths');
+});
