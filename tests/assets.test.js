@@ -35,8 +35,8 @@ test('index.html has one section per nav target', () => {
 });
 
 test('hero photo is web-sized (it is the LCP element)', () => {
-  const bytes = fs.statSync(path.join(ROOT, 'assets', 'profile.jpg')).size;
-  assert.ok(bytes < 200 * 1024, `profile.jpg is ${Math.round(bytes / 1024)} KB`);
+  const bytes = fs.statSync(path.join(ROOT, 'assets', 'profile.webp')).size;
+  assert.ok(bytes < 200 * 1024, `profile.webp is ${Math.round(bytes / 1024)} KB`);
 });
 
 test('stats row is removed and the main column is centered', () => {

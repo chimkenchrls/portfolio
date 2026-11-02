@@ -3203,13 +3203,13 @@
   })();
 
   /* ==========================================================================
-     11. Pixel photo — 8×8 tiles dissolve profile.jpg into light.jpg
+     11. Pixel photo — 8×8 tiles dissolve profile.webp into light.webp
      ========================================================================== */
 
   const pixelPhoto = (() => {
     const GRID = 8;
     const STEP_MS = 6;
-    const IMAGE = './assets/light.jpg';
+    const IMAGE = './assets/light.webp';
     const IMAGE_W = 639;
     const IMAGE_H = 780;
 

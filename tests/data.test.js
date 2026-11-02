@@ -90,7 +90,7 @@ test('outside photos are real, web-sized, and carry no EXIF/GPS metadata', () =>
   assert.equal(data.outside.length, 8);
   for (const { photo } of data.outside) {
     assert.doesNotMatch(photo, /placeholder/, 'placeholders replaced');
-    assert.match(photo, /\.jpg$/);
+    assert.match(photo, /\.webp$/);
     const bytes = fs.readFileSync(path.join(ROOT, photo));
     assert.ok(bytes.length < 200 * 1024, `${photo} is ${Math.round(bytes.length / 1024)} KB`);
     assert.equal(bytes.indexOf(Buffer.from('Exif\0\0')), -1, `${photo} still has EXIF metadata`);
@@ -106,7 +106,7 @@ test('no raw originals or archives are left inside the site', () => {
 test('the Live Photo card has a small, silent, metadata-free looping video', () => {
   const data = require('../assets/data.js');
   const live = data.outside[0];
-  assert.equal(live.photo, './assets/outside/outside-1.jpg');
+  assert.equal(live.photo, './assets/outside/outside-1.webp');
   assert.equal(live.video, './assets/outside/outside-1.mp4');
   const bytes = fs.readFileSync(path.join(ROOT, live.video));
   assert.ok(bytes.length < 1024 * 1024, `video is ${Math.round(bytes.length / 1024)} KB`);
@@ -132,7 +132,7 @@ test('project screenshots: listed files exist, are web-sized, and carry no metad
     const shots = Object.entries(project.media);
     assert.ok(shots.length >= 1 && shots.every(([kind]) => ['desktop', 'mobile'].includes(kind)), `${project.title}: desktop and/or mobile`);
     for (const [kind, file] of shots) {
-      assert.match(file, /^\.\/assets\/projects\/[\w.-]+\.jpg$/, `${project.title} ${kind}`);
+      assert.match(file, /^\.\/assets\/projects\/[\w.-]+\.webp$/, `${project.title} ${kind}`);
       const bytes = fs.readFileSync(path.join(ROOT, file));
       assert.ok(bytes.length < 250 * 1024, `${file} is ${Math.round(bytes.length / 1024)} KB`);
       assert.equal(bytes.indexOf(Buffer.from('Exif\0\0')), -1, `${file} has EXIF metadata`);

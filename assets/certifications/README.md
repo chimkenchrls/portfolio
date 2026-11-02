@@ -2,12 +2,12 @@
 
 The user supplied the DataCamp logo, STI logo, AppBuildersPH logo, AppBuildersPH certificate, and original STI Codefest certificate photograph on 2026-10-11. Original files are copied without changing their pixels.
 
-- `datacamp-logo.png`: original user-supplied DataCamp logo.
-- `sti-logo.png`: original user-supplied STI logo.
+- `datacamp-logo.webp`: original user-supplied DataCamp logo.
+- `sti-logo.webp`: original user-supplied STI logo.
 - `appbuildersph-logo-original.png`: original user-supplied AppBuildersPH logo.
-- `appbuildersph-logo-black.png`: black-background edit using the built-in image_gen tool; used by the card.
-- `appbuildersph-certificate.png`: original user-supplied certificate.
-- `sti-codefest-original.png`: original user-supplied photograph; the viewer crops its top/bottom with CSS. No certificate text, signatures, or pixels were regenerated.
+- `appbuildersph-logo-black.webp`: black-background edit using the built-in image_gen tool; used by the card.
+- `appbuildersph-certificate.webp`: original user-supplied certificate.
+- `sti-codefest-original.webp`: original user-supplied photograph; the viewer crops its top/bottom with CSS. No certificate text, signatures, or pixels were regenerated.
 
 The built-in tool's STI cleanup was inspected and rejected because it redrew details. That generated variant is not used or shipped with the site.
 

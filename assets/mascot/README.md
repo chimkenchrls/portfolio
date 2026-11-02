@@ -1,6 +1,6 @@
 # Pixel CK
 
-Generated with the built-in imagegen tool from the portfolio portrait and the user's Outside the IDE photos (`outside-5.jpg` and `outside-7.jpg`). Both PNG source sheets are preserved under `characters/mini-ck/`.
+Generated with the built-in imagegen tool from the portfolio portrait and the user's Outside the IDE photos (`outside-5.webp` and `outside-7.webp`). Both PNG source sheets are preserved under `characters/mini-ck/`.
 
 The page-mascot skill's builder aligns the shoulders between frames. A temporary copy of its build script uses nearest-neighbour resampling, no bottom vignette, 144-pixel tiles, and lossless WebP to preserve pixel edges. Its bleed cleanup keeps only each tile's largest connected bust, removing detached flecks from adjacent cells. The site uses the resulting 432×432 atlases with vanilla JavaScript; no React or runtime package was added.
 

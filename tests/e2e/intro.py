@@ -197,10 +197,10 @@ with sync_playwright() as pw:
     g.wait_for_timeout(3000)
     check("the photo is steady between glitches", g.evaluate(GLITCHING) == 0)
     g.wait_for_function(GLITCHING + " >= 3", timeout=6000)
-    strips = g.evaluate("[...document.querySelectorAll('.photo-glitch span')].filter(n => n.style.opacity === '1').map(n => [n.style.backgroundImage.includes('light.jpg'), n.style.clipPath, n.style.translate])")
+    strips = g.evaluate("[...document.querySelectorAll('.photo-glitch span')].filter(n => n.style.opacity === '1').map(n => [n.style.backgroundImage.includes('light.webp'), n.style.clipPath, n.style.translate])")
     check("it glitches: clipped strips, shifted sideways, the other image among them", any(s[0] for s in strips) and all(s[1].startswith("inset(") and s[2] not in ("", "0% 0px") for s in strips), str(strips))
     g.wait_for_timeout(260)
-    band = g.evaluate("[...document.querySelectorAll('.photo-glitch span')].filter(n => n.style.opacity === '1' && n.style.backgroundImage.includes('light.jpg')).map(n => n.style.clipPath)")
+    band = g.evaluate("[...document.querySelectorAll('.photo-glitch span')].filter(n => n.style.opacity === '1' && n.style.backgroundImage.includes('light.webp')).map(n => n.style.clipPath)")
     heights = [100 - float(c.split("(")[1].split("%")[0]) - float(c.split(" 0px ")[1].split("%")[0]) if " 0px " in c else 0 for c in band]
     check("at its peak a wide band of the other image holds", any(h >= 70 for h in heights), str(band))
     if SHOTS: g.screenshot(path=f"{SHOTS}/glitch.png", clip={"x": 180, "y": 270, "width": 360, "height": 360})

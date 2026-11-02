@@ -185,7 +185,7 @@ const PORTFOLIO_DATA = {
       slug: "keep-going",
       title: 'if (everythingFallsApart) print("keep going..");',
       excerpt: "On finding a small next step when things don’t go as planned.",
-      thumbnail: "./assets/blog/keep-going.png",
+      thumbnail: "./assets/blog/keep-going.webp",
       date: null,
       body: null,
     },
@@ -336,7 +336,7 @@ const PORTFOLIO_DATA = {
       kind: "Sound mixer",
       demo: {
         src: "./assets/projects/ambiancy-demo.mp4",
-        poster: "./assets/projects/ambiancy-demo.jpg",
+        poster: "./assets/projects/ambiancy-demo.webp",
         captions: "./assets/projects/ambiancy-demo.vtt",
         title: "Ambiancy in action",
         playLabel: "Play demo",
@@ -383,8 +383,8 @@ const PORTFOLIO_DATA = {
       },
       // Screenshots live in ./assets/projects/ (desktop and/or mobile).
       media: {
-        desktop: "./assets/projects/ambiancy-desktop.jpg",
-        mobile: "./assets/projects/ambiancy-mobile.jpg",
+        desktop: "./assets/projects/ambiancy-desktop.webp",
+        mobile: "./assets/projects/ambiancy-mobile.webp",
       },
     },
     {
@@ -432,8 +432,8 @@ const PORTFOLIO_DATA = {
         live: "https://pakisuyoexpress.netlify.app",
       },
       media: {
-        desktop: "./assets/projects/pakisuyo-express-desktop.jpg",
-        mobile: "./assets/projects/pakisuyo-express-mobile.jpg",
+        desktop: "./assets/projects/pakisuyo-express-desktop.webp",
+        mobile: "./assets/projects/pakisuyo-express-mobile.webp",
       },
     },
     {
@@ -482,8 +482,8 @@ const PORTFOLIO_DATA = {
         live: "https://owlsetph.vercel.app",
       },
       media: {
-        desktop: "./assets/projects/owlset-desktop.jpg",
-        mobile: "./assets/projects/owlset-mobile.jpg",
+        desktop: "./assets/projects/owlset-desktop.webp",
+        mobile: "./assets/projects/owlset-mobile.webp",
       },
     },
     {
@@ -534,8 +534,8 @@ const PORTFOLIO_DATA = {
       ],
       links: { source: null, live: null },
       media: {
-        desktop: "./assets/projects/thready-desktop.jpg",
-        mobile: "./assets/projects/thready-mobile.jpg",
+        desktop: "./assets/projects/thready-desktop.webp",
+        mobile: "./assets/projects/thready-mobile.webp",
       },
     },
     {
@@ -633,16 +633,16 @@ const PORTFOLIO_DATA = {
   },
   outside: [
     {
-      photo: "./assets/outside/outside-1.jpg",
+      photo: "./assets/outside/outside-1.webp",
       video: "./assets/outside/outside-1.mp4",
     },
-    { photo: "./assets/outside/outside-2.jpg" },
-    { photo: "./assets/outside/outside-3.jpg" },
-    { photo: "./assets/outside/outside-4.jpg" },
-    { photo: "./assets/outside/outside-5.jpg" },
-    { photo: "./assets/outside/outside-6.jpg" },
-    { photo: "./assets/outside/outside-7.jpg" },
-    { photo: "./assets/outside/outside-8.jpg" },
+    { photo: "./assets/outside/outside-2.webp" },
+    { photo: "./assets/outside/outside-3.webp" },
+    { photo: "./assets/outside/outside-4.webp" },
+    { photo: "./assets/outside/outside-5.webp" },
+    { photo: "./assets/outside/outside-6.webp" },
+    { photo: "./assets/outside/outside-7.webp" },
+    { photo: "./assets/outside/outside-8.webp" },
   ],
 
   // Add issuer logos and certificate photos in ./assets/certifications/.
@@ -653,7 +653,7 @@ const PORTFOLIO_DATA = {
       issuer: "DataCamp",
       status: "in-progress",
       date: null,
-      logo: "./assets/certifications/datacamp-logo.png",
+      logo: "./assets/certifications/datacamp-logo.webp",
       photo: null,
       link: null,
     },
@@ -662,8 +662,8 @@ const PORTFOLIO_DATA = {
       issuer: "STI College Lucena",
       status: "completed",
       date: "2026",
-      logo: "./assets/certifications/sti-logo.png",
-      photo: "./assets/certifications/sti-codefest-original.png",
+      logo: "./assets/certifications/sti-logo.webp",
+      photo: "./assets/certifications/sti-codefest-original.webp",
       // Crop the original photo in the viewer; keep its pixels untouched.
       photoCrop: { aspectRatio: 768 / 745, positionY: 25.1 },
       link: null,
@@ -673,8 +673,8 @@ const PORTFOLIO_DATA = {
       issuer: "AppBuildersPH",
       status: "completed",
       date: "2026",
-      logo: "./assets/certifications/appbuildersph-logo-black.png",
-      photo: "./assets/certifications/appbuildersph-certificate.png",
+      logo: "./assets/certifications/appbuildersph-logo-black.webp",
+      photo: "./assets/certifications/appbuildersph-certificate.webp",
       link: null,
     },
   ],
