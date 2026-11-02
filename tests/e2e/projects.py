@@ -8,7 +8,7 @@ GEO = """() => [...document.querySelectorAll('.project.has-media:not(.has-chat)'
   const r = (s) => { const n = li.querySelector(s); if (!n) return null; const b = n.getBoundingClientRect(); return { l: b.left, t: b.top, r: b.right, b: b.bottom, w: b.width, h: b.height }; };
   const imgs = [...li.querySelectorAll('.device img')];
   return { title: li.querySelector('.project-title').textContent, info: r('.project-info'), media: r('.project-media'), desktop: r('.device-desktop'), mobile: r('.device-mobile'),
-           loaded: imgs.every(i => i.complete && i.naturalWidth > 0), gray: imgs.every(i => getComputedStyle(i).filter.includes('grayscale(1)')) };
+           loaded: imgs.every(i => i.complete && i.naturalWidth > 0), colour: imgs.every(i => !getComputedStyle(i).filter.includes('grayscale')) };
 })"""
 
 with sync_playwright() as pw:
@@ -25,7 +25,7 @@ with sync_playwright() as pw:
         for r in rows:
             t = r["title"]
             check(f"{name}: {t}: screenshots loaded", r["loaded"])
-            check(f"{name}: {t}: black-and-white at rest", r["gray"])
+            check(f"{name}: {t}: screenshots keep their original colours", r["colour"])
             check(f"{name}: {t}: phone frame overlaps the browser frame's corner", r["mobile"]["r"] > r["desktop"]["r"] - 1 and r["mobile"]["b"] > r["desktop"]["b"] - 1 and r["mobile"]["l"] < r["desktop"]["r"] and r["mobile"]["w"] < r["desktop"]["w"] / 2, str(r["mobile"]))
             if name == "desktop":
                 check(f"desktop: {t}: frames sit to the right of the text", r["info"]["r"] <= r["media"]["l"] + 1, f'{r["info"]["r"]} vs {r["media"]["l"]}')

@@ -61,7 +61,7 @@ with sync_playwright() as pw:
     click_view(page, 'projects')
     page.evaluate('window.cachedCard = document.querySelector(".project")')
     page.locator('.project-open').first.click()
-    page.wait_for_url('**view=case&p=ambiancy')
+    page.wait_for_url('**/?view=case&p=ambiancy')
     check('project links open a case study in place', page.locator('.case-name').inner_text() == 'Ambiancy' and page.evaluate('shellProof.origin === performance.timeOrigin'))
     page.wait_for_function('document.querySelector(".sr-status").textContent === document.title')
     check('page changes are announced to screen readers', 'Ambiancy' in page.locator('.sr-status').text_content())
@@ -102,6 +102,7 @@ with sync_playwright() as pw:
     page.evaluate('window.firstSidebar = document.querySelector(".sidebar")')
     page.click('.nav-link[data-section="home"]')
     check('Home from a direct case-study URL replays the intro', page.locator('.intro-tiles').count() == 1 and page.locator('html.intro-play').count() == 1)
+    page.wait_for_timeout(600)  # the sidebar slides out over 480ms before it hides
     check('the same sidebar is hidden during that intro', page.evaluate('firstSidebar === document.querySelector(".sidebar") && getComputedStyle(firstSidebar).visibility === "hidden" && firstSidebar.getBoundingClientRect().right <= 0'))
     page.keyboard.press('Escape')
     check('the Home preview hooks initialize when entering from another page', page.locator('.project-hover').count() == 1 and page.locator('.project-row').count() == 5)
