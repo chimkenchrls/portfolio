@@ -42,14 +42,7 @@ with sync_playwright() as p:
     check("screen readers get the real heading meanwhile", all(label == "Projects" for text, label in seen if text != "03 // Projects"), str(seen))
     settled = page.evaluate("document.querySelector('#projects .divider-label').textContent.trim()")
     check("and it settles on the real text", settled == "03 // Projects", settled)
-    face = "document.querySelector('.poke-button .assistant-sprite').style.backgroundPosition"
     page.mouse.move(700, 400)
-    page.wait_for_timeout(400)
-    looks = lambda cell: page.wait_for_function(f"{face} === '{cell}'", timeout=600) and True
-    page.mouse.wheel(0, 200)
-    check("CK looks down while the page scrolls down", looks("50% 100%"), page.evaluate(face))
-    page.mouse.wheel(0, -200)
-    check("and up while it scrolls up", looks("50% 0%"), page.evaluate(face))
     page.evaluate("scrollTo({ top: 0, behavior: 'instant' })")
     page.wait_for_timeout(800)
     for _ in range(6):

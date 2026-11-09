@@ -3998,6 +3998,8 @@
       let direction = 4;
       let pointerAt = -Infinity;
       let scrollAt = -Infinity;
+      // Following the scroll and a swiping finger is for phones only.
+      const phone = window.matchMedia('(max-width: 639.98px)');
       let scrollDirection = 7;
       let activeAt = 0;
       let mood = { name: 'idle', at: 0 };
@@ -4025,7 +4027,7 @@
         let pose = dialog.open ? assistantPose(mood.name, now - mood.at, still()) : null;
         if (!pose) {
           if (still()) pose = { direction: 4, reaction: null };
-          else if (now - scrollAt < 700 && scrollAt > pointerAt + 150) pose = { direction: scrollDirection, reaction: null };
+          else if (phone.matches && now - scrollAt < 700 && scrollAt > pointerAt + 150) pose = { direction: scrollDirection, reaction: null };
           else if (now - pointerAt < 1800) pose = { direction, reaction: null };
           else if (dialog.open && now - activeAt > 40000) pose = { direction: 4, reaction: MASCOT_REACTION.sleepy };
           else pose = mascotIdle(now);
@@ -4417,7 +4419,7 @@
       // so he keeps following it for the whole swipe.
       const lookAtTouch = (event) => {
         const touch = event.touches[0];
-        if (touch) lookAt(touch.clientX, touch.clientY, true);
+        if (touch && phone.matches) lookAt(touch.clientX, touch.clientY, true);
       };
       window.addEventListener('touchstart', lookAtTouch, { passive: true });
       window.addEventListener('touchmove', lookAtTouch, { passive: true });
