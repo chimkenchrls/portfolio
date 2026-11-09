@@ -232,7 +232,7 @@ const PORTFOLIO_DATA = {
       ],
     },
     {
-      title: "Capstone Project",
+      title: "Thesis Project",
       org: "STI College Lucena",
       dates: "2026 — Present",
       current: true,
@@ -490,14 +490,14 @@ const PORTFOLIO_DATA = {
       title: "Thready",
       summary:
         "Production management and computer vision for a local garment business.",
-      kind: "Capstone project",
+      kind: "Thesis project",
       demo: null,
       role: "Thesis project · Frontend and DevOps lead",
       // Case study, shown at ./?view=case&p=<slug>. Each part is plain text; a blank
       // line starts a new paragraph. Use null for a part that is not written yet.
       caseStudy: {
         problem:
-          "A capstone for a local garment business, Shiela and Joel Garments: one system to manage production orders, who is working on each step, and quality checks, with computer vision to count garments.",
+          "A thesis project for a local garment business, Shiela and Joel Garments: one system to manage production orders, who is working on each step, and quality checks, with computer vision to count garments.",
         built:
           "A Next.js, TypeScript and Tailwind frontend, a Node.js backend, a MySQL 8 database, and a separate Python service that runs a YOLO model for garment counting. It covers production planning, orders, assigning several employees to a step, a quality-control role with reason codes, and sign-in hardening such as one-time codes, a single active session and login lockout. I led the frontend and the infrastructure.",
         ships:
@@ -518,7 +518,7 @@ const PORTFOLIO_DATA = {
       meta: "in progress",
       status: "in-progress",
       description:
-        "AI-enhanced, web-based production management system with computer vision for garment monitoring, built as a capstone project for Shiela and Joel Garments.",
+        "AI-enhanced, web-based production management system with computer vision for garment monitoring, built as a thesis project for Shiela and Joel Garments.",
       tags: [
         "TypeScript",
         "Next.js",
