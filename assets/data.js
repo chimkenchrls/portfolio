@@ -176,13 +176,12 @@ const PORTFOLIO_DATA = {
     ],
   },
 
-  // The Resources page (./?view=resources): one ruled row per group. An item's icon is
-  // a file in ./assets/icons/stack/ (with an optional brand color); items without one
-  // use the group's icon from ./assets/icons/. href null shows the item without a link.
+  // The Resources page (./?view=resources), laid out like Links. An item's icon is a
+  // file in ./assets/icons/stack/ (with an optional brand color); null shows the
+  // item without one. href null shows the item without a link.
   resources: [
     {
       category: "Tools I use",
-      icon: null,
       items: [
         { name: "Claude Code", note: "Pro plan", href: "https://claude.com/product/claude-code", icon: "claudecode", color: "#D97757" },
         { name: "Claude Design", note: "For designing", href: null, icon: "claude", color: "#D97757" },
@@ -191,7 +190,6 @@ const PORTFOLIO_DATA = {
     },
     {
       category: "Skills I use",
-      icon: "skill",
       items: [
         { name: "Wayfinder", note: "by Matt Pocock", href: "https://github.com/mattpocock/skills/tree/main/skills/engineering/wayfinder", icon: null, color: null },
         { name: "Superpowers", note: "by Jesse Vincent", href: "https://github.com/obra/superpowers", icon: null, color: null },
@@ -201,7 +199,6 @@ const PORTFOLIO_DATA = {
     },
     {
       category: "Plugins I use",
-      icon: "plugin",
       items: [
         { name: "Context7", note: "Current library docs, by Upstash", href: "https://context7.com", icon: null, color: null },
         { name: "Code Simplifier", note: "Cleanup agent, by Anthropic", href: "https://github.com/anthropics/claude-plugins-official/tree/main/plugins/code-simplifier", icon: null, color: null },
@@ -209,13 +206,11 @@ const PORTFOLIO_DATA = {
     },
     {
       category: "Behind the portfolio",
-      icon: null,
       items: [
         { name: "Geist", note: "Fonts, by Vercel", href: "https://vercel.com/font", icon: "vercel", color: null },
         { name: "Simple Icons", note: "Brand icons", href: "https://simpleicons.org", icon: "simpleicons", color: null },
         { name: "Vercel", note: "Hosting", href: "https://vercel.com", icon: "vercel", color: null },
         { name: "Cloudflare Workers", note: "Chat, pokes, guestbook and contact form", href: "https://workers.cloudflare.com", icon: "cloudflareworkers", color: "#F38020" },
-        { name: "Source code", note: "This site's repository", href: "https://github.com/chimkenchrls/portfolio", icon: "github", color: null },
       ],
     },
   ],

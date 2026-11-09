@@ -278,8 +278,6 @@ dd {
 .icon-resources {
   --icon: url("./assets/icons/resources.svg");
 }
-.icon-skill { --icon: url("./assets/icons/skill.svg"); }
-.icon-plugin { --icon: url("./assets/icons/plugin.svg"); }
 .icon-guestbook {
   --icon: url("./assets/icons/guestbook.svg");
 }
@@ -2794,6 +2792,9 @@ html.view-more .outside-intro {
   height: 40px;
   border-radius: 10px;
   background: var(--bg-alt);
+}
+.profile-link.no-icon {
+  grid-template-columns: minmax(0, 1fr) auto;
 }
 .link-copy {
   display: grid;

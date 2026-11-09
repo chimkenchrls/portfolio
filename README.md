@@ -69,7 +69,7 @@ Common edits in that file:
 | Add a tool to Stack | `stack[].items`; put its SVG in `assets/icons/stack/` and use the filename without `.svg` as `icon` |
 | Show a project beside a tool on Stack | Add the matching tool name to that project's `tags`; project links are derived automatically |
 | Update the short Home project description | The project's `summary` and `kind` |
-| Add a resource | `resources[].items`: `name`, `note`, `href` (or `null`), and an `icon` from `assets/icons/stack/` (or `null` to use the group's icon) |
+| Add a resource | `resources[].items`: `name`, `note`, `href` (or `null`), and an `icon` from `assets/icons/stack/` (or `null` for none) |
 | Update the resume | Keep `resumePage` and `assets/resume.pdf` in step |
 
 Visitor notes are stored in the database, not in `data.js`. See the [review and moderation commands](./docs/guestbook.md) to approve or remove them.
@@ -84,7 +84,7 @@ On devices with a fine pointer, hovering a Home project shows a small preview be
 
 The **More about me** page (`./?view=more`) opens with `more.title`, the centered Outside the IDE photo deck, the profile name and role, and `more.intro`. Full-width Experience and Education rows reuse the same content as Home, followed by the terminal.
 
-**Resources** (`./?view=resources`) sits below Links in the sidebar, with its title and introduction in `resourcesPage`. `resources` lists the groups (Tools, Skills, Plugins, and Behind the portfolio), laid out like the Links page. Each item has a `name`, a short `note`, an `href` (opens in a new tab; `null` shows it without a link), and an `icon` from `assets/icons/stack/` with an optional brand `color`. Items without an icon use the group's `icon` from `assets/icons/`.
+**Resources** (`./?view=resources`) sits below Links in the sidebar, with its title and introduction in `resourcesPage`. `resources` lists the groups (Tools, Skills, Plugins, and Behind the portfolio), laid out like the Links page. Each item has a `name`, a short `note`, an `href` (opens in a new tab; `null` shows it without a link), and an `icon` from `assets/icons/stack/` with an optional brand `color`. Items without an icon show just the name and note.
 
 The photo deck fans out around the active photo, with up to three neighbors on either side and a clickable position dot per photo. Tap/click, swipe, or use Enter/arrow keys to shuffle; holding reveals color. `outsideHint` controls the hint text, and `outside` supplies the photos. The Live Photo plays only when active, on screen and motion is allowed.
 

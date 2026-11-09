@@ -1220,12 +1220,10 @@
     if (data.resources !== undefined) {
       checkList('resources', data.resources, (group, p) => {
         if (!isText(group.category)) errors.push(`${p}.category: required text`);
-        if (group.icon !== null && !RESOURCE_ICON.test(String(group.icon))) errors.push(`${p}.icon: an icon name or null`);
         checkList(`${p}.items`, group.items, (item, name) => {
           if (!isText(item.name) || !isText(item.note)) errors.push(`${name}: name and note text required`);
           if (item.href !== null && !safeUrl(item.href)) errors.push(`${name}.href: an https URL or null`);
           if (item.icon !== null && !RESOURCE_ICON.test(String(item.icon))) errors.push(`${name}.icon: an icon name or null`);
-          if (item.icon === null && group.icon === null) errors.push(`${name}.icon: required when the group has no icon`);
           if (item.color !== null && !BRAND_COLOR.test(String(item.color))) errors.push(`${name}.color: #rrggbb or null`);
         });
       });
@@ -2212,13 +2210,17 @@
       section.setAttribute('aria-labelledby', heading.id);
       const list = el('ul', 'links-list');
       group.items.forEach((item) => {
-        const row = item.href ? externalLink(item.href, '', 'profile-link') : el('div', 'profile-link');
-        const icon = el('span', 'link-icon');
-        icon.setAttribute('aria-hidden', 'true');
-        icon.append(item.icon ? stackIconEl(item.icon, item.color) : el('span', `icon icon-${group.icon}`));
+        const kind = `profile-link${item.icon ? '' : ' no-icon'}`;
+        const row = item.href ? externalLink(item.href, '', kind) : el('div', kind);
+        if (item.icon) {
+          const icon = el('span', 'link-icon');
+          icon.setAttribute('aria-hidden', 'true');
+          icon.append(stackIconEl(item.icon, item.color));
+          row.append(icon);
+        }
         const words = el('span', 'link-copy');
         words.append(el('span', 'link-label', item.name), el('span', 'link-detail', item.note));
-        row.append(icon, words);
+        row.append(words);
         if (item.href) {
           const action = el('span', 'icon icon-external');
           action.setAttribute('aria-hidden', 'true');

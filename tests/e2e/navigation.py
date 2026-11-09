@@ -77,7 +77,7 @@ with sync_playwright() as pw:
     page.wait_for_function('document.documentElement.classList.contains("view-projects") && Math.abs(scrollY - 500) < 2')
     check('Back restores the previous scroll position', abs(page.evaluate('scrollY') - 500) < 2)
     click_view(page, 'resources')
-    check('Resources lists its four groups, links opening in a new tab', page.locator('#resources .links-group:visible').count() == 4 and page.locator('#resources a.profile-link[target="_blank"]').count() == 13)
+    check('Resources lists its four groups, links opening in a new tab', page.locator('#resources .links-group:visible').count() == 4 and page.locator('#resources a.profile-link[target="_blank"]').count() == 12)
     page.click('.collapse-toggle')
     check('the rail is enabled', page.locator('body.is-rail').count() == 1)
     click_view(page, 'stack')

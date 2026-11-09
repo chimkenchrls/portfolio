@@ -15,7 +15,6 @@ test('resources: every item has a name, a note, a safe link or none, and an icon
   const fs = require('node:fs');
   const path = require('node:path');
   for (const group of data.resources) {
-    if (group.icon) assert.ok(fs.existsSync(path.join(__dirname, '..', 'assets', 'icons', `${group.icon}.svg`)), group.icon);
     for (const item of group.items) {
       if (item.icon) assert.ok(fs.existsSync(path.join(__dirname, '..', 'assets', 'icons', 'stack', `${item.icon}.svg`)), item.icon);
       if (item.href) assert.match(item.href, /^https:\/\//, item.name);
@@ -23,14 +22,15 @@ test('resources: every item has a name, a note, a safe link or none, and an icon
   }
 });
 
-test('resources validation catches missing text, unsafe links and missing icons', () => {
+test('resources validation catches missing text, unsafe links and bad icon names', () => {
   const copy = structuredClone(data);
   const [tools, skills] = copy.resources;
   tools.items[0].note = '';
   tools.items[1].href = 'javascript:alert(1)';
-  skills.icon = null;
+  skills.items[0].icon = '../evil';
   const errors = validateData(copy);
   assert.ok(errors.includes('resources[0].items[0]: name and note text required'), errors.join('\n'));
   assert.ok(errors.some((error) => error.startsWith('resources[0].items[1].href')), errors.join('\n'));
   assert.ok(errors.some((error) => error.startsWith('resources[1].items[0].icon')), errors.join('\n'));
 });
+
