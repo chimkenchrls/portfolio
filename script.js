@@ -2334,7 +2334,7 @@
       const href = safeResume(profile.resume);
       const actions = $('.hero-actions');
       if (!href || !actions) return;
-      const link = el('a', 'btn btn-secondary', 'Resume');
+      const link = el('a', 'btn btn-secondary', 'Résumé');
       // The Resume page when there is one; otherwise straight to the PDF.
       if (data.resumePage) {
         link.href = './?view=resume';

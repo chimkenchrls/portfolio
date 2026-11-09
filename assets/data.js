@@ -83,8 +83,8 @@ const PORTFOLIO_DATA = {
   // phone numbers out of both the public page and downloadable PDF. Bullets are text, or
   // { label, text } for a bold lead-in.
   resumePage: {
-    title: "Resume",
-    intro: "The same resume as the PDF, to read here. Download it to send or print.",
+    title: "Résumé",
+    intro: "The same résumé as the PDF, to read here. Download it to send or print.",
     website: "https://kenchrls.vercel.app",
     summary:
       "A 4th-year Computer Science student at STI College Lucena with foundations in software development, cloud deployment, and CI/CD automation. Seeking a DevOps or Software Engineering internship to apply technical skills, gain industry experience, and contribute to reliable, scalable systems.",
@@ -171,7 +171,7 @@ const PORTFOLIO_DATA = {
           { key: "linkedin", label: "LinkedIn" },
           { key: "github", label: "GitHub" },
           { key: "email", label: "Email" },
-          { key: "resume", label: "Resume" },
+          { key: "resume", label: "Résumé" },
         ],
       },
     ],

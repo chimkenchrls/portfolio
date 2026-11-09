@@ -76,7 +76,7 @@ test('resume: the button only appears once data.js points at a real file', () =>
   bad.profile.resume = 'resume.docx';
   assert.ok(validateData(bad).some((e) => e.startsWith('profile.resume')));
   assert.doesNotMatch(html, />\s*Resume\s*</, 'no static button that could point at nothing');
-  assert.match(read('script.js'), /safeResume\(profile\.resume\)[\s\S]{0,200}'btn btn-secondary', 'Resume'/);
+  assert.match(read('script.js'), /safeResume\(profile\.resume\)[\s\S]{0,200}'btn btn-secondary', 'Résumé'/);
   assert.match(read('style.css'), /\.btn-secondary \{/);
 });
 
