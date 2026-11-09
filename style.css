@@ -275,9 +275,11 @@ dd {
 .icon-home {
   --icon: url("./assets/icons/home.svg");
 }
-.icon-blog {
-  --icon: url("./assets/icons/blog.svg");
+.icon-resources {
+  --icon: url("./assets/icons/resources.svg");
 }
+.icon-skill { --icon: url("./assets/icons/skill.svg"); }
+.icon-plugin { --icon: url("./assets/icons/plugin.svg"); }
 .icon-guestbook {
   --icon: url("./assets/icons/guestbook.svg");
 }
@@ -1241,6 +1243,50 @@ body.is-rail .sidebar-controls {
   font-size: 14px;
 }
 
+/* Resources (?view=resources): Stack's ruled rows, each item a name with a note under it. */
+.resources-group:last-child {
+  border-bottom: 1px solid var(--border);
+}
+.resources-items {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px 24px;
+  list-style: none;
+}
+.resource {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.resource .icon {
+  flex: none;
+  margin-top: 3px;
+}
+.resource-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.resource-name {
+  font-size: 14px;
+}
+.resource-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fg-muted);
+}
+a.resource .resource-name {
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--t-fast) ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  a.resource:hover .resource-name {
+    text-decoration-color: var(--fg);
+  }
+}
+
 /* The Stack page (?view=stack): a two-column sheet, one tool per line, with the
    projects that use it on the right. Home keeps the short rows above. */
 html.view-stack .stack-grid {
@@ -1559,13 +1605,13 @@ html.cover-returning .assistant-launcher {
 }
 .projects-page-header,
 .stack-page-header,
-.blog-page-header,
+.resources-page-header,
 .links-page-header {
   display: none;
 }
 html.view-projects .projects-page-header,
 html.view-stack .stack-page-header,
-html.view-blog .blog-page-header,
+html.view-resources .resources-page-header,
 html.view-links .links-page-header {
   display: block;
   padding-top: 16px;
@@ -1573,7 +1619,7 @@ html.view-links .links-page-header {
 }
 .projects-page-intro,
 .stack-page-intro,
-.blog-page-intro,
+.resources-page-intro,
 .links-page-intro {
   font-size: 17px;
   line-height: 1.7;
@@ -1761,10 +1807,9 @@ html:not(.view-projects):not(.view-case) .project-list {
 html.view-projects .main > .section:not(#projects),
 html.view-case .main > .section:not(#projects),
 html.view-stack .main > .section:not(#stack),
-html.view-more .main > .section:not(#personal):not(#now):not(#background):not(#writing):not(#outside):not(#contact),
+html.view-more .main > .section:not(#personal):not(#now):not(#background):not(#outside):not(#contact),
 html.view-guestbook .main > .section:not(#guestbook),
-html.view-post .main > .section:not(#writing),
-html.view-blog .main > .section:not(#writing),
+html.view-resources .main > .section:not(#resources),
 html.view-links .main > .section:not(#links),
 html.view-resume .main > .section:not(#resume),
 html:not(.view-resume) #resume,
@@ -1774,7 +1819,7 @@ html.has-cover #now,
 html.has-cover #guestbook,
 html.has-cover #links,
 html.has-cover #background,
-html.has-cover #writing,
+html.has-cover #resources,
 html.has-cover #outside,
 html.has-cover #contact :is(.contact-intro, .terminal, .terminal-chips) {
   display: none;
@@ -1788,9 +1833,8 @@ html.view-projects [data-home] {
 /* A case study has its own title, so the section divider is left to screen readers. */
 html.view-projects #projects .divider,
 html.view-stack #stack .divider,
-html.view-blog #writing .divider,
-html.view-case #projects .divider,
-html.view-post #writing .divider {
+html.view-resources #resources .divider,
+html.view-case #projects .divider {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -2651,7 +2695,7 @@ html.view-post #writing .divider {
   font-size: 13px;
 }
 
-/* More about me — personal introduction and a flat list of writing. */
+/* More about me — personal introduction. */
 .more-page-header {
   display: none;
 }
@@ -2757,9 +2801,6 @@ html.view-more .outside-intro {
   font-size: 13px;
   line-height: 1.6;
 }
-.writing-list {
-  list-style: none;
-}
 /* Links — flat, grouped rows using the existing profile as their source. */
 .links-groups {
   display: grid;
@@ -2828,102 +2869,6 @@ html.view-more .outside-intro {
   button.profile-link:hover {
     background: var(--bg-alt);
   }
-}
-.writing-read-time {
-  margin-top: 12px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--fg-muted);
-}
-.writing-entry {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
-  padding-block: 24px;
-  border-bottom: 1px solid var(--border);
-}
-.writing-entry.has-thumbnail {
-  grid-template-columns: 136px minmax(0, 1fr);
-}
-.writing-thumbnail {
-  display: block;
-  width: 136px;
-  height: 96px;
-  object-fit: contain;
-  background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-}
-.writing-copy > .writing-date {
-  display: block;
-  margin-bottom: 8px;
-}
-.writing-entry:first-child {
-  border-top: 1px solid var(--border);
-}
-.writing-entry.is-upcoming {
-  border-bottom-style: dashed;
-}
-.writing-title {
-  font-family: var(--font-mono);
-  font-size: 17px;
-  font-weight: 500;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
-.writing-link {
-  text-decoration: underline;
-  text-decoration-color: var(--border);
-  text-underline-offset: 5px;
-}
-.writing-link:hover {
-  text-decoration-color: var(--fg);
-}
-.writing-excerpt {
-  margin-top: 10px;
-  font-size: 14px;
-  line-height: 1.7;
-  color: var(--fg-muted);
-}
-.writing-date {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--fg-muted);
-  white-space: nowrap;
-}
-.writing-page {
-  max-width: 660px;
-  margin-inline: auto;
-}
-.writing-name {
-  font-family: var(--font-mono);
-  font-size: clamp(24px, 3vw, 34px);
-  font-weight: 500;
-  line-height: 1.4;
-  letter-spacing: -0.02em;
-  overflow-wrap: anywhere;
-}
-.writing-page .writing-date {
-  display: block;
-  margin-top: 20px;
-}
-.writing-lede {
-  margin-top: 24px;
-  font-size: 17px;
-  line-height: 1.7;
-  color: var(--fg-muted);
-}
-.writing-body {
-  margin-top: 32px;
-  padding-top: 32px;
-  border-top: 1px solid var(--border);
-  font-size: 17px;
-  line-height: 1.8;
-  overflow-wrap: anywhere;
-}
-.writing-body p + p {
-  margin-top: 24px;
 }
 /* Outside the IDE — intro beside a stacked photo deck */
 /* overflow-x: clip keeps tilted and sliding cards from widening the page. */
@@ -4231,19 +4176,11 @@ html.at-cover:not(.intro-play) .intro-hint {
     margin-left: 0;
     padding: 28px 16px 24px;
   }
-  html:is(.view-more, .view-projects, .view-stack, .view-blog, .view-links, .view-guestbook, .view-case, .view-post, .view-resume) .main {
+  html:is(.view-more, .view-projects, .view-stack, .view-resources, .view-links, .view-guestbook, .view-case, .view-resume) .main {
     padding-top: 16px;
   }
-  html .main :is(.more-page-header, .projects-page-header, .stack-page-header, .blog-page-header, .links-page-header, .resume-page-header) {
+  html .main :is(.more-page-header, .projects-page-header, .stack-page-header, .resources-page-header, .links-page-header, .resume-page-header) {
     padding-top: 0;
-  }
-  .writing-entry.has-thumbnail {
-    grid-template-columns: 88px minmax(0, 1fr);
-    gap: 16px;
-  }
-  .writing-thumbnail {
-    width: 88px;
-    height: 80px;
   }
   html.view-more .outside {
     padding-inline: 0;

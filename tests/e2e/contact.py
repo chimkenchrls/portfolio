@@ -116,7 +116,7 @@ with sync_playwright() as pw:
     p.click(".sidebar-contact")
     p.mouse.click(5, 5)
     check("clicking the backdrop closes the modal", not p.locator(".contact-dialog[open]").count())
-    for view in ("more", "projects", "stack", "links", "blog"):
+    for view in ("more", "projects", "stack", "links", "resources"):
         p.goto(URL.split("#")[0] + "?view=" + view, wait_until="domcontentloaded")
         p.click(".sidebar-contact")
         check(f"Contact works on the {view} page", p.is_visible(".contact-dialog .contact-form") and p.is_visible("#contact-message"))

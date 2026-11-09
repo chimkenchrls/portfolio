@@ -72,10 +72,9 @@ const PORTFOLIO_DATA = {
       "Tools I use and explore across development, deployment, and infrastructure.",
   },
 
-  blogPage: {
-    title: "Blog",
-    intro:
-      "Notes on building things, learning as I go, and life beyond the terminal.",
+  resourcesPage: {
+    title: "Resources",
+    intro: "The tools and agent skills I build with, collected in one place.",
   },
 
   // The Resume page (./?view=resume): the PDF's wording as a sheet on the page, with
@@ -177,17 +176,47 @@ const PORTFOLIO_DATA = {
     ],
   },
 
-  // Posts appear on Blog and More about me. Leave body and date null until a post is
-  // ready. Set both (date: YYYY-MM-DD; body: paragraphs separated by blank lines)
-  // to publish it at ./?view=post&p=<slug>. Text is displayed literally.
-  writing: [
+  // The Resources page (./?view=resources): one ruled row per group. An item's icon is
+  // a file in ./assets/icons/stack/ (with an optional brand color); items without one
+  // use the group's icon from ./assets/icons/. href null shows the item without a link.
+  resources: [
     {
-      slug: "keep-going",
-      title: 'if (everythingFallsApart) print("keep going..");',
-      excerpt: "On finding a small next step when things don’t go as planned.",
-      thumbnail: "./assets/blog/keep-going.webp",
-      date: null,
-      body: null,
+      category: "Tools I use",
+      icon: null,
+      items: [
+        { name: "Claude Code", note: "Pro plan", href: "https://claude.com/product/claude-code", icon: "claudecode", color: "#D97757" },
+        { name: "Claude Design", note: "For designing", href: null, icon: "claude", color: "#D97757" },
+        { name: "VS Code", note: "My editor", href: "https://code.visualstudio.com/", icon: "visualstudiocode", color: "#007ACC" },
+      ],
+    },
+    {
+      category: "Skills I use",
+      icon: "skill",
+      items: [
+        { name: "Wayfinder", note: "by Matt Pocock", href: "https://github.com/mattpocock/skills/tree/main/skills/engineering/wayfinder", icon: null, color: null },
+        { name: "Superpowers", note: "by Jesse Vincent", href: "https://github.com/obra/superpowers", icon: null, color: null },
+        { name: "Ponytail", note: "by Dietrich Gebert", href: "https://ponytail.dev", icon: null, color: null },
+        { name: "Impeccable", note: "by Paul Bakaus", href: "https://impeccable.style", icon: null, color: null },
+      ],
+    },
+    {
+      category: "Plugins I use",
+      icon: "plugin",
+      items: [
+        { name: "Context7", note: "Current library docs, by Upstash", href: "https://context7.com", icon: null, color: null },
+        { name: "Code Simplifier", note: "Cleanup agent, by Anthropic", href: "https://github.com/anthropics/claude-plugins-official/tree/main/plugins/code-simplifier", icon: null, color: null },
+      ],
+    },
+    {
+      category: "How this site is built",
+      icon: null,
+      items: [
+        { name: "Geist", note: "Fonts, by Vercel", href: "https://vercel.com/font", icon: "vercel", color: null },
+        { name: "Simple Icons", note: "Brand icons", href: "https://simpleicons.org", icon: "simpleicons", color: null },
+        { name: "Vercel", note: "Hosting", href: "https://vercel.com", icon: "vercel", color: null },
+        { name: "Cloudflare Workers", note: "Chat, pokes, guestbook and contact form", href: "https://workers.cloudflare.com", icon: "cloudflareworkers", color: "#F38020" },
+        { name: "Source code", note: "This site's repository", href: "https://github.com/chimkenchrls/portfolio", icon: "github", color: null },
+      ],
     },
   ],
 

@@ -69,8 +69,7 @@ Common edits in that file:
 | Add a tool to Stack | `stack[].items`; put its SVG in `assets/icons/stack/` and use the filename without `.svg` as `icon` |
 | Show a project beside a tool on Stack | Add the matching tool name to that project's `tags`; project links are derived automatically |
 | Update the short Home project description | The project's `summary` and `kind` |
-| Add a blog thumbnail | The post's `thumbnail`, using a relative image path in `assets/blog/` |
-| Publish a blog post | Set both `writing[].date` and `writing[].body` |
+| Add a resource | `resources[].items`: `name`, `note`, `href` (or `null`), and an `icon` from `assets/icons/stack/` (or `null` to use the group's icon) |
 | Update the resume | Keep `resumePage` and `assets/resume.pdf` in step |
 
 Visitor notes are stored in the database, not in `data.js`. See the [review and moderation commands](./docs/guestbook.md) to approve or remove them.
@@ -81,11 +80,11 @@ Home's **Selected projects** list uses each project's optional `summary` and `ki
 
 On devices with a fine pointer, hovering a Home project shows a small preview below the cursor, flipped inward near viewport edges. A project's `demo` plays silently while hovered; projects with `chat` show the first two nonsystem messages from `chat.previewScene` (matching a scene label, or the first scene by default). Other projects use the desktop screenshot or bot image. Leaving, scrolling, pressing Escape, or hiding the tab stops playback. Reduced motion shows the poster without playback or cursor-following motion; touch screens keep the ordinary project links.
 
-**Links** (`./?view=links`) sits above Blog in the sidebar. `linksPage` defines the heading and the Social/Work groups; each row reads its destination from `profile`. Set `profile.discordUrl`, `profile.tiktok` and `profile.facebook` to HTTPS profile URLs (or `null`). Discord copies `profile.discord` while its URL is missing. LinkedIn, GitHub, email and resume reuse the existing profile fields; missing destinations show a non-clickable "Coming soon" row.
+**Links** (`./?view=links`) sits above Resources in the sidebar. `linksPage` defines the heading and the Social/Work groups; each row reads its destination from `profile`. Set `profile.discordUrl`, `profile.tiktok` and `profile.facebook` to HTTPS profile URLs (or `null`). Discord copies `profile.discord` while its URL is missing. LinkedIn, GitHub, email and resume reuse the existing profile fields; missing destinations show a non-clickable "Coming soon" row.
 
-The **More about me** page (`./?view=more`) opens with `more.title`, the centered Outside the IDE photo deck, the profile name and role, and `more.intro`. Full-width Experience and Education rows reuse the same content as Home, followed by the `writing` list and terminal.
+The **More about me** page (`./?view=more`) opens with `more.title`, the centered Outside the IDE photo deck, the profile name and role, and `more.intro`. Full-width Experience and Education rows reuse the same content as Home, followed by the terminal.
 
-**Blog** (`./?view=blog`) sits below Links in the sidebar, with its title and introduction in `blogPage`. Blog and More about me show the full `writing` list; Home has no blog preview. Each entry has a unique lowercase `slug`, `title`, `excerpt`, `date` and `body`, plus an optional `thumbnail` image from `assets/blog/`. Leave `date` and `body` as `null` for an upcoming post; it has no link until both are filled. To publish, set a real `YYYY-MM-DD` date and the finished body text (separate paragraphs with blank lines). The post opens at `./?view=post&p=<slug>` with a back link to Blog. Reading time is estimated from the body at 200 words per minute. Text is rendered literally, without HTML or Markdown. Unknown or unfinished post URLs show Blog.
+**Resources** (`./?view=resources`) sits below Links in the sidebar, with its title and introduction in `resourcesPage`. `resources` lists the groups (Tools, Skills, Plugins, and How this site is built), drawn as Stack-style ruled rows. Each item has a `name`, a short `note`, an `href` (opens in a new tab; `null` shows it without a link), and an `icon` from `assets/icons/stack/` with an optional brand `color`. Items without an icon use the group's `icon` from `assets/icons/`.
 
 The photo deck fans out around the active photo, with up to three neighbors on either side and a clickable position dot per photo. Tap/click, swipe, or use Enter/arrow keys to shuffle; holding reveals color. `outsideHint` controls the hint text, and `outside` supplies the photos. The Live Photo plays only when active, on screen and motion is allowed.
 

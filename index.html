@@ -97,7 +97,7 @@
         }
         // The Projects, Stack and More about me pages (?view=projects|stack|more)
         // are this same file showing only their own sections; no cover, no intro.
-        var view = /[?&]view=(projects|more|stack|case|post|blog|links|guestbook|resume)(&|$)/.exec(window.location.search);
+        var view = /[?&]view=(projects|more|stack|case|resources|links|guestbook|resume)(&|$)/.exec(window.location.search);
         if (view) {
           root.classList.add("view-" + view[1]);
           return;
@@ -211,11 +211,11 @@
           <li>
             <a
               class="nav-link"
-              href="./?view=blog"
-              data-view="blog"
-              title="Blog"
-              ><span class="icon icon-blog" aria-hidden="true"></span
-              ><span class="nav-text">Blog</span></a
+              href="./?view=resources"
+              data-view="resources"
+              title="Resources"
+              ><span class="icon icon-resources" aria-hidden="true"></span
+              ><span class="nav-text">Resources</span></a
             >
           </li>
         </ul>
@@ -552,16 +552,16 @@
         </div>
       </section>
 
-      <section class="section" id="writing" aria-labelledby="writing-heading">
-        <header class="blog-page-header" data-render="blogHeading"></header>
+      <section class="section" id="resources" aria-labelledby="resources-heading">
+        <header class="resources-page-header" data-render="resourcesHeading"></header>
         <div class="divider">
           <span class="divider-line"></span>
-          <h2 class="divider-label" id="writing-heading">
-            <span class="divider-index" aria-hidden="true">02 //</span> Blog
+          <h2 class="divider-label" id="resources-heading">
+            <span class="divider-index" aria-hidden="true">01 //</span> Resources
           </h2>
           <span class="divider-line"></span>
         </div>
-        <ul class="writing-list" data-render="writing"></ul>
+        <div class="resources-list" data-render="resources"></div>
       </section>
 
       <section class="section" id="contact" aria-labelledby="contact-heading">

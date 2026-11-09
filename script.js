@@ -22,7 +22,6 @@
 
   const PROJECT_STATUSES = ['done', 'in-progress', 'coming-soon'];
   const CERTIFICATION_STATUSES = ['in-progress', 'completed'];
-  const POST_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
   // Publication dates stay the same in every visitor's time zone.
   const postDate = (value) => {
@@ -31,10 +30,6 @@
     if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) return null;
     return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(date);
   };
-  const publishedPost = (post) => Boolean(post && POST_SLUG.test(post.slug) && postDate(post.date)
-    && typeof post.body === 'string' && post.body.trim());
-  const postReadTime = (body) => typeof body === 'string' && body.trim()
-    ? Math.max(1, Math.ceil(body.trim().split(/\s+/).length / 200)) : null;
   const CERTIFICATE_PHOTO_PATH = /^\.\/assets\/certifications\/[\w.-]+\.(jpe?g|png|webp)$/;
   const CERTIFICATE_LOGO_PATH = /^\.\/assets\/certifications\/[\w.-]+\.(svg|jpe?g|png|webp)$/;
 
@@ -43,6 +38,7 @@
   const SHOT_PATH = /^\.\/assets\/projects\/[\w.-]+\.(jpe?g|png|webp)$/;
   const ICON_NAME = /^[a-z][a-z0-9-]*$/;
   const BRAND_COLOR = /^#[\da-f]{6}$/i;
+  const RESOURCE_ICON = /^[a-z0-9]+$/;
   const projectShots = (project) => ['desktop', 'mobile']
     .map((kind) => ({ kind, src: project && project.media ? project.media[kind] : null, label: `${project.title} on ${kind}` }))
     .filter((shot) => typeof shot.src === 'string' && SHOT_PATH.test(shot.src));
@@ -880,11 +876,10 @@
     if (url.origin !== current.origin || url.username || url.password
       || ![current.pathname, directory, `${directory}index.html`].includes(url.pathname)) return null;
     let view = url.searchParams.get('view') || 'home';
-    if (!['home', 'more', 'projects', 'stack', 'case', 'post', 'blog', 'links', 'guestbook', 'resume'].includes(view)) return null;
+    if (!['home', 'more', 'projects', 'stack', 'case', 'resources', 'links', 'guestbook', 'resume'].includes(view)) return null;
     let slug = url.searchParams.get('p');
     if (view === 'case' && !(data.projects || []).some((project) => project.caseStudy && projectSlug(project.title) === `project-${slug}`)) view = 'projects';
-    if (view === 'post' && !(data.writing || []).some((post) => post.slug === slug && publishedPost(post))) view = 'blog';
-    if (view !== 'case' && view !== 'post') slug = null;
+    if (view !== 'case') slug = null;
     return { view, slug, hash: url.hash, url: url.href };
   };
   // Each poke gets a different face; the order loops.
@@ -1193,8 +1188,8 @@
     if (data.stackPage !== undefined) {
       if (!data.stackPage || !isText(data.stackPage.title) || !isText(data.stackPage.intro)) errors.push('stackPage: title and intro text required');
     }
-    if (data.blogPage !== undefined) {
-      if (!data.blogPage || !isText(data.blogPage.title) || !isText(data.blogPage.intro)) errors.push('blogPage: title and intro text required');
+    if (data.resourcesPage !== undefined) {
+      if (!data.resourcesPage || !isText(data.resourcesPage.title) || !isText(data.resourcesPage.intro)) errors.push('resourcesPage: title and intro text required');
     }
     if (data.now != null) {
       if (!data.now || !isText(data.now.title) || !postDate(data.now.updated)) errors.push('now: title and update date required');
@@ -1222,16 +1217,17 @@
         });
       });
     }
-    if (data.writing !== undefined) {
-      const slugs = new Set();
-      checkList('writing', data.writing, (post, p) => {
-        if (typeof post.slug !== 'string' || !POST_SLUG.test(post.slug) || slugs.has(post.slug)) errors.push(`${p}.slug: unique lowercase slug required`);
-        slugs.add(post.slug);
-        if (!isText(post.title) || !isText(post.excerpt)) errors.push(`${p}: title and excerpt text required`);
-        if (!isOptionalText(post.body)) errors.push(`${p}.body: text or null`);
-        if (post.thumbnail != null && !/^\.\/assets\/blog\/[\w.-]+\.(png|jpe?g|webp|svg)$/.test(String(post.thumbnail))) errors.push(`${p}.thumbnail: a file in ./assets/blog/ or null`);
-        if (post.date !== null && !postDate(post.date)) errors.push(`${p}.date: YYYY-MM-DD or null`);
-        if (isText(post.body) && !postDate(post.date)) errors.push(`${p}: a finished post needs a publication date`);
+    if (data.resources !== undefined) {
+      checkList('resources', data.resources, (group, p) => {
+        if (!isText(group.category)) errors.push(`${p}.category: required text`);
+        if (group.icon !== null && !RESOURCE_ICON.test(String(group.icon))) errors.push(`${p}.icon: an icon name or null`);
+        checkList(`${p}.items`, group.items, (item, name) => {
+          if (!isText(item.name) || !isText(item.note)) errors.push(`${name}: name and note text required`);
+          if (item.href !== null && !safeUrl(item.href)) errors.push(`${name}.href: an https URL or null`);
+          if (item.icon !== null && !RESOURCE_ICON.test(String(item.icon))) errors.push(`${name}.icon: an icon name or null`);
+          if (item.icon === null && group.icon === null) errors.push(`${name}.icon: required when the group has no icon`);
+          if (item.color !== null && !BRAND_COLOR.test(String(item.color))) errors.push(`${name}.color: #rrggbb or null`);
+        });
       });
     }
     if (data.outsideIntro !== undefined && !isText(data.outsideIntro)) errors.push('outsideIntro: text');
@@ -1257,7 +1253,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, safeResume, nextProject, scrollProgress, computeTiles, revealDelays, decodeText, joinParts, postDate, publishedPost, postReadTime, profileLink,
+      SECTIONS, padCount, safeUrl, safeResume, nextProject, scrollProgress, computeTiles, revealDelays, decodeText, joinParts, postDate, profileLink,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -2009,7 +2005,7 @@
       return [el('h3', null, projectsPage.homeTitle || projectsPage.title), count];
     };
     const stackHeading = ({ stackPage }) => pageHeading(stackPage, 'stack-page-intro');
-    const blogHeading = ({ blogPage }) => pageHeading(blogPage, 'blog-page-intro');
+    const resourcesHeading = ({ resourcesPage }) => pageHeading(resourcesPage, 'resources-page-intro');
     const guestbookHeading = ({ guestbook }) => {
       const nodes = pageHeading(guestbook, 'guestbook-intro');
       const title = nodes.find((node) => node.tagName === 'H1');
@@ -2207,63 +2203,25 @@
       identity.append(name, el('p', 'personal-role', profile.title));
       return [identity, ...paragraphs(more.intro)];
     };
-    const postTime = (post) => {
-      const time = el('time', 'writing-date', postDate(post.date));
-      time.dateTime = post.date;
-      return time;
-    };
-    const postArticle = (post) => {
-      const item = el('li', 'writing-page');
-      const article = el('article');
-      const back = el('a', 'case-back', '← Blog');
-      back.href = './?view=blog';
-      const title = el('h1', 'writing-name', post.title);
-      const body = el('div', 'writing-body');
-      body.append(...paragraphs(post.body));
-      article.append(back, title, postTime(post), el('p', 'writing-lede', post.excerpt), body);
-      item.append(article);
-      setTitle(post.title);
-      return item;
-    };
-    const writingEntry = (post) => {
-      const ready = publishedPost(post);
-      const item = el('li', `writing-entry${ready ? '' : ' is-upcoming'}`);
-      if (post.thumbnail) {
-        const image = el('img', 'writing-thumbnail');
-        image.src = post.thumbnail;
-        image.alt = '';
-        image.width = 136;
-        image.height = 96;
-        image.loading = 'lazy';
-        image.decoding = 'async';
-        item.classList.add('has-thumbnail');
-        item.append(image);
-      }
-      const heading = el('h3', 'writing-title');
-      if (ready) {
-        const link = el('a', 'writing-link', post.title);
-        link.href = `./?view=post&p=${post.slug}`;
-        heading.append(link);
-      } else heading.textContent = post.title;
-      const copy = el('div', 'writing-copy');
-      copy.append(ready ? postTime(post) : el('span', 'writing-date', 'Coming soon'), heading, el('p', 'writing-excerpt', post.excerpt));
-      if (ready) copy.append(el('p', 'writing-read-time', `~${postReadTime(post.body)} min read`));
-      item.append(copy);
-      return item;
-    };
-    const writingRows = (posts) => posts.length ? posts.map(writingEntry) : [pendingEl('li', 'No posts yet.')];
-    const writing = ({ writing: posts = [] }) => {
-      if (root.classList.contains('view-post')) {
-        const slug = new URLSearchParams(window.location.search).get('p');
-        const post = posts.find((entry) => entry.slug === slug && publishedPost(entry));
-        if (post) return [postArticle(post)];
-        // Unwritten and unknown posts return to the Blog list.
-        root.classList.replace('view-post', 'view-blog');
-      }
-      return writingRows(posts);
-    };
-
-    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, writing, blogHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
+    // One ruled row per group: the group name on the left, its items on the right.
+    const resources = ({ resources: groups = [] }) => groups.map((group) => {
+      const box = el('section', 'stack-group resources-group');
+      const list = el('ul', 'resources-items');
+      group.items.forEach((item) => {
+        const li = el('li');
+        const row = item.href ? externalLink(item.href, '', 'resource') : el('div', 'resource');
+        const icon = item.icon ? stackIconEl(item.icon, item.color) : el('span', `icon icon-sm icon-${group.icon}`);
+        icon.setAttribute('aria-hidden', 'true');
+        const words = el('span', 'resource-copy');
+        words.append(el('span', 'resource-name', item.name), el('span', 'resource-note', item.note));
+        row.append(icon, words);
+        li.append(row);
+        list.append(li);
+      });
+      box.append(el('h2', 'stack-group-title', group.category), list);
+      return box;
+    });
+    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, resources, resourcesHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -2356,8 +2314,9 @@
         }).length, 0),
         projects: list(data.projects).length,
         stack: list(data.stack).reduce((total, group) => total + list(group.items).length, 0),
+        resources: list(data.resources).reduce((total, group) => total + list(group.items).length, 0),
       };
-      const units = { links: 'link', projects: 'project', stack: 'tool' };
+      const units = { links: 'link', projects: 'project', stack: 'tool', resources: 'resource' };
       Object.entries(counts).forEach(([view, count]) => {
         const link = $(`.nav-link[data-view="${view}"]`);
         if (!link) return;
@@ -2373,7 +2332,6 @@
       const slug = new URLSearchParams(window.location.search).get('p');
       if (name === 'projects') return root.classList.contains('view-case') ? `case:${slug}` : root.classList.contains('view-projects') ? 'all' : 'home';
       if (name === 'stack') return root.classList.contains('view-stack') ? 'sheet' : 'home';
-      if (name === 'writing') return root.classList.contains('view-post') ? `post:${slug}` : 'list';
       return /\bview-/.test(root.className) ? 'hidden' : 'home';
     };
     const headings = (data) => {
@@ -2386,15 +2344,13 @@
       head('projects', '03 //', 'Projects');
       head('stack', '04 //', 'Stack');
       head('contact', '06 //', 'Get in touch');
-      head('writing', '02 //', data.blogPage.title);
-      if (/\bview-(more|post)\b/.test(root.className)) { head('outside', '01 //', 'Outside the IDE'); head('contact', '03 //', 'Terminal'); }
+      if (root.classList.contains('view-more')) { head('outside', '01 //', 'Outside the IDE'); head('contact', '03 //', 'Terminal'); }
       if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       if (root.classList.contains('view-stack')) head('stack', '01 //', 'Stack');
-      const page = Object.entries({ more: data.more, projects: data.projectsPage, stack: data.stackPage, blog: data.blogPage, links: data.linksPage, guestbook: data.guestbook, resume: data.resumePage })
+      const page = Object.entries({ more: data.more, projects: data.projectsPage, stack: data.stackPage, resources: data.resourcesPage, links: data.linksPage, guestbook: data.guestbook, resume: data.resumePage })
         .find(([view]) => root.classList.contains(`view-${view}`));
       const slug = new URLSearchParams(window.location.search).get('p');
       if (root.classList.contains('view-case')) setTitle(data.projects.find((project) => projectSlug(project.title) === `project-${slug}`).title);
-      else if (root.classList.contains('view-post')) setTitle(data.writing.find((post) => post.slug === slug).title);
       else if (page && page[1]) setTitle(page[1].title);
       else document.title = homeTitle;
     };
@@ -2440,7 +2396,7 @@
           showLoadError(container);
         }
       });
-      $$('[data-render="projects"], [data-render="stack"], [data-render="writing"], [data-render="projectListHeading"]').forEach((container) => {
+      $$('[data-render="projects"], [data-render="stack"], [data-render="projectListHeading"]').forEach((container) => {
         variants.set(container, { mode: modeFor(container.dataset.render), cache: new Map() });
       });
       headings(data);
@@ -2617,8 +2573,7 @@
         links.forEach((link) => {
           const view = link.dataset.view;
           const active = view && (root.classList.contains(`view-${view}`)
-            || (view === 'projects' && root.classList.contains('view-case'))
-            || (view === 'blog' && root.classList.contains('view-post')));
+            || (view === 'projects' && root.classList.contains('view-case')));
           if (active) link.setAttribute('aria-current', 'page');
           else link.removeAttribute('aria-current');
         });

@@ -1,5 +1,4 @@
 """In-place navigation retains the shell, cached content, drafts and history."""
-import json
 import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
@@ -10,8 +9,7 @@ SHOTS = os.environ.get('SHOTS')
 source = Path('/site/assets/data.js')
 if not source.exists():
     source = Path(__file__).resolve().parents[2] / 'assets/data.js'
-fixture = {'slug': 'navigation-fixture', 'title': 'Navigation fixture', 'excerpt': 'Synthetic browser fixture.', 'date': '2026-10-15', 'body': 'A test article, used only in this browser.'}
-script = source.read_text() + '\nPORTFOLIO_DATA.writing.push(' + json.dumps(fixture) + ');'
+script = source.read_text()
 
 
 def session(browser, width=1280, height=900, reduced='reduce', **options):
@@ -46,7 +44,7 @@ with sync_playwright() as pw:
     page.evaluate('window.shellProof = { sidebar: document.querySelector(".sidebar"), main: document.querySelector("main"), form: document.querySelector(".contact-form"), sky: document.querySelector(".sky"), origin: performance.timeOrigin }; document.querySelector("#assistant-input").value = "A chat draft";')
     documents = []
     page.on('request', lambda request: documents.append(request.url) if request.resource_type == 'document' else None)
-    for view in ('links', 'more', 'projects', 'stack', 'blog', 'guestbook'):
+    for view in ('links', 'more', 'projects', 'stack', 'resources', 'guestbook'):
         click_view(page, view)
         check(f'{view}: the shell and document survive', page.evaluate('shellProof.sidebar === document.querySelector(".sidebar") && shellProof.main === document.querySelector("main") && shellProof.sky === document.querySelector(".sky") && shellProof.origin === performance.timeOrigin'))
         check(f'{view}: the current page is marked', page.get_attribute(f'.nav-link[data-view="{view}"]', 'aria-current') == 'page')
@@ -78,16 +76,13 @@ with sync_playwright() as pw:
     page.go_back()
     page.wait_for_function('document.documentElement.classList.contains("view-projects") && Math.abs(scrollY - 500) < 2')
     check('Back restores the previous scroll position', abs(page.evaluate('scrollY') - 500) < 2)
-    click_view(page, 'blog')
-    page.click('a[href$="p=navigation-fixture"]')
-    check('published posts render without reloading', page.locator('.writing-name').inner_text() == fixture['title'] and 'test article' in page.locator('.writing-body').inner_text())
-    page.click('.case-back:visible')
-    check('the Blog list returns after a post', page.locator('.writing-link').count() == 1)
+    click_view(page, 'resources')
+    check('Resources lists its four groups, links opening in a new tab', page.locator('.resources-group:visible').count() == 4 and page.locator('a.resource[target="_blank"]').count() == 13)
     page.click('.collapse-toggle')
     check('the rail is enabled', page.locator('body.is-rail').count() == 1)
     click_view(page, 'stack')
     click_view(page, 'links')
-    check('collapse state and nav counts remain stable', page.locator('body.is-rail').count() == 1 and page.locator('.nav-count').count() == 3)
+    check('collapse state and nav counts remain stable', page.locator('body.is-rail').count() == 1 and page.locator('.nav-count').count() == 4)
     page.click('.collapse-toggle')
     page.click('.nav-link[data-section="home"]')
     check('Home restores every project row with the sidebar hidden on the cover', page.locator('.project-row:visible').count() == 5 and page.locator('.sidebar').evaluate('n => getComputedStyle(n).visibility === "hidden" && n.getBoundingClientRect().right <= 0'))
@@ -117,7 +112,7 @@ with sync_playwright() as pw:
     ctx, page, errors, _ = session(browser, width=390, height=844, is_mobile=True, has_touch=True)
     page.goto(BASE + '?view=links')
     page.evaluate('window.phoneSidebar = document.querySelector(".sidebar")')
-    for view in ('more', 'projects', 'stack', 'guestbook', 'blog'):
+    for view in ('more', 'projects', 'stack', 'guestbook', 'resources'):
         click_view(page, view, phone=True)
         check(f'phone {view}: the drawer closes and its DOM stays mounted', not page.locator('body.drawer-open').count() and page.evaluate('phoneSidebar === document.querySelector(".sidebar")'))
     page.click('.menu-toggle')
