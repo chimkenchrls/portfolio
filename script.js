@@ -2589,7 +2589,8 @@
 
     const setActive = (id) => {
       links.forEach((link) => {
-        const on = link.dataset.section === id;
+        // Every Home section keeps Home lit; the other links open their own pages.
+        const on = link.dataset.section === id || link.dataset.section === SECTIONS[0].id;
         link.classList.toggle('is-active', on);
         if (on) link.setAttribute('aria-current', 'location');
         else link.removeAttribute('aria-current');
