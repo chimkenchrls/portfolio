@@ -84,7 +84,7 @@ On devices with a fine pointer, hovering a Home project shows a small preview be
 
 The **More about me** page (`./?view=more`) opens with `more.title`, the centered Outside the IDE photo deck, the profile name and role, and `more.intro`. Full-width Experience and Education rows reuse the same content as Home, followed by the terminal.
 
-**Resources** (`./?view=resources`) sits below Links in the sidebar, with its title and introduction in `resourcesPage`. `resources` lists the groups (Tools, Skills, Plugins, and How this site is built), drawn as Stack-style ruled rows. Each item has a `name`, a short `note`, an `href` (opens in a new tab; `null` shows it without a link), and an `icon` from `assets/icons/stack/` with an optional brand `color`. Items without an icon use the group's `icon` from `assets/icons/`.
+**Resources** (`./?view=resources`) sits below Links in the sidebar, with its title and introduction in `resourcesPage`. `resources` lists the groups (Tools, Skills, Plugins, and Behind the portfolio), laid out like the Links page. Each item has a `name`, a short `note`, an `href` (opens in a new tab; `null` shows it without a link), and an `icon` from `assets/icons/stack/` with an optional brand `color`. Items without an icon use the group's `icon` from `assets/icons/`.
 
 The photo deck fans out around the active photo, with up to three neighbors on either side and a clickable position dot per photo. Tap/click, swipe, or use Enter/arrow keys to shuffle; holding reveals color. `outsideHint` controls the hint text, and `outside` supplies the photos. The Live Photo plays only when active, on screen and motion is allowed.
 

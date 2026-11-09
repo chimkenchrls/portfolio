@@ -208,7 +208,7 @@ const PORTFOLIO_DATA = {
       ],
     },
     {
-      category: "How this site is built",
+      category: "Behind the portfolio",
       icon: null,
       items: [
         { name: "Geist", note: "Fonts, by Vercel", href: "https://vercel.com/font", icon: "vercel", color: null },

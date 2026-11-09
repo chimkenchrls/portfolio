@@ -1243,50 +1243,6 @@ body.is-rail .sidebar-controls {
   font-size: 14px;
 }
 
-/* Resources (?view=resources): Stack's ruled rows, each item a name with a note under it. */
-.resources-group:last-child {
-  border-bottom: 1px solid var(--border);
-}
-.resources-items {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px 24px;
-  list-style: none;
-}
-.resource {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-.resource .icon {
-  flex: none;
-  margin-top: 3px;
-}
-.resource-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-.resource-name {
-  font-size: 14px;
-}
-.resource-note {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--fg-muted);
-}
-a.resource .resource-name {
-  text-decoration: underline;
-  text-decoration-color: var(--border);
-  text-underline-offset: 4px;
-  transition: text-decoration-color var(--t-fast) ease;
-}
-@media (hover: hover) and (pointer: fine) {
-  a.resource:hover .resource-name {
-    text-decoration-color: var(--fg);
-  }
-}
-
 /* The Stack page (?view=stack): a two-column sheet, one tool per line, with the
    projects that use it on the right. Home keeps the short rows above. */
 html.view-stack .stack-grid {

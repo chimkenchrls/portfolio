@@ -2203,23 +2203,33 @@
       identity.append(name, el('p', 'personal-role', profile.title));
       return [identity, ...paragraphs(more.intro)];
     };
-    // One ruled row per group: the group name on the left, its items on the right.
-    const resources = ({ resources: groups = [] }) => groups.map((group) => {
-      const box = el('section', 'stack-group resources-group');
-      const list = el('ul', 'resources-items');
+    // Laid out like the Links page: a titled group of rows, each an icon tile, the
+    // name with its note under it, and an arrow when it links somewhere.
+    const resources = ({ resources: groups = [] }) => groups.map((group, groupIndex) => {
+      const section = el('section', 'links-group');
+      const heading = el('h2', 'history-title', group.category);
+      heading.id = `resources-group-${groupIndex}`;
+      section.setAttribute('aria-labelledby', heading.id);
+      const list = el('ul', 'links-list');
       group.items.forEach((item) => {
-        const li = el('li');
-        const row = item.href ? externalLink(item.href, '', 'resource') : el('div', 'resource');
-        const icon = item.icon ? stackIconEl(item.icon, item.color) : el('span', `icon icon-sm icon-${group.icon}`);
+        const row = item.href ? externalLink(item.href, '', 'profile-link') : el('div', 'profile-link');
+        const icon = el('span', 'link-icon');
         icon.setAttribute('aria-hidden', 'true');
-        const words = el('span', 'resource-copy');
-        words.append(el('span', 'resource-name', item.name), el('span', 'resource-note', item.note));
+        icon.append(item.icon ? stackIconEl(item.icon, item.color) : el('span', `icon icon-${group.icon}`));
+        const words = el('span', 'link-copy');
+        words.append(el('span', 'link-label', item.name), el('span', 'link-detail', item.note));
         row.append(icon, words);
+        if (item.href) {
+          const action = el('span', 'icon icon-external');
+          action.setAttribute('aria-hidden', 'true');
+          row.append(action);
+        }
+        const li = el('li');
         li.append(row);
         list.append(li);
       });
-      box.append(el('h2', 'stack-group-title', group.category), list);
-      return box;
+      section.append(heading, list);
+      return section;
     });
     const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, resources, resourcesHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
 

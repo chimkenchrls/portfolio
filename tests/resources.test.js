@@ -11,7 +11,7 @@ test('dates reject impossible days and format without a local-time shift', () =>
 
 test('resources: every item has a name, a note, a safe link or none, and an icon', () => {
   assert.deepEqual(validateData(data), []);
-  assert.deepEqual(data.resources.map((group) => group.category), ['Tools I use', 'Skills I use', 'Plugins I use', 'How this site is built']);
+  assert.deepEqual(data.resources.map((group) => group.category), ['Tools I use', 'Skills I use', 'Plugins I use', 'Behind the portfolio']);
   const fs = require('node:fs');
   const path = require('node:path');
   for (const group of data.resources) {
