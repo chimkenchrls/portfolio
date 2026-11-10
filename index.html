@@ -158,30 +158,36 @@
     </nav>
 
     <main class="main" id="main" tabindex="-1">
-      <section class="section hero" id="home" aria-labelledby="hero-name">
-        <div
-          class="hero-photo"
-          role="img"
-          tabindex="0"
-          aria-label="Black-and-white portrait of Kenneth Charles Valdez. Hover, focus, or tap to reveal a pixelated alternate image."
-        >
+      <section class="section poster" id="home" aria-labelledby="hero-name">
+        <div class="poster-stage">
+          <div class="poster-light" aria-hidden="true"></div>
           <img
-            class="hero-photo-img"
-            src="./assets/profile.webp"
+            class="poster-photo poster-photo-desktop"
+            src="./assets/hero-cutout.webp"
             alt=""
-            width="640"
-            height="640"
+            width="676"
+            height="780"
           />
+          <img
+            class="poster-photo poster-photo-phone"
+            src="./assets/hero-mobile.webp"
+            alt=""
+            width="489"
+            height="900"
+          />
+          <h1 class="poster-name" id="hero-name">Kenneth Charles Valdez</h1>
+          <div class="poster-name-over" aria-hidden="true">
+            <span class="poster-name">Kenneth Charles Valdez</span>
+          </div>
         </div>
-        <div class="hero-text">
-          <p class="eyebrow">Building. Learning. Shipping.</p>
-          <h1 class="hero-name" id="hero-name">Kenneth Charles Valdez</h1>
-          <p class="hero-title">Aspiring DevOps Engineer</p>
-          <p class="hero-location">
-            <span class="icon icon-sm icon-pin" aria-hidden="true"></span
-            >Sariaya, Quezon, Philippines
+        <p class="poster-title">Aspiring DevOps Engineer</p>
+        <div class="poster-side">
+          <p class="poster-bio">
+            A 4th-year BS Computer Science student at STI College Lucena,
+            building side projects and learning how to make deployments smooth
+            and scalable.
           </p>
-          <div class="hero-actions">
+          <div class="poster-actions">
             <a
               class="btn btn-primary"
               href="mailto:charleskenneth129@gmail.com"
@@ -189,6 +195,9 @@
               >Email me</a
             >
           </div>
+        </div>
+        <div class="poster-meta">
+          <p class="poster-location">Sariaya, Quezon, Philippines &middot; GMT+8</p>
           <p class="social" data-render="social">
             <a
               href="https://github.com/chimkenchrls"
@@ -197,6 +206,7 @@
               >github</a
             >
           </p>
+          <a class="poster-scroll" href="#about">Scroll &darr;</a>
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
-  SECTIONS, padCount, safeUrl, computeTiles, revealDelays,
+  SECTIONS, padCount, safeUrl, revealDelays,
   isTypingTarget, resolveShortcut, validateData,
 } = require('../script.js');
 
@@ -58,32 +58,6 @@ test('safeUrl allows only http(s) and mailto', () => {
   for (const bad of [null, undefined, '', 'null', 'javascript:alert(1)', 'www.site.com', 'https://', 'https://has space.com']) {
     assert.equal(safeUrl(bad), null, `expected null for ${String(bad)}`);
   }
-});
-
-test('computeTiles replicates object-fit: cover for a portrait image', () => {
-  const tiles = computeTiles(8, 639, 780);
-  assert.equal(tiles.length, 64);
-  close(tiles[0].top, 0);
-  close(tiles[0].left, 0);
-  close(tiles[0].size, 12.5);
-  close(tiles[0].bgSize[0], 800);
-  close(tiles[0].bgSize[1], (780 / 639) * 800);
-  close(tiles[0].bgPos[0], 0);
-  const topEdge = -((780 / 639) - 1) / 2;
-  close(tiles[0].bgPos[1], (topEdge / (0.125 - 780 / 639)) * 100);
-  close(tiles[7].bgPos[0], 100);
-  close(tiles[63].top, 87.5);
-  close(tiles[63].left, 87.5);
-});
-
-test('computeTiles on a square image maps corners to 0% and 100%', () => {
-  const tiles = computeTiles(2, 100, 100);
-  assert.equal(tiles.length, 4);
-  close(tiles[0].bgPos[0], 0);
-  close(tiles[0].bgPos[1], 0);
-  close(tiles[3].bgPos[0], 100);
-  close(tiles[3].bgPos[1], 100);
-  close(tiles[3].bgSize[0], 200);
 });
 
 test('revealDelays is a shuffled permutation of step multiples', () => {
@@ -321,7 +295,6 @@ test('the cover is set up in the head, with the intro only on a plain load, and 
   assert.match(head, /root\.classList\.add\("has-cover"\);\s*if \(!window\.location\.hash\) \{\s*root\.classList\.add\("at-cover"\);\s*if \(!calm\) root\.classList\.add\("intro-play"\);/);
   assert.match(head, /history\.scrollRestoration = "manual";[\s\S]*?entry\.type === "reload"\) \{[\s\S]*?history\.replaceState\(null, "", window\.location\.pathname \+ window\.location\.search\);[\s\S]*?window\.scrollTo\(0, 0\);/, 'a reload starts over at the hero, without the #section');
   assert.match(head, /getAttribute\("data-cover"\) !== "ready"\)\s*root\.classList\.remove\("has-cover", "at-cover", "intro-play"\)/, 'the ordinary page appears if script.js never loads');
-  assert.match(css, /html\.has-cover \.hero \{[^}]*min-height: 100vh;[^}]*translate: calc\(var\(--main-offset\) \/ -2\) 0;/, 'the hero fills the window and is centred on it');
   assert.doesNotMatch(css, /html\.(?:intro|at-cover) \.main > \.section/, 'the sections below are never hidden');
   const module = js.slice(js.indexOf('const cover = (() => {'), js.indexOf('20. Scroll aids'));
   assert.match(module, /coverProgress\(window\.scrollY, hero\.offsetHeight\)/, 'the layout follows the scroll position both ways');
@@ -342,35 +315,6 @@ test('cover progress: 0 at the top, 1 shortly before the hero has left, smooth a
   for (let y = 0; y <= 900; y += 10) { const p = coverProgress(y, 900); assert.ok(p >= last && p <= 1); last = p; }
   assert.equal(coverProgress(10, 0), 1, 'a missing hero height cannot divide by zero');
   assert.equal(coverProgress(NaN, 900), 0);
-});
-
-test('photo glitch: a few thin strips, some showing the other image, never the whole photo', () => {
-  const { glitchSlices } = require('../script.js');
-  let seed = 11;
-  const random = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  for (let run = 0; run < 300; run++) {
-    const slices = glitchSlices(random);
-    assert.ok(slices.length >= 3 && slices.length <= 5);
-    assert.ok(slices.some((s) => s.alt), 'the alternate image always breaks through somewhere');
-    let area = 0;
-    for (const s of slices) {
-      assert.ok(s.height >= 4 && s.height <= 12, 'thin bands');
-      assert.ok(s.top >= 0 && s.top + s.height <= 100, 'inside the photo');
-      assert.ok(Math.abs(s.shift) >= 2 && Math.abs(s.shift) <= 6, 'a small sideways jump');
-      area += s.height;
-    }
-    assert.ok(area <= 60, 'strips, not a full-frame flash');
-  }
-  assert.ok(glitchSlices(() => 0.99).every((s) => !s.alt) === false, 'even an unlucky roll shows the alternate once');
-  for (let run = 0; run < 100; run++) {
-    const peak = glitchSlices(random, 1);
-    assert.ok(peak.length >= 4 && peak.length <= 6, 'the band plus the strips fit the six layers');
-    assert.deepEqual([peak[0].alt, peak[0].height, Math.abs(peak[0].shift)], [true, 75, 1], 'at the peak three quarters of the photo is the other image, almost in place');
-    assert.ok(peak[0].top >= 0 && peak[0].top + peak[0].height <= 100);
-    const part = glitchSlices(random, 0.4)[0];
-    assert.equal(part.height, 48, 'it builds up to the peak and back down');
-  }
-  assert.ok(glitchSlices(random, 7)[0].height === 75 && glitchSlices(random, -2).every((s) => s.height <= 12), 'out-of-range amounts are clamped');
 });
 
 test('contact form: problems are found per field, before anything is sent', () => {

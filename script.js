@@ -146,32 +146,6 @@
     return Math.min(1, Math.max(0, scrollY / range));
   };
 
-  // Slices one image across a grid×grid set of tiles while replicating
-  // `object-fit: cover` (uniform scale, centred crop) for a square box.
-  const computeTiles = (grid, imageWidth, imageHeight) => {
-    const scale = 1 / Math.min(imageWidth, imageHeight);
-    const renderedW = imageWidth * scale;
-    const renderedH = imageHeight * scale;
-    const leftEdge = -(renderedW - 1) / 2;
-    const topEdge = -(renderedH - 1) / 2;
-    const size = 1 / grid;
-    const tiles = [];
-    for (let i = 0; i < grid * grid; i += 1) {
-      const top = Math.floor(i / grid) * size;
-      const left = (i % grid) * size;
-      tiles.push({
-        top: top * 100,
-        left: left * 100,
-        size: size * 100,
-        bgSize: [renderedW * grid * 100, renderedH * grid * 100],
-        bgPos: [
-          ((leftEdge - left) / (size - renderedW)) * 100 + 0,
-          ((topEdge - top) / (size - renderedH)) * 100 + 0,
-        ],
-      });
-    }
-    return tiles;
-  };
 
   // Shuffled reveal order → delay (ms) for each tile index.
   const revealDelays = (count, stepMs, random = Math.random) => {
@@ -715,25 +689,6 @@
       default: return null;
     }
   };
-  // One frame of the photo glitch: a few thin horizontal strips (top/height in % of
-  // the photo) pushed sideways, some showing the alternate image. `reveal` (0–1) adds
-  // one wide band of the alternate image, so at the peak of a glitch it is plainly him.
-  const glitchSlices = (random = Math.random, reveal = 0) => {
-    const count = 3 + Math.floor(random() * 3);
-    const slices = Array.from({ length: count }, () => {
-      const height = 4 + Math.floor(random() * 9);
-      const shift = 2 + Math.floor(random() * 5);
-      return { top: Math.floor(random() * (100 - height)), height, shift: random() < 0.5 ? -shift : shift, alt: random() < 0.5 };
-    });
-    if (!slices.some((slice) => slice.alt)) slices[0].alt = true;
-    const amount = Math.min(1, Math.max(0, Number(reveal) || 0));
-    if (amount > 0) {
-      const height = Math.round(30 + amount * 45);
-      // The band goes first, so the thin strips still cut across it.
-      slices.unshift({ top: Math.floor(random() * (100 - height)), height, shift: random() < 0.5 ? -1 : 1, alt: true });
-    }
-    return slices;
-  };
   // How far the page has moved from the lone hero (0) to the ordinary layout (1),
   // eased at both ends. It is complete a little before the hero has fully left.
   const coverProgress = (scrollY, heroHeight) => {
@@ -1243,7 +1198,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, safeResume, nextProject, scrollProgress, computeTiles, revealDelays, decodeText, joinParts, postDate, profileLink,
+      SECTIONS, padCount, safeUrl, safeResume, nextProject, scrollProgress, revealDelays, decodeText, joinParts, postDate, profileLink,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -1257,7 +1212,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, notchCurrent, posterTimeline, panelLabel, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
+      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, notchCurrent, posterTimeline, panelLabel, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
@@ -2294,7 +2249,7 @@
     const applyResume = (data) => {
       const { profile = {} } = data;
       const href = safeResume(profile.resume);
-      const actions = $('.hero-actions');
+      const actions = $('.poster-actions');
       if (!href || !actions) return;
       const link = el('a', 'btn btn-secondary', 'Résumé');
       // The Resume page when there is one; otherwise straight to the PDF.
@@ -3119,87 +3074,21 @@
   })();
 
   /* ==========================================================================
-     11. Pixel photo — 8×8 tiles dissolve profile.webp into light.webp
+     11. Poster colour — on touch screens a tap on the photo turns colour on and off
      ========================================================================== */
 
-  const pixelPhoto = (() => {
-    const GRID = 8;
-    const STEP_MS = 6;
-    const IMAGE = './assets/light.webp';
-    const IMAGE_W = 639;
-    const IMAGE_H = 780;
-
+  const posterColour = (() => {
     const init = () => {
-      const photo = $('.hero-photo');
-      if (!photo) return;
-      const delays = revealDelays(GRID * GRID, prefersReducedMotion() ? 0 : STEP_MS);
-      const fragment = document.createDocumentFragment();
-      computeTiles(GRID, IMAGE_W, IMAGE_H).forEach((tile, i) => {
-        const node = el('span', 'pixel-tile');
-        node.setAttribute('aria-hidden', 'true');
-        node.style.top = `${tile.top}%`;
-        node.style.left = `${tile.left}%`;
-        node.style.width = `${tile.size}%`;
-        node.style.height = `${tile.size}%`;
-        node.style.backgroundImage = `url("${IMAGE}")`;
-        node.style.backgroundSize = `${tile.bgSize[0]}% ${tile.bgSize[1]}%`;
-        node.style.backgroundPosition = `${tile.bgPos[0]}% ${tile.bgPos[1]}%`;
-        node.style.setProperty('--delay', `${delays[i]}ms`);
-        fragment.append(node);
+      const poster = $('.poster');
+      if (!poster) return;
+      const touch = window.matchMedia('(hover: none)');
+      poster.addEventListener('click', (event) => {
+        // A tap during the intro only skips it (see posterIntro); links and buttons keep their own job.
+        if (!touch.matches || root.classList.contains('intro-play')) return;
+        if (!event.target.closest('.poster-photo')) return;
+        poster.classList.toggle('is-colour');
       });
-      photo.append(fragment);
-
-      // Touch devices have no hover: tap toggles the reveal.
-      const noHover = window.matchMedia('(hover: none)');
-      photo.addEventListener('click', () => {
-        if (noHover.matches) photo.classList.toggle('is-revealed');
-      });
-
-      // Every so often the photo glitches for a little over half a second: strips
-      // jump, then a wide band of the alternate image holds for a moment, then it
-      // breaks up and snaps back. Not while it is being revealed
-      // by hover, during the intro, off screen, in a background tab, or under
-      // reduced motion.
-      const base = $('.hero-photo-img', photo);
-      const glitch = el('span', 'photo-glitch');
-      glitch.setAttribute('aria-hidden', 'true');
-      const strips = Array.from({ length: 6 }, () => glitch.appendChild(document.createElement('span')));
-      if (base) base.after(glitch);
-      let inView = !('IntersectionObserver' in window);
-      let glitchTimer = 0;
-      const clear = () => strips.forEach((strip) => { strip.style.opacity = ''; });
-      const frame = (reveal) => {
-        const slices = glitchSlices(Math.random, reveal);
-        strips.forEach((strip, i) => {
-          const slice = slices[i];
-          if (!slice) { strip.style.opacity = ''; return; }
-          strip.style.backgroundImage = `url("${slice.alt || !base ? IMAGE : base.currentSrc || base.src}")`;
-          strip.style.clipPath = `inset(${slice.top}% 0 ${100 - slice.top - slice.height}% 0)`;
-          strip.style.translate = `${slice.shift}% 0`;
-          strip.style.opacity = '1';
-        });
-      };
-      const quiet = () => !inView || document.hidden || prefersReducedMotion() || root.classList.contains('intro-play')
-        || photo.matches(':hover, :focus-visible, .is-revealed');
-      const plan = (delay) => {
-        clearTimeout(glitchTimer);
-        glitchTimer = window.setTimeout(() => {
-          plan(8000 + Math.random() * 7000);
-          if (quiet()) return;
-          // [ms from the start, how much of the alternate image shows]
-          [[0, 0], [80, 0.4], [190, 1], [430, 0.5], [530, 0]].forEach(([at, reveal]) => window.setTimeout(() => frame(reveal), at));
-          window.setTimeout(clear, 620);
-        }, delay);
-      };
-      if ('IntersectionObserver' in window) new IntersectionObserver(([entry]) => { inView = entry.isIntersecting; }).observe(photo);
-      photo.addEventListener('pointerenter', clear);
-      plan(6000);
-
-      const preload = () => { const img = new Image(); img.src = IMAGE; };
-      if (document.readyState === 'complete') preload();
-      else window.addEventListener('load', preload, { once: true });
     };
-
     return { init };
   })();
 
@@ -3472,9 +3361,9 @@
         data: data || {},
         history, // live reference, so `history` always sees the latest
         identity: {
-          name: textOf('.hero-name'),
-          title: textOf('.hero-title'),
-          location: textOf('.hero-location'),
+          name: textOf('#hero-name'),
+          title: textOf('.poster-title'),
+          location: textOf('.poster-location').replace(/ · GMT\+8$/, ''),
           status: box.dataset.status || null,
           bio: $$('.about-bio p').map((node) => node.textContent.replace(/\s+/g, ' ').trim()),
         },
@@ -5163,7 +5052,7 @@
     game.init(data);
     keyboard.init();
     clipboard.init();
-    pixelPhoto.init();
+    posterColour.init();
     reveal.init();
     labelDecode.init();
     githubGraph.init(data);

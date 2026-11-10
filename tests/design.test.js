@@ -85,13 +85,10 @@ test('cards are kept for projects and certifications; the other sections are rul
   assert.match(js, /el\('li', 'project'\)/);
 });
 
-test('the hero keeps its original size and its one static button', () => {
-  assert.match(block('.hero-name'), /font-size:\s*clamp\(2\.25rem, 4\.6vw, 3\.75rem\)/);
-  assert.match(block('.hero'), /min-height:\s*min\(620px, calc\(100vh - 96px\)\)/);
-  const actions = html.slice(html.indexOf('class="hero-actions"'), html.indexOf('class="social"'));
+test('the poster has one static button; the Résumé one comes from data.js', () => {
+  const actions = between(html, 'class="poster-actions"', '</div>');
   assert.match(actions, /class="btn btn-primary"[^>]*href="mailto:/);
-  assert.doesNotMatch(actions, /btn-secondary/, 'only "Email me" is static; a Resume button is added from data.js');
-  assert.doesNotMatch(html + css, /hero-scroll|scroll-cue/);
+  assert.doesNotMatch(actions, /btn-secondary/, 'only "Email me" is static; a Résumé button is added from data.js');
 });
 
 test('new motion is switched off for reduced-motion users', () => {
@@ -152,4 +149,37 @@ test("CK's panel holds the old sidebar controls", () => {
     assert.ok(panel.includes(part), `panel lacks ${part}`);
   }
   for (const view of ['resume', 'resources', 'links', 'guestbook']) assert.ok(panel.includes(`href="./?view=${view}"`), `panel lacks ${view}`);
+});
+
+// Poster redesign: the opening screen.
+const PLACEHOLDERS = ['Curious about how systems connect', "Things I've built and shipped", 'What I reach for', 'Building pipelines that ship on every push', "Hi, I'm Ken", 'Proof', 'PROOF'];
+
+test('the poster has one h1 with the full name and real copy only', () => {
+  const home = between(html, '<section class="section poster" id="home"', '</section>');
+  const h1s = [...home.matchAll(/<h1[^>]*>([^<]*)<\/h1>/g)];
+  assert.equal(h1s.length, 1);
+  assert.equal(h1s[0][1].trim(), 'Kenneth Charles Valdez');
+  assert.match(home, /class="poster-title"[^>]*>\s*Aspiring DevOps Engineer\s*</);
+  assert.ok(!html.includes('Building. Learning. Shipping.'), 'the old tagline is gone');
+  for (const text of PLACEHOLDERS) assert.ok(!html.includes(text), `placeholder "${text}" shipped`);
+});
+
+test('the poster name is one serif line', () => {
+  const rule = block('.poster-name');
+  assert.match(rule, /Instrument Serif/);
+  assert.match(rule, /italic/);
+  assert.match(rule, /white-space:\s*nowrap/);
+});
+
+test('the photo is black and white until colour is asked for', () => {
+  assert.match(block('.poster-photo'), /grayscale\(1\)/);
+  assert.match(css, /\.poster\.is-colour \.poster-photo[^{]*\{[^}]*filter:\s*none/);
+});
+
+test('the pixel photo is gone', () => {
+  const js = read('script.js');
+  for (const gone of ['pixel-tile', 'hero-photo', 'photo-glitch']) {
+    assert.ok(!html.includes(gone) && !css.includes(gone), `${gone} still present`);
+  }
+  assert.doesNotMatch(js, /const pixelPhoto =|glitchSlices|computeTiles/);
 });
