@@ -68,7 +68,7 @@ with sync_playwright() as pw:
     page.goto(BASE + '?view=guestbook', wait_until='domcontentloaded')
     page.locator('.guestbook-retry').wait_for(state='visible')
     check('an unavailable API shows a retry and keeps the form hidden', not page.is_visible('.guestbook-form') and page.is_visible('.guestbook-retry'))
-    check('Guestbook is its own page: no poster, no notch link lit', page.locator('.notch [aria-current]').count() == 0 and not page.locator('html.is-home').count() and page.locator('footer a[href="./?view=guestbook"]').count() == 1)
+    check('Guestbook is its own page: no poster, no notch link lit', page.locator('.notch [aria-current]').count() == 0 and not page.locator('html.is-home').count() and page.locator('a[href*="view=guestbook"]').count() == 0)
     state['down'] = False
     page.click('.guestbook-retry')
     page.locator('.guestbook-form').wait_for(state='visible')

@@ -148,7 +148,7 @@ test("the footer holds what CK's menu held", () => {
   for (const part of ['data-chat', 'game-trigger', 'score-row', 'poke-button', 'poke-value', 'theme-toggle', 'data-profile-link="github"', 'data-profile-link="linkedin"', 'data-copy=']) {
     assert.ok(footer.includes(part), `footer lacks ${part}`);
   }
-  for (const view of ['resume', 'resources', 'links', 'guestbook']) assert.ok(footer.includes(`href="./?view=${view}"`), `footer lacks ${view}`);
+  for (const view of ['resume', 'resources', 'links']) assert.ok(footer.includes(`href="./?view=${view}"`), `footer lacks ${view}`);
   assert.doesNotMatch(html, /\b(ck-panel|ck-hint|sidebar-chat)\b/);
 });
 

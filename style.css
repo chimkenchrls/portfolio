@@ -820,6 +820,7 @@ body {
   }
   .footer .poke-button:hover {
     background: none;
+    border-color: transparent;
   }
 
   .score-row:hover .score-value {
@@ -4119,11 +4120,15 @@ body.contact-open {
 }
 
 /* 18. Footer ============================================================== */
-/* On every page: CK to poke, the email big, the pages, CK's extras. When it fits
-   the window the page slides up off it (html.footer-reveal, set by siteFooter). */
+/* On every page. The email is the headline across the width; under one rule,
+   everything else sits in four short labelled columns (CK, Pages, Elsewhere,
+   With CK); a last rule carries the © and the time. When it fits the window the
+   page slides up off it (html.footer-reveal, set by siteFooter). */
 .footer {
+  /* The page hairline nearly matches --bg-alt in the dark theme; mix one from the text instead. */
+  --border: color-mix(in srgb, var(--fg) 13%, transparent);
   position: relative;
-  padding: clamp(40px, 6vw, 80px) clamp(24px, 6vw, 88px) clamp(28px, 4vw, 44px);
+  padding: clamp(40px, 6vw, 72px) clamp(24px, 6vw, 88px) clamp(24px, 3vw, 32px);
   color: var(--fg);
   background: var(--bg-alt);
   border-radius: 28px 28px 0 0;
@@ -4145,46 +4150,137 @@ html.footer-reveal .main {
 }
 .footer-inner {
   display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "top top"
-    "center nav"
-    "bottom nav";
-  gap: clamp(36px, 5vw, 64px) 48px;
-  max-width: 1200px;
+  gap: clamp(36px, 4.5vw, 52px);
+  max-width: 1120px;
   margin: 0 auto;
 }
-.footer-top-row {
-  grid-area: top;
+.footer-mail {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  gap: 24px;
+}
+.footer-mail-text {
+  min-width: 0;
+}
+.footer-name {
+  margin: 0 0 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.footer-email {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+}
+.footer-email a {
+  font-size: clamp(22px, 4.6vw, 60px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--fg);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.footer-email .copy-button {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.footer-copied {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.footer-top {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.footer-arrow {
+  width: 11px;
+  height: 11px;
+  margin-top: 5px;
+  border-top: 1.5px solid currentColor;
+  border-left: 1.5px solid currentColor;
+  rotate: 45deg;
+}
+.footer-cols {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 1fr 1.3fr;
+  gap: 32px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border);
+}
+.footer-head {
+  margin: 0 0 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.footer-col ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.footer-col a {
+  font-size: 15px;
+  color: var(--fg);
+  text-decoration: none;
+}
+/* Contact came from the old sidebar: keep its hook, drop its pill. */
+.footer-col .sidebar-contact {
+  display: inline;
+  width: auto;
+  height: auto;
+  padding: 0;
+  font-weight: inherit;
+  background: none;
+  border: 0;
+  box-shadow: none;
 }
 .footer .poke {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 14px;
+  padding: 0;
 }
 .footer .poke[hidden] {
   display: none;
 }
-.footer .poke {
-  gap: 18px;
-}
-/* A square spot for him, nothing clipped (the old menu's pill hid his head). */
+/* A square spot for him, nothing clipped. */
 .footer .poke-button {
   display: grid;
   place-items: center;
-  width: 88px;
-  height: 88px;
+  width: 72px;
+  height: 72px;
   overflow: visible;
   background: none;
   border: 0;
   border-radius: 0;
 }
 .footer .poke-button .assistant-sprite {
-  width: 80px;
-  height: 80px;
+  width: 68px;
+  height: 68px;
 }
 /* He sits on the left, so his emote hops beside the top-left of his head. */
 .footer .poke-emote {
@@ -4194,178 +4290,111 @@ html.footer-reveal .main {
 }
 .footer .poke-count {
   display: grid;
+  margin: 0;
   font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--fg-muted);
 }
 .footer .poke-value {
-  font-size: 20px;
+  font-family: var(--font-sans);
+  font-size: 18px;
+  letter-spacing: 0;
   color: var(--fg);
-}
-.footer-top {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-}
-.footer-arrow {
-  width: 12px;
-  height: 12px;
-  margin-top: 5px;
-  border-top: 2px solid currentColor;
-  border-left: 2px solid currentColor;
-  rotate: 45deg;
-}
-.footer-center {
-  grid-area: center;
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 20px;
-  text-align: center;
-}
-.footer-name {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
-}
-.footer-email {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-.footer-email a {
-  font-size: clamp(18px, 3.6vw, 40px);
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  color: var(--fg);
-  text-decoration: none;
-  overflow-wrap: anywhere;
-}
-.footer-copied {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-}
-.footer-links {
-  display: flex;
-  gap: 10px;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--fg-muted);
-}
-.footer-links a {
-  color: var(--fg-muted);
-  text-decoration: none;
+  font-variant-numeric: tabular-nums;
 }
 .footer-extras {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 16px;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
 }
 .footer-extras > button {
   display: inline-flex;
+  flex: none;
   align-items: center;
   gap: 8px;
-  height: 36px;
+  width: auto;
+  height: 34px;
+  margin: 0;
   padding: 0 14px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--fg);
   background: var(--bg);
   border: 1px solid var(--border);
+  border-style: solid;
   border-radius: 999px;
+  transition:
+    background-color var(--t-fast) ease,
+    scale 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.footer-extras > button:active {
+  scale: 0.97;
 }
 .footer-extras > button[hidden] {
   display: none;
 }
-/* The buttons that came from the old sidebar keep their hooks but take the footer's look. */
-.footer-extras > :is(.game-trigger, .score-row, .theme-toggle) {
-  flex: none;
-  width: auto;
-  margin: 0;
-  color: var(--fg);
-  border-style: solid;
-}
 .footer-extras .nav-text,
 .footer-extras .theme-label {
   flex: none;
+  overflow: visible;
   white-space: nowrap;
 }
-.footer-nav .sidebar-contact {
-  display: inline;
-  width: auto;
-  height: auto;
-  padding: 0;
-  font-size: 15px;
-  font-weight: inherit;
-  background: none;
-  border: 0;
-  box-shadow: none;
-}
-.footer-nav {
-  grid-area: nav;
-  display: grid;
-  align-content: center;
-  justify-items: end;
-  gap: 16px;
-}
-.footer-nav a {
-  font-size: 15px;
-  text-transform: uppercase;
-  color: var(--fg);
-  text-decoration: none;
-}
 .footer-bottom {
-  grid-area: bottom;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 24px;
+  gap: 4px 24px;
+  padding-top: 18px;
   font-size: 13px;
-  text-transform: uppercase;
   color: var(--fg-muted);
+  border-top: 1px solid var(--border);
 }
-.footer-bottom p:last-child {
-  text-align: center;
+.footer-bottom p {
+  margin: 0;
+}
+.footer-clock {
+  font-variant-numeric: tabular-nums;
 }
 @media (hover: hover) and (pointer: fine) {
-  .footer-nav a:hover,
-  .footer-links a:hover,
+  .footer-col a:hover,
   .footer-email a:hover {
     text-decoration: underline;
     text-underline-offset: 4px;
   }
+  .footer-extras > button:hover {
+    background: var(--surface);
+  }
+}
+@media (max-width: 860px) {
+  .footer-cols {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px 20px;
+  }
+  .footer-ck,
+  .footer-play {
+    grid-column: 1 / -1;
+  }
+  .footer-extras {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    justify-items: stretch;
+  }
+  .footer-extras > button {
+    justify-content: center;
+  }
 }
 @media (max-width: 639.98px) {
-  .footer-inner {
-    grid-template-columns: 1fr;
-    grid-template-areas: "top" "center" "nav" "bottom";
+  .footer-mail .footer-top {
+    display: none;
   }
-  .footer-nav {
-    grid-template-columns: 1fr 1fr;
-    justify-items: start;
+  .footer-email a {
+    font-size: clamp(16px, 5.4vw, 22px);
   }
   .footer-bottom {
     flex-direction: column;
-  }
-  .footer-bottom p:last-child {
-    text-align: left;
   }
 }
 

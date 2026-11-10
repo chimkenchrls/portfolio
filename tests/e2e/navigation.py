@@ -38,6 +38,9 @@ def click_view(page, view, phone=False):
     elif view in NOTCH:
         page.click('.notch-ck')
         page.click(f'.phone-menu [data-view="{view}"]')
+    elif view == 'guestbook':
+        # Nothing links to the guestbook for now; it is still a page of its own.
+        page.evaluate("v => { const a = document.createElement('a'); a.href = './?view=' + v; document.body.append(a); a.click(); a.remove(); }", view)
     else:
         to_bottom(page)
         page.click(f'footer [data-view="{view}"]')

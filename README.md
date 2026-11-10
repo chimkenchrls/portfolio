@@ -86,8 +86,8 @@ up on the panel's edge and opens the chat. Stack rows draw their lines in, and t
 certifications deal out from a stack as they arrive.
 
 A big footer on every page holds what CK's menu used to: CK to poke with the shared
-count, the email with a copy button, GitHub · LinkedIn · Résumé, Chat with me, Play
-chimken, the theme toggle, every page (Links and Guestbook included), and the time in
+count, the email as a big headline with a copy button, then four labelled columns (CK, Pages, Elsewhere: GitHub · LinkedIn · Résumé · Links · Contact, and With CK: Chat with me, Play
+chimken, the theme toggle), and the time in
 the Philippines. When it fits the window the page slides up off it. Nothing moves
 under reduced motion.
 

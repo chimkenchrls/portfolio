@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 from common import check, finish, new_page
 
 BASE = "http://localhost:8000/"
-LINKS = ["HOME", "PROJECTS", "STACK", "RESOURCES", "MORE", "LINKS", "GUESTBOOK"]
+PAGES = ["HOME", "PROJECTS", "STACK", "RESOURCES", "MORE"]
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
@@ -18,10 +18,13 @@ with sync_playwright() as pw:
         check(f"{label}: name, big email with a copy button", "Kenneth Charles Valdez" in f.locator(".footer-name").text_content()
               and f.locator(".footer-email a[href^='mailto:']").text_content().strip() == "charleskenneth129@gmail.com"
               and f.locator(".footer-email [data-copy]").count() == 1)
-        small = [t.strip().lower() for t in f.locator(".footer-links a").all_inner_texts()]
-        check(f"{label}: GitHub · LinkedIn · Résumé", small == ["github", "linkedin", "résumé"], str(small))
-        pages = [t.strip().upper() for t in f.locator(".footer-nav a").all_inner_texts()]
-        check(f"{label}: the page list", pages[:7] == LINKS, str(pages))
+        small = [t.strip().lower() for t in f.locator(".footer-links a").all_text_contents()]
+        check(f"{label}: Elsewhere: GitHub, LinkedIn, Résumé, Links, Contact", small == ["github", "linkedin", "résumé", "links", "contact"], str(small))
+        pages = [t.strip().upper() for t in f.locator(".footer-nav a").all_text_contents()]
+        check(f"{label}: the page list", pages == PAGES, str(pages))
+        check(f"{label}: no link to the guestbook", p.locator("a[href*='view=guestbook']").count() == 0)
+        heads = [t.strip() for t in f.locator(".footer-head").all_text_contents()]
+        check(f"{label}: columns are labelled Pages, Elsewhere, With CK", heads == ["Pages", "Elsewhere", "With CK"], str(heads))
         check(f"{label}: chat, chimken, score row and theme toggle", f.locator("[data-chat]").count() == 1 and f.locator(".game-trigger").count() == 1
               and f.locator(".score-row").count() == 1 and f.locator(".theme-toggle").count() == 1)
         text = " ".join(f.text_content().split())
@@ -44,8 +47,8 @@ with sync_playwright() as pw:
     theme = p.evaluate("document.documentElement.dataset.theme")
     p.click("footer .theme-toggle"); p.wait_for_timeout(700)
     check("the theme toggle flips the theme", p.evaluate("document.documentElement.dataset.theme") != theme)
-    p.click("footer .footer-nav a[data-view='guestbook']")
-    p.wait_for_function("document.documentElement.classList.contains('view-guestbook')")
+    p.click("footer .footer-nav a[data-view='more']")
+    p.wait_for_function("document.documentElement.classList.contains('view-more')")
     check("its page links open in place", True)
     p.evaluate("scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})"); p.wait_for_timeout(200)
     p.click("footer a.footer-top"); p.wait_for_timeout(900)
