@@ -54,7 +54,7 @@
 
   --topbar-h: 56px;
   --frame: #dcdbd7;
-  --notch-h: 52px;
+  --notch-h: 40px;
   --main-top: 48px; /* .main's top padding */
   --notch-fg: #55555a;
   --radius: 6px;
@@ -525,11 +525,11 @@ body {
   display: grid;
   place-items: center;
   width: 44px;
-  height: 44px;
+  height: var(--notch-h);
 }
 .notch-ck > .assistant-sprite {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   transition: scale 160ms ease-out;
 }
 .notch-ck:active > .assistant-sprite {
@@ -977,7 +977,7 @@ body {
 /* Phones: a shorter notch with CK alone, a thinner frame. */
 @media (max-width: 639.98px) {
   :root {
-    --notch-h: 44px;
+    --notch-h: 36px;
   }
   .frame {
     --frame-inset: 8px;

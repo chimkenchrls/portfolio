@@ -110,7 +110,7 @@ with sync_playwright() as pw:
     check("Home's featured cards are there when entering from another page", page.locator('.project-feature').count() == 3)
     page.evaluate('document.querySelector("#about").scrollIntoView({behavior:"instant"})')
     page.wait_for_timeout(250)
-    check('the notch stays pinned at the top while scrolling', page.evaluate('Math.abs(firstNotch.getBoundingClientRect().top) <= 1'))
+    check('the notch stays pinned at the top of the frame while scrolling', page.evaluate('Math.abs(firstNotch.getBoundingClientRect().top - parseFloat(getComputedStyle(firstNotch).top)) <= 1 && parseFloat(getComputedStyle(firstNotch).top) === 12'))
     page.evaluate('scrollTo({top:0,behavior:"instant"})')
     page.wait_for_timeout(250)
     check('scrolling back to the poster does not replay the intro', not page.locator('html.intro-play').count())
