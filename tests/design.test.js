@@ -183,3 +183,23 @@ test('the pixel photo is gone', () => {
   }
   assert.doesNotMatch(js, /const pixelPhoto =|glitchSlices|computeTiles/);
 });
+
+// Poster redesign: the "lights on" intro.
+test('the intro hides poster parts only while intro-play is set', () => {
+  const intro = between(css, '/* 19b. Poster intro', '/* 20. Responsive').replace(/\/\*[\s\S]*?\*\//g, '');
+  for (const [, selectors, body] of intro.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/opacity:\s*0\b|translate:\s*0 -100%|clip-path/.test(body)) {
+      for (const selector of selectors.split(',')) assert.match(selector.trim(), /^html\.intro-play /, `"${selector.trim()}" hides outside the intro`);
+    }
+  }
+  assert.match(intro, /html\.intro-play \.poster-light/);
+  assert.match(intro, /html\.intro-play \.notch/);
+});
+
+test('the head marks Home and starts the intro only on a plain, motion-friendly load', () => {
+  const head = html.slice(0, html.indexOf('</head>'));
+  assert.doesNotMatch(head, /at-cover|has-cover|data-cover/);
+  assert.match(head, /root\.classList\.add\("is-home"\);\s*if \(!window\.location\.hash && !calm\) root\.classList\.add\("intro-play"\);/);
+  assert.match(head, /getAttribute\("data-intro"\) !== "ready"\)\s*root\.classList\.remove\("intro-play"\)/, 'a failsafe if script.js never loads');
+  assert.match(head, /history\.scrollRestoration = "manual";/, 'a reload still starts at the poster');
+});

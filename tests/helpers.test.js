@@ -272,51 +272,6 @@ test('the dotted grid is gone and the sky canvas is decorative', () => {
   assert.match(css, /\.sky \{[^}]*pointer-events:\s*none/);
 });
 
-test('intro timeline: tiles, then the name, then the rest, all inside about two seconds', () => {
-  const { introTimeline } = require('../script.js');
-  const time = introTimeline(20, 5);
-  assert.equal(time.nameStart, 450);
-  assert.ok(time.restStart >= time.nameStart + 20 * time.nameStep - 100, 'the other lines wait for the name');
-  assert.equal(time.end, time.restStart + 4 * time.restStep + 380);
-  assert.ok(time.end <= 2200, `the whole intro is short (${time.end}ms)`);
-  assert.ok(80 + 63 * time.tileStep + time.tileFade <= time.restStart, 'the photo is complete before the rest appears');
-  assert.equal(introTimeline(0, 0).end, 1100 + 380, 'no letters and no extras still ends cleanly');
-  assert.deepEqual(introTimeline(NaN, -3), introTimeline(0, 0));
-});
-
-test('the cover is set up in the head, with the intro only on a plain load, and a failsafe', () => {
-  const fs = require('node:fs');
-  const path = require('node:path');
-  const root = path.join(__dirname, '..');
-  const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-  const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
-  const js = fs.readFileSync(path.join(root, 'script.js'), 'utf8');
-  const head = html.slice(0, html.indexOf('</head>'));
-  assert.match(head, /root\.classList\.add\("has-cover"\);\s*if \(!window\.location\.hash\) \{\s*root\.classList\.add\("at-cover"\);\s*if \(!calm\) root\.classList\.add\("intro-play"\);/);
-  assert.match(head, /history\.scrollRestoration = "manual";[\s\S]*?entry\.type === "reload"\) \{[\s\S]*?history\.replaceState\(null, "", window\.location\.pathname \+ window\.location\.search\);[\s\S]*?window\.scrollTo\(0, 0\);/, 'a reload starts over at the hero, without the #section');
-  assert.match(head, /getAttribute\("data-cover"\) !== "ready"\)\s*root\.classList\.remove\("has-cover", "at-cover", "intro-play"\)/, 'the ordinary page appears if script.js never loads');
-  assert.doesNotMatch(css, /html\.(?:intro|at-cover) \.main > \.section/, 'the sections below are never hidden');
-  const module = js.slice(js.indexOf('const cover = (() => {'), js.indexOf('20. Scroll aids'));
-  assert.match(module, /coverProgress\(window\.scrollY, hero\.offsetHeight\)/, 'the layout follows the scroll position both ways');
-  assert.match(module, /prefersReducedMotion\(\) \? \(window\.scrollY > 4 \? 1 : 0\)/, 'reduced motion: it switches instead of gliding');
-  assert.match(module, /name\.setAttribute\('aria-label', title\)/, 'the name stays readable to screen readers while it types');
-  assert.doesNotMatch(module, /innerHTML/);
-});
-
-test('cover progress: 0 at the top, 1 shortly before the hero has left, smooth and never backwards', () => {
-  const { coverProgress } = require('../script.js');
-  assert.equal(coverProgress(0, 900), 0);
-  assert.equal(coverProgress(720, 900), 1, 'complete at 80% of the hero');
-  assert.equal(coverProgress(5000, 900), 1);
-  assert.equal(coverProgress(-50, 900), 0, 'rubber-band overscroll stays at the cover');
-  assert.equal(coverProgress(360, 900), 0.5, 'halfway in the middle');
-  assert.ok(coverProgress(72, 900) < 0.05, 'eases in: the first nudge barely moves anything');
-  let last = 0;
-  for (let y = 0; y <= 900; y += 10) { const p = coverProgress(y, 900); assert.ok(p >= last && p <= 1); last = p; }
-  assert.equal(coverProgress(10, 0), 1, 'a missing hero height cannot divide by zero');
-  assert.equal(coverProgress(NaN, 900), 0);
-});
-
 test('contact form: problems are found per field, before anything is sent', () => {
   const { contactProblems } = require('../script.js');
   const good = { name: 'Ada', email: 'ada@example.com', message: 'We have an opening for you.' };
@@ -370,7 +325,7 @@ test('pages: Projects and More about me are views of the same file, without the 
   const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
   assert.match(html, /view=\(projects\|more\|stack\|case\|resources\|links\|guestbook\|resume\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
   assert.match(css, /html\.view-more \.main > \.section:not\(#personal\):not\(#now\):not\(#background\):not\(#outside\):not\(#contact\),/, 'More about me includes Now alongside photos, bio, background and terminal');
-  assert.match(css, /html\.has-cover #outside,\s*html\.has-cover #contact :is\(\.contact-intro, \.terminal, \.terminal-chips\) \{\s*display: none;/, 'Home leaves those two out, but only when the head script ran');
+  assert.match(css, /html\.is-home #outside,\s*html\.is-home #contact :is\(\.contact-intro, \.terminal, \.terminal-chips\) \{\s*display: none;/, 'Home leaves those two out, but only when the head script ran');
   assert.doesNotMatch(html, /class="project-more"/, 'all projects are shown without an expansion button');
   assert.match(html, /href="\.\/#projects" data-home>Back to home</);
   const data = require('../assets/data.js');
@@ -489,4 +444,10 @@ test('panelLabel numbers the Home panels after the hero', () => {
   assert.equal(panelLabel('contact'), '05 · Contact');
   assert.equal(panelLabel('home'), null);
   assert.equal(panelLabel('nope'), null);
+});
+
+test('the old cover glide and typing intro are retired', () => {
+  const api = require('../script.js');
+  assert.equal(api.coverProgress, undefined);
+  assert.equal(api.introTimeline, undefined);
 });

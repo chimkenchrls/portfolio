@@ -689,13 +689,6 @@
       default: return null;
     }
   };
-  // How far the page has moved from the lone hero (0) to the ordinary layout (1),
-  // eased at both ends. It is complete a little before the hero has fully left.
-  const coverProgress = (scrollY, heroHeight) => {
-    const range = Math.max(1, (Number(heroHeight) || 0) * 0.8);
-    const raw = Math.min(1, Math.max(0, (Number(scrollY) || 0) / range));
-    return raw * raw * (3 - 2 * raw);
-  };
   // Which notch link is lit for a page (case studies belong to Projects).
   const notchCurrent = (view) => ({ home: 'home', projects: 'projects', case: 'projects', stack: 'stack', more: 'more' })[view] || null;
   // The poster intro's windows in ms: lights on, photo steps in, name sweeps, the rest settles, notch drops.
@@ -704,16 +697,6 @@
   const panelLabel = (id) => {
     const index = SECTIONS.findIndex((section) => section.id === id);
     return index > 0 ? `${String(index).padStart(2, '0')} · ${SECTIONS[index].label}` : null;
-  };
-  // When each part of the hero intro starts (ms): the photo's tiles drop away, the
-  // name types out as the photo completes, then the remaining lines rise in turn.
-  const introTimeline = (letters, extras) => {
-    const count = (value) => Math.max(0, Math.floor(value) || 0);
-    const nameStart = 450;
-    const nameStep = 34;
-    const restStart = Math.max(1100, nameStart + count(letters) * nameStep - 100);
-    const restStep = 70;
-    return { tileStep: 13, tileFade: 140, nameStart, nameStep, restStart, restStep, end: restStart + Math.max(0, count(extras) - 1) * restStep + 380 };
   };
   // A small seeded generator, so the night sky is the same on every visit.
   const skyRandom = (seed) => {
@@ -1212,7 +1195,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, notchCurrent, posterTimeline, panelLabel, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
+      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
@@ -3084,7 +3067,7 @@
       const touch = window.matchMedia('(hover: none)');
       poster.addEventListener('click', (event) => {
         // A tap during the intro only skips it (see posterIntro); links and buttons keep their own job.
-        if (!touch.matches || root.classList.contains('intro-play')) return;
+        if (!touch.matches || root.classList.contains('intro-play') || posterIntro.justSkipped()) return;
         if (!event.target.closest('.poster-photo')) return;
         poster.classList.toggle('is-colour');
       });
@@ -3750,6 +3733,8 @@
      19. Portfolio assistant — floating character, private Gemini connection
      ========================================================================== */
   const portfolioAssistant = (() => {
+    // A quick hello from the notch CK (the intro calls it once the notch lands).
+    let greet = () => {};
     const init = (data) => {
       const config = data && data.assistant;
       // CK in the notch: he blinks, idles and looks around; a click on him opens his menu (ckPanel).
@@ -3828,6 +3813,12 @@
         // The sidebar CK idles like the launcher, rests while the chat is open,
         // and pulls a face for a moment after each poke.
         if (pokeSprite) show(pokeSprite, poked || (dialog.open ? { direction: 4, reaction: null } : pose));
+      };
+      greet = () => {
+        if (still()) return;
+        pokeFace = MASCOT_REACTION.delighted;
+        pokeUntil = performance.now() + 900;
+        paint();
       };
       const setMood = (name) => {
         mood = { name, at: performance.now() };
@@ -4215,7 +4206,7 @@
       window.visualViewport?.addEventListener('scroll', fitViewport);
       syncMotion();
     };
-    return { init };
+    return { init, greet: () => greet() };
   })();
 
   /* ==========================================================================
@@ -4346,159 +4337,59 @@
   })();
 
   /* ==========================================================================
-     19d. Cover — the hero is its own opening screen; the sidebar arrives after it
+     19d. Poster intro — lights on, he steps in, the name sweeps, the rest settles
      ========================================================================== */
-  const cover = (() => {
-    let refresh = () => {};
-    let replay = () => {};
+  const posterIntro = (() => {
+    let stop = () => {};
+    let skippedAt = -Infinity;
+    const play = () => {
+      stop();
+      const poster = $('.poster');
+      if (!poster || prefersReducedMotion() || window.scrollY > 4 || typeof poster.animate !== 'function') {
+        root.classList.remove('intro-play');
+        return;
+      }
+      root.classList.add('intro-play');
+      const time = posterTimeline();
+      const ease = 'cubic-bezier(0.23, 1, 0.32, 1)';
+      const running = [];
+      const run = (nodes, frames, [from, to], extra = {}) => nodes.forEach((node, index) => {
+        if (node) running.push(node.animate(frames, { duration: to - from, delay: from + (extra.step || 0) * index, easing: extra.easing || ease, fill: 'both' }));
+      });
+      let timer = 0;
+      let done = false;
+      // Jump to the finished poster (also how a click or key skips the intro).
+      const finish = (event) => {
+        if (done) return;
+        done = true;
+        if (event) skippedAt = performance.now();
+        clearTimeout(timer);
+        document.removeEventListener('pointerdown', finish, true);
+        window.removeEventListener('keydown', finish, true);
+        root.classList.remove('intro-play');
+        running.forEach((animation) => animation.cancel());
+      };
+      stop = finish;
+      document.addEventListener('pointerdown', finish, true);
+      window.addEventListener('keydown', finish, true);
+
+      run([$('.poster-light', poster)], [{ opacity: 0 }, { opacity: 1 }], time.light, { easing: 'ease-out' });
+      run($$('.poster-photo', poster), [{ opacity: 0, translate: '0 12px' }, { opacity: 1, translate: '0 0' }], time.photo);
+      run($$('.poster-name', poster), [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], time.name, { easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+      run([$('.poster-title', poster), $('.poster-side', poster), $('.poster-meta', poster)], [{ opacity: 0, translate: '0 8px' }, { opacity: 1, translate: '0 0' }], [time.rest[0], time.rest[0] + 420], { step: 70 });
+      run([$('.notch')], [{ translate: '0 -100%' }, { translate: '0 0' }], time.notch);
+      // CK says hello once the notch has landed.
+      window.setTimeout(() => { if (!done) portfolioAssistant.greet(); }, time.notch[1] - 150);
+      timer = window.setTimeout(() => finish(), time.end + 60);
+    };
     const init = () => {
       // Tells the <head> failsafe that this script is in charge.
-      root.setAttribute('data-cover', 'ready');
-      const photo = $('.hero-photo');
-      const name = $('.hero-name');
-      if (!photo || !name || !$('.hero') || !$('#main')) { root.classList.remove('has-cover', 'at-cover', 'intro-play'); return; }
-
-      // The change from lone hero to ordinary page follows the scroll position:
-      // the hero glides from the centre of the window to the page column while the
-      // sidebar (the top bar on phones) slides in, and the floating CK fades in.
-      // Scrolling back up runs it in reverse. Styles are set on the elements
-      // themselves, not through a variable, so only they are restyled each frame.
-      const hero = $('.hero');
-      const main = $('#main');
-      const sidebar = $('#sidebar');
-      const topbar = $('.topbar');
-      const launcher = $('.assistant-launcher');
-      const wide = window.matchMedia('(min-width: 640px)');
-      let queued = false;
-      let hint = null;
-      const sync = () => {
-        queued = false;
-        if (hint) hint.hidden = !root.classList.contains('has-cover');
-        if (!root.classList.contains('has-cover')) {
-          root.classList.remove('at-cover');
-          hero.style.translate = '';
-          if (sidebar) sidebar.style.translate = '';
-          if (topbar) topbar.style.translate = '';
-          if (launcher) { launcher.style.opacity = ''; launcher.style.pointerEvents = ''; }
-          return;
-        }
-        const amount = prefersReducedMotion() ? (window.scrollY > 4 ? 1 : 0) : coverProgress(window.scrollY, hero.offsetHeight);
-        const away = 1 - amount;
-        root.classList.toggle('at-cover', window.scrollY <= 4);
-        if (wide.matches) {
-          hero.style.translate = `${(-(parseFloat(getComputedStyle(main).marginLeft) || 0) / 2) * away}px 0`;
-          if (sidebar) sidebar.style.translate = `calc(${-100 * away}% - ${48 * away}px) 0`;
-        } else {
-          hero.style.translate = '';
-          if (sidebar) sidebar.style.translate = '';
-        }
-        if (topbar) topbar.style.translate = `0 ${-100 * away}%`;
-        if (launcher) {
-          launcher.style.opacity = String(amount);
-          launcher.style.pointerEvents = amount > 0.6 ? '' : 'none';
-        }
-      };
-      const schedule = () => {
-        if (queued) return;
-        queued = true;
-        requestAnimationFrame(sync);
-      };
-      window.addEventListener('scroll', schedule, { passive: true });
-      window.addEventListener('resize', schedule);
-      motionQuery.addEventListener('change', schedule);
-      if (sidebar) sidebar.addEventListener('transitionend', schedule); // collapsing changes the column
-      sync();
-
-      hint = el('button', 'intro-hint', 'Scroll');
-      hint.hidden = !root.classList.contains('has-cover');
-      hint.type = 'button';
-      hint.setAttribute('aria-label', 'Scroll to the About section');
-      hint.addEventListener('click', () => {
-        const about = $('#about');
-        if (about) about.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
-      });
-      document.body.append(hint);
-
-      const rest = $$('.hero-text > :not(.hero-name)');
-      const title = name.textContent;
-      let stopIntro = () => {};
-      const playIntro = () => {
-        stopIntro();
-        if (prefersReducedMotion() || window.scrollY > 4 || typeof name.animate !== 'function') {
-          root.classList.remove('intro-play');
-          return;
-        }
-        root.classList.add('intro-play');
-        const running = [];
-        let timer = 0;
-        let played = false;
-        // Jump to the finished hero (also how a click skips the animation).
-        const finish = () => {
-          if (played) return;
-          played = true;
-          clearTimeout(timer);
-          document.removeEventListener('pointerdown', finish);
-          window.removeEventListener('keydown', finish);
-          running.forEach((animation) => animation.cancel());
-          $$('.intro-tiles').forEach((tiles) => tiles.remove());
-          photo.style.opacity = '';
-          name.textContent = title;
-          name.removeAttribute('aria-label');
-          name.style.opacity = '';
-          root.classList.remove('intro-play');
-        };
-        stopIntro = finish;
-        document.addEventListener('pointerdown', finish);
-        window.addEventListener('keydown', finish);
-
-        const time = introTimeline(Array.from(title.replace(/\s/g, '')).length, rest.length);
-
-        // 1. The photo: 64 page-coloured tiles drop away in a shuffled order.
-        const tiles = el('div', 'intro-tiles');
-        tiles.setAttribute('aria-hidden', 'true');
-        revealDelays(64, time.tileStep).forEach((delay) => {
-          const tile = document.createElement('span');
-          tiles.append(tile);
-          running.push(tile.animate([{ opacity: 1 }, { opacity: 0 }], { duration: time.tileFade, delay: 80 + delay, easing: 'steps(2, end)', fill: 'forwards' }));
-        });
-        photo.append(tiles);
-        photo.style.opacity = '1';
-
-        // 2. The name: each letter is already in place, so nothing shifts as it types.
-        name.setAttribute('aria-label', title);
-        name.textContent = '';
-        let letter = 0;
-        title.split(/(\s+)/).forEach((part) => {
-          if (!part) return;
-          if (/^\s+$/.test(part)) { name.append(' '); return; }
-          const word = el('span', 'intro-word');
-          word.setAttribute('aria-hidden', 'true');
-          Array.from(part).forEach((character) => {
-            const span = el('span', 'intro-char', character);
-            word.append(span);
-            running.push(span.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 1, delay: time.nameStart + letter * time.nameStep, fill: 'forwards' }));
-            letter += 1;
-          });
-          name.append(word);
-        });
-        name.style.opacity = '1';
-
-        // 3. Everything else rises into place, one line after another.
-        rest.forEach((node, index) => {
-          running.push(node.animate([{ opacity: 0, translate: '0 10px' }, { opacity: 1, translate: '0 0' }], { duration: 380, delay: time.restStart + index * time.restStep, easing: 'cubic-bezier(0.23, 1, 0.32, 1)', fill: 'both' }));
-        });
-        timer = window.setTimeout(finish, time.end + 60);
-      };
-
-      refresh = () => { stopIntro(); sync(); };
-      replay = () => {
-        window.scrollTo({ top: 0, behavior: 'instant' });
-        sync();
-        playIntro();
-      };
-      if (root.classList.contains('intro-play')) playIntro();
+      root.setAttribute('data-intro', 'ready');
+      if (root.classList.contains('intro-play')) play();
     };
-    return { init, refresh: () => refresh(), replay: () => replay() };
+    // True just after a click or tap skipped the intro, so that tap does nothing else.
+    const justSkipped = () => performance.now() - skippedAt < 600;
+    return { init, play, stop: () => stop(), justSkipped };
   })();
 
   /* ==========================================================================
@@ -4922,18 +4813,14 @@
 
       const show = (route, { replay = false, scroll = null } = {}) => {
         const wasLit = nav.lit();
-        // Back to Home's cover from another page: the sidebar slides away instead of vanishing (CSS).
-        if (route.view === 'home' && !root.classList.contains('has-cover') && !prefersReducedMotion()) {
-          root.classList.add('cover-returning');
-          setTimeout(() => root.classList.remove('cover-returning'), 520);
-        }
         document.dispatchEvent(new Event('portfolio:navigate'));
         $$('dialog[open]').forEach((dialog) => dialog.close());
         $$('video', main).forEach((video) => video.pause());
         ckPanel.close({ restoreFocus: false });
         [...root.classList].filter((name) => name.startsWith('view-')).forEach((name) => root.classList.remove(name));
-        root.classList.remove('at-cover', 'intro-play');
-        root.classList.toggle('has-cover', route.view === 'home');
+        posterIntro.stop();
+        root.classList.remove('intro-play');
+        root.classList.toggle('is-home', route.view === 'home');
         if (route.view !== 'home') root.classList.add(`view-${route.view}`);
         render.changeView(data);
         chatReplay.init();
@@ -4941,7 +4828,6 @@
         guestbook.init(data);
         labelDecode.init();
         nav.sync();
-        cover.refresh();
         main.focus({ preventScroll: true });
         announce(document.title);
         let target = null;
@@ -4949,20 +4835,14 @@
         if (scroll !== null) window.scrollTo({ top: scroll, behavior: 'instant' });
         else if (target && main.contains(target) && target.getClientRects().length) target.scrollIntoView({ block: 'start', behavior: 'instant' });
         else window.scrollTo({ top: 0, behavior: 'instant' });
-        cover.refresh();
-        if (replay && route.view === 'home' && !route.hash) cover.replay();
+        const intro = replay && route.view === 'home' && !route.hash;
+        if (intro) posterIntro.play();
         // The highlight slides to the new link and the new page shows through dropping tiles,
-        // unless Home's intro replays; back on Home's cover the hero fades up instead.
+        // unless Home's intro replays.
         nav.slideFrom(wasLit);
         main.classList.remove('page-in');
         $$('.page-tiles').forEach((old) => old.remove());
-        if (!prefersReducedMotion() && !(replay && root.classList.contains('at-cover'))) {
-          if (!root.classList.contains('at-cover')) dissolve();
-          else {
-            void main.offsetWidth; // restart the fade on quick successive changes
-            main.classList.add('page-in');
-          }
-        }
+        if (!prefersReducedMotion() && !root.classList.contains('intro-play')) dissolve();
       };
       // Page-coloured 40px tiles over the visible page column drop away in a shuffled order.
       const dissolve = () => {
@@ -5064,7 +4944,7 @@
     portfolioAssistant.init(data);
     chimkenArt.init();
     nightSky.init();
-    cover.init();
+    posterIntro.init();
     clickBurst.init();
     contactForm.init(data);
     guestbook.init(data);

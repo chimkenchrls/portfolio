@@ -60,16 +60,15 @@
       })();
     </script>
     <script>
-      // Cover: the hero is its own opening screen (see "cover" in script.js).
-      // The sidebar stays away until the page is scrolled past it. On a plain
-      // load the hero also assembles itself once, unless reduced motion is on.
+      // Home opens on the poster and plays its intro once (see "posterIntro" in
+      // script.js); the other pages (?view=...) are this same file.
       (function () {
         var root = document.documentElement;
         var calm =
           window.matchMedia &&
           window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         // A reload always starts over: back to the top, without the #section in
-        // the address, so the hero and its intro come first again. (A fresh visit
+        // the address, so the poster and its intro come first again. (A fresh visit
         // through a link to a section still opens at that section.)
         var entry =
           window.performance &&
@@ -95,22 +94,17 @@
             window.scrollTo(0, 0);
           });
         }
-        // The Projects, Stack and More about me pages (?view=projects|stack|more)
-        // are this same file showing only their own sections; no cover, no intro.
         var view = /[?&]view=(projects|more|stack|case|resources|links|guestbook|resume)(&|$)/.exec(window.location.search);
         if (view) {
           root.classList.add("view-" + view[1]);
           return;
         }
-        root.classList.add("has-cover");
-        if (!window.location.hash) {
-          root.classList.add("at-cover");
-          if (!calm) root.classList.add("intro-play");
-        }
-        // If the main script never arrives, fall back to the ordinary page.
+        root.classList.add("is-home");
+        if (!window.location.hash && !calm) root.classList.add("intro-play");
+        // If the main script never arrives, show the poster as it is.
         setTimeout(function () {
-          if (root.getAttribute("data-cover") !== "ready")
-            root.classList.remove("has-cover", "at-cover", "intro-play");
+          if (root.getAttribute("data-intro") !== "ready")
+            root.classList.remove("intro-play");
         }, 5000);
       })();
     </script>

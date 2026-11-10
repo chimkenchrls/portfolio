@@ -55,6 +55,7 @@
   --topbar-h: 56px;
   --frame: #dcdbd7;
   --notch-h: 52px;
+  --main-top: 48px; /* .main's top padding */
   --notch-fg: #55555a;
   --radius: 6px;
   --radius-lg: 12px;
@@ -928,7 +929,6 @@ body {
 @media (max-width: 639.98px) {
   :root {
     --notch-h: 44px;
-    --main-top: 28px;
   }
   .frame {
     margin: 8px;
@@ -1963,17 +1963,17 @@ html.view-links .main > .section:not(#links),
 html.view-resume .main > .section:not(#resume),
 html:not(.view-resume) #resume,
 html.view-more #contact .contact-form,
-html.has-cover #personal,
-html.has-cover #now,
-html.has-cover #guestbook,
-html.has-cover #links,
-html.has-cover #background,
-html.has-cover #resources,
-html.has-cover #outside,
-html.has-cover #contact :is(.contact-intro, .terminal, .terminal-chips) {
+html.is-home #personal,
+html.is-home #now,
+html.is-home #guestbook,
+html.is-home #links,
+html.is-home #background,
+html.is-home #resources,
+html.is-home #outside,
+html.is-home #contact :is(.contact-intro, .terminal, .terminal-chips) {
   display: none;
 }
-html.has-cover .contact-form {
+html.is-home .contact-form {
   margin-top: 0;
 }
 html.view-projects [data-home] {
@@ -3982,113 +3982,35 @@ body.assistant-open { overflow: hidden; }
   }
 }
 
-/* 19b. Cover ============================================================== */
-/* The hero is its own opening screen: at the top of the page it fills the window
-   and is centred on it, with no sidebar. As the page scrolls through the hero,
-   script.js glides the hero across to the page column and slides the sidebar (or
-   the phone top bar) in, both tied to the scroll position, so they are in place
-   when About takes over and reverse on the way back up. The classes are set in
-   the <head> so nothing flashes before script.js runs. */
-:root {
-  --main-offset: 0px;
-  --main-top: 48px; /* .main's top padding */
-}
-@media (max-width: 1024px) {
-  :root {
-    --main-top: 40px;
-  }
-}
-@media (min-width: 640px) {
-  /* Where the sidebar waits before script.js starts moving it with the scroll;
-     it cannot be tabbed to while it is away. */
-}
-@media (min-width: 640px) and (max-width: 860px) {
-  /* The stacked tablet hero is centred in the window too. */
-}
-
-/* Page-coloured squares that cover the photo and drop away at random. */
-.intro-tiles {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  display: grid;
-  grid-template: repeat(8, 1fr) / repeat(8, 1fr);
-  pointer-events: none;
-}
-.intro-tiles span {
-  background: var(--bg);
-}
-.intro-word {
-  display: inline-block;
-  white-space: nowrap;
-}
-.intro-char {
+/* 19b. Poster intro ====================================================== */
+/* Once per load on Home (html.intro-play, set in the <head>): the light comes on,
+   he steps in, the name sweeps across, the rest settles and the notch drops in.
+   script.js animates each part from these starting points and then removes the
+   class; without it (no JS, reduced motion, a #section link) nothing is hidden. */
+html.intro-play .poster-light,
+html.intro-play .poster-title,
+html.intro-play .poster-side,
+html.intro-play .poster-meta {
   opacity: 0;
 }
-/* "Scroll": shown whenever the hero is on its own. */
-.intro-hint {
-  position: fixed;
-  bottom: max(18px, env(safe-area-inset-bottom));
-  left: 50%;
-  z-index: 22;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 8px 16px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.3em;
-  text-indent: 0.3em;
-  text-transform: uppercase;
-  color: var(--fg-muted);
+html.intro-play .poster-photo {
   opacity: 0;
-  pointer-events: none;
-  translate: -50% 0;
-  transition:
-    opacity 300ms ease-out,
-    color var(--t-fast) ease;
+  translate: 0 12px;
 }
-html.at-cover:not(.intro-play) .intro-hint {
-  opacity: 1;
-  pointer-events: auto;
+html.intro-play .poster-name {
+  clip-path: inset(0 100% 0 0);
 }
-.intro-hint::after {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border: solid currentColor;
-  border-width: 0 1.5px 1.5px 0;
-  rotate: 45deg;
-  animation: intro-nudge 1.6s steps(2, jump-none) infinite;
-}
-@keyframes intro-nudge {
-  from {
-    translate: 0 0;
-  }
-  to {
-    translate: 0 4px;
-  }
-}
-@media (hover: hover) and (pointer: fine) {
-  .intro-hint:hover {
-    color: var(--fg);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .intro-hint {
-    transition: none;
-  }
-  .intro-hint::after {
-    animation: none;
-  }
+html.intro-play .notch {
+  translate: 0 -100%;
 }
 
 /* 20. Responsive ========================================================== */
 
 
 @media (max-width: 1024px) {
+  :root {
+    --main-top: 40px;
+  }
   .main {
     --main-x: 32px;
     padding: var(--main-top) var(--main-x) 28px;
@@ -4152,6 +4074,9 @@ html.at-cover:not(.intro-play) .intro-hint {
     height: clamp(240px, 45dvh, 380px);
   }
 
+  :root {
+    --main-top: 28px;
+  }
   .main {
     --main-x: 16px;
     padding: var(--main-top) var(--main-x) 24px;
