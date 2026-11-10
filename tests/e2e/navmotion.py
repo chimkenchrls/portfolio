@@ -1,11 +1,15 @@
-"""Page changes (in place, through the router): the highlight slides from the old link, the page column shows through dropping tiles."""
+"""Page changes (in place, through the router): the highlight slides from the old link; the new page rises out of a soft blur."""
 import os
 from playwright.sync_api import sync_playwright
 from common import check, finish, new_page, ALL_PROJECTS
 
 SHOTS = os.environ.get("SHOTS")
 STATE = """() => { const a = document.querySelector('.nav-link.nav-slide');
-  return { arrived: document.querySelectorAll('.page-tiles span').length > 0,
+  const enter = document.getAnimations().filter(n => n.id === 'page-enter');
+  const frames = enter.length ? enter[0].effect.getKeyframes() : [];
+  return { arrived: enter.length > 0, blocks: enter.length,
+           moves: frames.some(f => f.translate && f.translate !== '0px 0px' && f.translate !== 'none'),
+           blurs: frames.some(f => f.filter && f.filter.includes('blur')),
            slide: a ? a.dataset.notch : null, from: a ? a.style.getPropertyValue('--nav-from') : null,
            tiles: document.querySelectorAll('.page-tiles').length }; }"""
 
@@ -15,12 +19,15 @@ with sync_playwright() as p:
     page.hover('.notch-ck'); page.click('.notch .nav-link[data-notch="stack"]')
     page.wait_for_function("location.search.includes('view=stack')")
     state = page.evaluate(STATE)
-    check("arriving through the notch covers the page in tiles", state["arrived"] and state["tiles"] == 1, str(state))
+    check("arriving through the notch, the new page rises out of a soft blur, block after block", state["arrived"] and state["moves"] and state["blurs"] and state["tiles"] == 0, str(state))
+    first = page.evaluate("(() => { const a = document.getAnimations().find(n => n.id === 'page-enter'); return a ? Number(getComputedStyle(a.effect.target).opacity) : 1; })()")
+    check("it starts faint, not with a flash of the full page", first < 0.9, str(first))
     check("the underline slides right from Projects to Stack", state["slide"] == "stack" and state["from"].startswith("-"), str(state))
     if SHOTS:
         page.screenshot(path=f"{SHOTS}/nav-mid.png")
     page.wait_for_timeout(600)
-    check("the slide and the tiles clean up after themselves", page.locator(".nav-slide").count() == 0 and page.locator(".page-tiles").count() == 0)
+    check("the slide and the entrance clean up after themselves", page.locator(".nav-slide").count() == 0 and page.evaluate("document.getAnimations().filter(n => n.id === 'page-enter').length") == 0
+          and page.evaluate("[...document.querySelectorAll('#main *')].every(n => !n.style.translate && !n.style.filter)"))
     page.hover('.notch-ck'); page.click('.notch .nav-link[data-notch="projects"]')
     page.wait_for_function("location.search.includes('view=projects')")
     check("and slides back the other way", page.evaluate(STATE)["from"].startswith("") and not page.evaluate(STATE)["from"].startswith("-"), str(page.evaluate(STATE)))
@@ -51,7 +58,7 @@ with sync_playwright() as p:
     page.hover('.notch-ck'); page.click('.notch .nav-link[data-notch="stack"]')
     page.wait_for_function("location.search.includes('view=stack')")
     state = page.evaluate(STATE)
-    check("reduced motion: nothing moves", state["slide"] is None and not state["arrived"], str(state))
+    check("reduced motion: nothing moves, the page only fades in", state["slide"] is None and state["arrived"] and not state["moves"] and not state["blurs"], str(state))
     ctx.close()
     browser.close()
 finish()

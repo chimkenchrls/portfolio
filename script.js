@@ -136,18 +136,6 @@
   };
 
 
-  // Shuffled reveal order → delay (ms) for each tile index.
-  const revealDelays = (count, stepMs, random = Math.random) => {
-    const order = Array.from({ length: count }, (_, i) => i);
-    for (let i = order.length - 1; i > 0; i -= 1) {
-      const j = Math.floor(random() * (i + 1));
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-    const delays = new Array(count);
-    order.forEach((tileIndex, position) => { delays[tileIndex] = position * stepMs; });
-    return delays;
-  };
-
   // A section label part-way through decoding (progress 0–1): characters settle left to
   // right and the rest flicker through random glyphs; spaces stay so words keep their shape.
   const DECODE_GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/#_*+';
@@ -1229,7 +1217,7 @@
 
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-      SECTIONS, padCount, safeUrl, safeResume, nextProject, scrollProgress, revealDelays, decodeText, joinParts, postDate, profileLink,
+      SECTIONS, padCount, safeUrl, safeResume, nextProject, scrollProgress, decodeText, joinParts, postDate, profileLink,
       parseContributions, buildContributionWeeks, dotRadius, monthLabels, skeletonDays,
       isTypingTarget, resolveShortcut, validateData, projectShots,
       chatTokens, chatTiming, chatScript,
@@ -2277,9 +2265,8 @@
       window.addEventListener('pointerdown', skip, true);
       window.addEventListener('keydown', skip, true);
       animations[0].finished.then(() => {
-        navigation.go('./?view=resume');
-        $('#main').classList.remove('page-in');
-        $$('.page-tiles').forEach((tiles) => tiles.remove());
+        // The sheet's flight is this page change's motion, so the page does not rise in as well.
+        navigation.go('./?view=resume', { enter: false });
         const sheet = $('.resume-sheet');
         if (!sheet || done) { finish(); return; }
         const to = sheet.getBoundingClientRect();
@@ -4901,7 +4888,7 @@
       positions.set(current, window.scrollY);
       window.addEventListener('scroll', () => positions.set(current, window.scrollY), { passive: true });
 
-      const show = (route, { replay = false, scroll = null } = {}) => {
+      const show = (route, { replay = false, scroll = null, enter = true } = {}) => {
         const wasLit = nav.lit();
         document.dispatchEvent(new Event('portfolio:navigate'));
         $$('dialog[open]').forEach((dialog) => dialog.close());
@@ -4926,29 +4913,44 @@
         else window.scrollTo({ top: 0, behavior: 'instant' });
         const intro = replay && route.view === 'home' && !route.hash;
         if (intro) posterIntro.play();
-        // The highlight slides to the new link and the new page shows through dropping tiles,
-        // unless Home's intro replays.
+        // The highlight slides to the new link and the new page rises in, unless Home's intro replays.
         nav.slideFrom(wasLit);
-        main.classList.remove('page-in');
-        $$('.page-tiles').forEach((old) => old.remove());
-        if (!prefersReducedMotion() && !root.classList.contains('intro-play')) dissolve();
+        settle();
+        if (enter && !root.classList.contains('intro-play')) arrive();
       };
-      // Page-coloured 40px tiles over the visible page column drop away in a shuffled order.
-      const dissolve = () => {
-        const box = main.getBoundingClientRect();
-        const top = Math.max(0, box.top);
-        const columns = Math.ceil(box.width / 40);
-        const count = columns * Math.ceil((window.innerHeight - top) / 40);
-        const tiles = el('div', 'page-tiles');
-        tiles.setAttribute('aria-hidden', 'true');
-        Object.assign(tiles.style, { left: `${box.left}px`, top: `${top}px`, width: `${box.width}px`, gridTemplateColumns: `repeat(${columns}, 40px)` });
-        revealDelays(count, 260 / count).forEach((delay) => {
-          const tile = document.createElement('span');
-          tile.style.animationDelay = `${Math.round(delay)}ms`;
-          tiles.append(tile);
+      // The new page's blocks in view rise 14px out of a soft blur, one after another
+      // (70ms apart, at most four). Reduced motion: a short fade, nothing moves.
+      let entering = [];
+      const settle = () => { entering.forEach((animation) => animation.cancel()); entering = []; };
+      const open = (node) => (getComputedStyle(node).display === 'contents' ? [...node.children] : [node]);
+      // A block taller than the screen (a whole page in one section) staggers its own parts instead.
+      const split = (node) => (node.getBoundingClientRect().height > window.innerHeight && node.children.length > 1 ? [...node.children].flatMap(open) : [node]);
+      const blocks = () => $$(':scope > *', main)
+        .flatMap(open)
+        .flatMap(split)
+        .filter((node) => {
+          if (!node.getClientRects().length) return false;
+          const box = node.getBoundingClientRect();
+          return box.bottom > 0 && box.top < window.innerHeight;
+        })
+        .slice(0, 4);
+      const arrive = () => {
+        if (typeof main.animate !== 'function') return;
+        const still = prefersReducedMotion();
+        const frames = still
+          ? [{ opacity: 0 }, { opacity: 1 }]
+          : [{ opacity: 0, translate: '0 14px', filter: 'blur(6px)' }, { opacity: 1, translate: '0 0', filter: 'blur(0px)' }];
+        entering = blocks().map((block, index) => {
+          const animation = block.animate(frames, {
+            id: 'page-enter',
+            duration: still ? 200 : 560,
+            delay: still ? 0 : index * 70,
+            easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
+            fill: 'backwards',
+          });
+          animation.finished.then(() => { entering = entering.filter((other) => other !== animation); }, () => {});
+          return animation;
         });
-        document.body.append(tiles);
-        window.setTimeout(() => tiles.remove(), 460);
       };
       visit = (href, options = {}) => {
         const route = portfolioRoute(href, window.location.href, data);

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const {
-  SECTIONS, padCount, safeUrl, revealDelays,
+  SECTIONS, padCount, safeUrl,
   isTypingTarget, resolveShortcut, validateData,
 } = require('../script.js');
 
@@ -49,16 +49,6 @@ test('safeUrl allows only http(s) and mailto', () => {
   for (const bad of [null, undefined, '', 'null', 'javascript:alert(1)', 'www.site.com', 'https://', 'https://has space.com']) {
     assert.equal(safeUrl(bad), null, `expected null for ${String(bad)}`);
   }
-});
-
-test('revealDelays is a shuffled permutation of step multiples', () => {
-  let seed = 1;
-  const rng = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
-  const delays = revealDelays(64, 6, rng);
-  assert.equal(delays.length, 64);
-  assert.deepEqual([...delays].sort((a, b) => a - b), Array.from({ length: 64 }, (_, i) => i * 6));
-  assert.notDeepEqual(delays, Array.from({ length: 64 }, (_, i) => i * 6));
-  assert.deepEqual(revealDelays(4, 0, rng), [0, 0, 0, 0]);
 });
 
 test('isTypingTarget detects form fields and contenteditable', () => {
