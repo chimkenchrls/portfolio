@@ -2435,59 +2435,77 @@
   })();
 
   /* ==========================================================================
-     5. CK's panel — the menu CK drops from the notch (what the sidebar held)
+     5. Phone menu — CK opens it where there is no hover
      ========================================================================== */
 
-  const ckPanel = (() => {
-    const panel = $('.ck-panel');
+  const phoneMenu = (() => {
+    const menu = $('.phone-menu');
     const ck = $('.notch-ck');
-    const hint = ck && $('.ck-hint', ck);
-    let hintTimer = 0;
+    // Without hover (phones, touch screens) CK opens this menu; with hover he is the Home link.
+    const touchQuery = window.matchMedia('(hover: none)');
+    const focusables = () => $$('a[href], button:not([disabled])', menu).filter((node) => node.getClientRects().length);
 
-    const hideHint = () => {
-      clearTimeout(hintTimer);
-      if (!hint || hint.hidden) return;
-      hint.hidden = true;
-      storage.set('localStorage', 'ck-hint-seen', '1');
-    };
-    // Once, on a first visit: a small "tap me" under CK, gone on the first open or after 6s.
-    const offerHint = () => {
-      if (!hint || storage.get('localStorage', 'ck-hint-seen') !== null) return;
-      hint.hidden = false;
-      hintTimer = window.setTimeout(hideHint, 6000);
+    const label = () => {
+      if (!ck) return;
+      if (touchQuery.matches) {
+        ck.setAttribute('role', 'button');
+        ck.setAttribute('aria-haspopup', 'dialog');
+        ck.setAttribute('aria-controls', 'phone-menu');
+        ck.setAttribute('aria-expanded', String(Boolean(menu && menu.open)));
+        ck.setAttribute('aria-label', 'Open menu');
+      } else {
+        ['role', 'aria-haspopup', 'aria-controls', 'aria-expanded'].forEach((name) => ck.removeAttribute(name));
+        ck.setAttribute('aria-label', 'Home');
+      }
     };
     const open = () => {
-      if (!panel || panel.open) return;
-      hideHint();
-      panel.showModal();
-      ck.setAttribute('aria-expanded', 'true');
-      const first = $('.poke-button', panel);
-      if (first && first.getClientRects().length) first.focus({ preventScroll: true });
+      if (!menu || menu.open) return;
+      menu.classList.remove('is-closing');
+      menu.showModal();
+      label();
+      const first = focusables()[0];
+      if (first) first.focus({ preventScroll: true });
     };
+    // Choosing something closes it at once; Escape and × play the fade out first.
     const close = ({ restoreFocus = true } = {}) => {
-      if (!panel || !panel.open) return;
-      panel.close();
-      if (restoreFocus) ck.focus({ preventScroll: true });
+      if (!menu || !menu.open) return;
+      const done = () => {
+        menu.classList.remove('is-closing');
+        if (menu.open) menu.close();
+        label();
+        if (restoreFocus && ck) ck.focus({ preventScroll: true });
+      };
+      if (!restoreFocus || prefersReducedMotion()) { done(); return; }
+      menu.classList.add('is-closing');
+      window.setTimeout(done, 200);
     };
 
     const init = () => {
-      if (!panel || !ck || typeof panel.showModal !== 'function') return;
-      ck.addEventListener('click', () => (panel.open ? close() : open()));
-      panel.addEventListener('close', () => ck.setAttribute('aria-expanded', 'false'));
-      // A click on the dim backdrop (the dialog element itself, outside its box) closes it.
-      panel.addEventListener('click', (event) => {
-        if (event.target === panel) {
-          const box = panel.getBoundingClientRect();
-          if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close();
-          return;
-        }
-        // Links and the buttons that open another dialog (chimken, its score) take over from the menu.
-        if (event.target.closest('a[href], .game-trigger, .score-row')) close({ restoreFocus: false });
+      if (!ck) return;
+      label();
+      touchQuery.addEventListener('change', () => { close({ restoreFocus: false }); label(); });
+      if (!menu || typeof menu.showModal !== 'function') return;
+      ck.addEventListener('click', (event) => {
+        if (!touchQuery.matches) return;
+        event.preventDefault();
+        open();
       });
-      // Page shortcuts stay off while the menu is open; Escape is the dialog's own.
-      panel.addEventListener('keydown', (event) => event.stopPropagation());
-      if (root.classList.contains('intro-play')) window.setTimeout(offerHint, 2200);
-      else offerHint();
+      $('.phone-menu-close', menu).addEventListener('click', () => close());
+      menu.addEventListener('cancel', (event) => { event.preventDefault(); close(); });
+      menu.addEventListener('click', (event) => {
+        if (event.target.closest('a[href], [data-chat]')) close({ restoreFocus: false });
+      });
+      menu.addEventListener('keydown', (event) => {
+        // Page shortcuts stay off while the menu is open; Tab goes round inside it.
+        event.stopPropagation();
+        if (event.key !== 'Tab') return;
+        const items = focusables();
+        if (!items.length) return;
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      });
     };
 
     return { init, open, close };
@@ -2498,7 +2516,7 @@
      ========================================================================== */
 
   const nav = (() => {
-    const links = $$('.nav-link[data-notch]');
+    const links = $$('[data-notch]');
 
     const setActive = (id) => {
       links.forEach((link) => {
@@ -2871,7 +2889,7 @@
     const open = () => {
       if (!dialog || !ctx || typeof dialog.showModal !== 'function' || isOpen()) return;
       returnFocus = document.activeElement;
-      ckPanel.close({ restoreFocus: false });
+      phoneMenu.close({ restoreFocus: false });
       const saved = Math.floor(Number(storage.get('localStorage', HI_KEY)));
       state = createChimkenState(Number.isFinite(saved) && saved > 0 ? saved : 0);
       shownScore = '';
@@ -2944,7 +2962,7 @@
         switch (action.type) {
           case 'close':
             game.close();
-            ckPanel.close();
+            phoneMenu.close();
             break;
           case 'game':
             event.preventDefault();
@@ -3807,7 +3825,7 @@
     let greet = () => {};
     const init = (data) => {
       const config = data && data.assistant;
-      // CK in the notch: he blinks, idles and looks around; a click on him opens his menu (ckPanel).
+      // CK in the notch: he blinks, idles and looks around; a click on him goes home, or opens the phone menu (phoneMenu).
       const launcher = $('.notch-ck');
       const dialog = $('.assistant-dialog');
       if (!config || !launcher || !dialog || typeof dialog.showModal !== 'function') return;
@@ -4053,7 +4071,7 @@
       };
       const open = (from) => {
         opener = from;
-        ckPanel.close({ restoreFocus: false });
+        phoneMenu.close({ restoreFocus: false });
         document.body.classList.add('assistant-open');
         dialog.showModal();
         fitViewport();
@@ -4189,6 +4207,8 @@
         chatButton.hidden = false;
         chatButton.addEventListener('click', () => open(chatButton));
       }
+      // Every other way into the chat: About, the peeking CK, the footer, the phone menu.
+      $$('[data-chat]').forEach((button) => button.addEventListener('click', () => open(button)));
       if (poke && pokeSprite) {
         showPokes();
         poke.hidden = false;
@@ -4552,9 +4572,7 @@
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         if (dialog.open) return;
-        // The trigger lives in CK's menu, which closes as the form opens; focus goes back to CK.
-        returnFocus = trigger.closest('.ck-panel') ? $('.notch-ck') : trigger;
-        ckPanel.close({ restoreFocus: false });
+        returnFocus = trigger;
         fallback.hidden = Boolean(form && enabled);
         if (form && enabled) {
           // Keep Home visually complete while the one live form is in the dialog.
@@ -4891,7 +4909,7 @@
         document.dispatchEvent(new Event('portfolio:navigate'));
         $$('dialog[open]').forEach((dialog) => dialog.close());
         $$('video', main).forEach((video) => video.pause());
-        ckPanel.close({ restoreFocus: false });
+        phoneMenu.close({ restoreFocus: false });
         [...root.classList].filter((name) => name.startsWith('view-')).forEach((name) => root.classList.remove(name));
         posterIntro.stop();
         root.classList.remove('intro-play');
@@ -4953,7 +4971,7 @@
         if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
         if (!portfolioRoute(link.href, window.location.href, data)) return;
         event.preventDefault();
-        visit(link.href, { replay: link.matches('.nav-link[data-section="home"]') });
+        visit(link.href, { replay: link.matches('[data-notch="home"]') });
       });
       window.addEventListener('popstate', (event) => {
         const route = portfolioRoute(window.location.href, window.location.href, data);
@@ -5002,7 +5020,7 @@
     const data = typeof PORTFOLIO_DATA !== 'undefined' ? PORTFOLIO_DATA : null;
     render.init(data);
     theme.init();
-    ckPanel.init();
+    phoneMenu.init();
     nav.init();
     game.init(data);
     keyboard.init();

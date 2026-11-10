@@ -196,7 +196,8 @@ test('Projects comes before Stack, in the page and in the nav', () => {
   assert.deepEqual(found, order);
   const notch = html.slice(html.indexOf('<nav class="notch"'), html.indexOf('</nav>', html.indexOf('<nav class="notch"')));
   const links = [...notch.matchAll(/class="nav-link"\s+href="\.\/([^"]*)"/g)].map((m) => m[1]);
-  assert.deepEqual(links, ['', '?view=projects', '?view=stack', '?view=more'], 'Notch: Home, Projects, Stack, More');
+  assert.deepEqual(links, ['?view=projects', '?view=stack', '?view=resources', '?view=more'], 'Notch: Projects, Stack | Resources, More');
+  assert.match(notch, /<a class="notch-ck" href="\.\/" data-notch="home"/, 'CK is Home');
 });
 
 test("CK's menu: no status line or visitor counter; a chimken score row instead", () => {

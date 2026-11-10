@@ -136,11 +136,11 @@ test('the sidebar, top bar, drawer and floating CK are gone', () => {
   for (const gone of [/^\.sidebar \{/m, /^\.topbar \{/m, /body\.is-rail/, /\.assistant-launcher/]) assert.doesNotMatch(css, gone);
 });
 
-test('the notch holds four page links and CK', () => {
+test('the notch holds four page links and CK, who is Home', () => {
   const notch = between(html, '<nav class="notch"', '</nav>');
-  const order = [...notch.matchAll(/data-notch="([a-z]+)"|class="notch-ck"/g)].map((m) => m[1] || 'ck');
-  assert.deepEqual(order, ['home', 'projects', 'ck', 'stack', 'more']);
-  assert.match(notch, /class="notch-ck"[^>]*aria-controls="ck-panel"/);
+  const order = [...notch.matchAll(/data-notch="([a-z]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(order, ['projects', 'stack', 'home', 'resources', 'more']);
+  assert.match(notch, /<a class="notch-ck" href="\.\/" data-notch="home"/);
 });
 
 test("CK's panel holds the old sidebar controls", () => {
@@ -239,7 +239,7 @@ test('only About stays pinned, so Projects slides over it; the rest scrolls norm
 
 test('CK holds still: the notch sides open to the same width around him', () => {
   const notch = between(html, '<nav class="notch"', '</nav>');
-  assert.match(notch, /<span class="notch-side">[\s\S]*data-notch="home"[\s\S]*data-notch="projects"[\s\S]*<\/span>\s*<button\s+class="notch-ck"[\s\S]*<span class="notch-side">[\s\S]*data-notch="stack"[\s\S]*data-notch="more"/);
+  assert.match(notch, /<span class="notch-side">[\s\S]*data-notch="projects"[\s\S]*data-notch="stack"[\s\S]*<\/span>\s*<a class="notch-ck"[\s\S]*<span class="notch-side">[\s\S]*data-notch="resources"[\s\S]*data-notch="more"/);
   assert.match(css, /\.notch-side \{[^}]*width:\s*0/);
   assert.match(css, /\.notch:is\(:hover, :has\(:focus-visible\)\) \.notch-side \{[^}]*width:\s*var\(--side-w\)/);
 });

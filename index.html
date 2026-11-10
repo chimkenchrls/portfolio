@@ -135,22 +135,14 @@
     <div class="frame">
     <nav class="notch" aria-label="Pages">
       <span class="notch-side">
-        <a class="nav-link" href="./" data-notch="home" data-section="home" title="Home (1)">Home</a>
         <a class="nav-link" href="./?view=projects" data-notch="projects" data-view="projects">Projects</a>
-      </span>
-      <button
-        class="notch-ck"
-        type="button"
-        aria-haspopup="dialog"
-        aria-controls="ck-panel"
-        aria-expanded="false"
-        aria-label="Open CK's menu"
-      >
-        <span class="assistant-sprite" aria-hidden="true"></span>
-        <span class="ck-hint" hidden>tap me</span>
-      </button>
-      <span class="notch-side">
         <a class="nav-link" href="./?view=stack" data-notch="stack" data-view="stack">Stack</a>
+      </span>
+      <a class="notch-ck" href="./" data-notch="home" data-section="home" title="Home (1)" aria-label="Home">
+        <span class="assistant-sprite" aria-hidden="true"></span>
+      </a>
+      <span class="notch-side">
+        <a class="nav-link" href="./?view=resources" data-notch="resources" data-view="resources">Resources</a>
         <a class="nav-link" href="./?view=more" data-notch="more" data-view="more">More</a>
       </span>
     </nav>
@@ -555,6 +547,34 @@
       </footer>
     </main>
     </div>
+
+    <dialog class="phone-menu" id="phone-menu" aria-label="Menu">
+      <div class="phone-menu-top">
+        <span class="phone-menu-ck assistant-sprite" aria-hidden="true"></span>
+        <button class="phone-menu-close" type="button" aria-label="Close menu">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <nav class="phone-menu-pages" aria-label="Pages">
+        <a class="nav-link" href="./" data-notch="home" data-section="home">Home</a>
+        <a class="nav-link" href="./?view=projects" data-notch="projects" data-view="projects">Projects</a>
+        <a class="nav-link" href="./?view=stack" data-notch="stack" data-view="stack">Stack</a>
+        <a class="nav-link" href="./?view=resources" data-notch="resources" data-view="resources">Resources</a>
+        <a class="nav-link" href="./?view=more" data-notch="more" data-view="more">More</a>
+      </nav>
+      <div class="phone-menu-foot">
+        <div class="phone-menu-actions">
+          <a class="btn btn-primary" href="./#contact" data-section="contact">Get in touch</a>
+          <button class="btn" type="button" data-chat aria-haspopup="dialog" aria-controls="assistant-dialog">Chat with CK</button>
+        </div>
+        <p class="phone-menu-email">
+          <a href="mailto:charleskenneth129@gmail.com">charleskenneth129@gmail.com</a>
+          <button class="copy-button" type="button" data-copy="charleskenneth129@gmail.com" aria-label="Copy email address">
+            <span class="icon icon-sm icon-copy" aria-hidden="true"></span><span class="visually-hidden" data-copy-label>Copy</span>
+          </button>
+        </p>
+      </div>
+    </dialog>
 
     <dialog class="ck-panel" id="ck-panel" aria-label="CK's menu">
       <div class="ck-panel-head">

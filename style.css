@@ -890,7 +890,144 @@ body {
   }
 }
 
-/* 8. CK panel ============================================================= */
+/* 8. Phone menu ========================================================== */
+/* Where there is no hover, CK opens a full-screen menu: CK and × where he sits in
+   the notch, the pages big in the middle, a way to get in touch at the bottom. */
+.phone-menu {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0 24px max(28px, env(safe-area-inset-bottom));
+  border: 0;
+  color: var(--fg);
+  background: var(--frame);
+  opacity: 0;
+  transition: opacity 250ms ease-out;
+}
+.phone-menu[open] {
+  display: flex;
+  flex-direction: column;
+  opacity: 1;
+}
+@starting-style {
+  .phone-menu[open] {
+    opacity: 0;
+  }
+}
+.phone-menu.is-closing {
+  opacity: 0;
+  transition-duration: 200ms;
+}
+.phone-menu::backdrop {
+  background: transparent;
+}
+.phone-menu-top {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: var(--notch-h);
+}
+.phone-menu-ck {
+  width: 40px;
+  height: 40px;
+}
+.phone-menu-close {
+  position: absolute;
+  top: 50%;
+  left: calc(50% + 34px);
+  translate: 0 -50%;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--fg);
+  background: none;
+  border: 0;
+}
+.phone-menu-pages {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+.phone-menu-pages .nav-link {
+  display: block;
+  width: auto;
+  height: auto;
+  padding: 2px 8px;
+  font-size: clamp(30px, 9vw, 40px);
+  font-weight: 400;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  background: none;
+  border: 0;
+  box-shadow: none;
+  animation: menu-rise 360ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: calc(var(--i, 0) * 50ms + 60ms);
+}
+.phone-menu-pages .nav-link:nth-child(2) { --i: 1; }
+.phone-menu-pages .nav-link:nth-child(3) { --i: 2; }
+.phone-menu-pages .nav-link:nth-child(4) { --i: 3; }
+.phone-menu-pages .nav-link:nth-child(5) { --i: 4; }
+.phone-menu-pages .nav-link[aria-current] {
+  color: var(--fg);
+}
+@keyframes menu-rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+.phone-menu-foot {
+  display: grid;
+  gap: 16px;
+}
+.phone-menu-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.phone-menu-actions .btn {
+  justify-content: center;
+}
+.phone-menu-email {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 15px;
+}
+.phone-menu-email a {
+  color: var(--fg);
+  text-decoration: none;
+}
+.copy-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  color: var(--fg-muted);
+  background: none;
+  border: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-menu,
+  .phone-menu-pages .nav-link {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* 8b. CK panel (old) ====================================================== */
 /* Tapping CK in the notch drops this menu: everything the old sidebar held. */
 .ck-panel {
   position: fixed;
