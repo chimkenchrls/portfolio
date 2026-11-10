@@ -523,3 +523,27 @@ test('nextProject walks the case studies in order and wraps round', () => {
   assert.equal(nextProject([a, b, c], c), a, 'the last wraps to the first');
   assert.equal(nextProject([a, b], a), null, 'no other case study, no link');
 });
+
+test('notchCurrent lights one notch link per view', () => {
+  const { notchCurrent } = require('../script.js');
+  assert.equal(notchCurrent('home'), 'home');
+  assert.equal(notchCurrent('projects'), 'projects');
+  assert.equal(notchCurrent('case'), 'projects');
+  assert.equal(notchCurrent('stack'), 'stack');
+  assert.equal(notchCurrent('more'), 'more');
+  for (const v of ['resume', 'resources', 'links', 'guestbook', '', undefined]) assert.equal(notchCurrent(v), null);
+});
+
+test('posterTimeline follows the spec windows and ends at 2s', () => {
+  const t = require('../script.js').posterTimeline();
+  assert.deepEqual([t.light, t.photo, t.name, t.rest, t.notch], [[0, 600], [400, 1100], [900, 1600], [1400, 2000], [1600, 2000]]);
+  assert.equal(t.end, 2000);
+});
+
+test('panelLabel numbers the Home panels after the hero', () => {
+  const { panelLabel } = require('../script.js');
+  assert.equal(panelLabel('about'), '01 · About');
+  assert.equal(panelLabel('contact'), '05 · Contact');
+  assert.equal(panelLabel('home'), null);
+  assert.equal(panelLabel('nope'), null);
+});

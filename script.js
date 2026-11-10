@@ -753,6 +753,15 @@
     const raw = Math.min(1, Math.max(0, (Number(scrollY) || 0) / range));
     return raw * raw * (3 - 2 * raw);
   };
+  // Which notch link is lit for a page (case studies belong to Projects).
+  const notchCurrent = (view) => ({ home: 'home', projects: 'projects', case: 'projects', stack: 'stack', more: 'more' })[view] || null;
+  // The poster intro's windows in ms: lights on, photo steps in, name sweeps, the rest settles, notch drops.
+  const posterTimeline = () => ({ light: [0, 600], photo: [400, 1100], name: [900, 1600], rest: [1400, 2000], notch: [1600, 2000], end: 2000 });
+  // "01 · About" for the Home panels after the poster; null for Home itself or an unknown id.
+  const panelLabel = (id) => {
+    const index = SECTIONS.findIndex((section) => section.id === id);
+    return index > 0 ? `${String(index).padStart(2, '0')} · ${SECTIONS[index].label}` : null;
+  };
   // When each part of the hero intro starts (ms): the photo's tiles drop away, the
   // name types out as the photo completes, then the remaining lines rise in turn.
   const introTimeline = (letters, extras) => {
@@ -1265,7 +1274,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, scrollFling, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
+      skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, notchCurrent, posterTimeline, panelLabel, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
