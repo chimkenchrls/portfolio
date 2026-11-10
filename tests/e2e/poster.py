@@ -155,6 +155,16 @@ with sync_playwright() as pw:
     check("the bottom row's links all set the same way (DISCORD in capitals too)", len(looks) == 3 and all(l[1:] == looks[0][1:] for l in looks) and looks[0][1] == "uppercase", str(looks))
     check("no Scroll link on the poster", p.locator(".poster a[href='#about']").count() == 0)
     ctx.close()
+    ctx, p, errors = page(b, 390, 800, is_mobile=True, has_touch=True, reduced_motion="reduce")
+    poster, photo, social = box(p, ".poster"), box(p, ".poster-photo-phone"), box(p, ".poster-meta .social")
+    check("phone: the photo takes at most 56% of the poster's height", photo["h"] <= 0.56 * poster["h"], f"{photo['h']} of {poster['h']}")
+    middle = social["x"] + social["w"] / 2
+    check("phone: github / linkedin / discord are centred", abs(middle - (poster["x"] + poster["w"] / 2)) <= 2, f"{middle} vs {poster['x'] + poster['w'] / 2}")
+    if SHOTS: p.screenshot(path=f"{SHOTS}/poster-phone-small.png")
+    ctx.close()
+    ctx, p, errors = page(b, 375, 667, is_mobile=True, has_touch=True, reduced_motion="reduce")
+    if SHOTS: p.screenshot(path=f"{SHOTS}/poster-phone-short.png")
+    ctx.close()
     for theme, frame in (("dark", (0, 0, 0)), ("light", (0xdc, 0xdb, 0xd7))):
         ctx, p, errors = page(b, 1280, 800, theme=theme, reduced_motion="reduce")
         p.wait_for_timeout(500)
