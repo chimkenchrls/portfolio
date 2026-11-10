@@ -4119,6 +4119,159 @@ body.contact-open {
   border-radius: 4px;
 }
 
+/* 17b. Closing panel ====================================================== */
+/* Every page ends on one ask before the footer. While the page lifts off the
+   footer it shrinks a little and sinks into the frame colour (panelStack). */
+/* The wrap is opaque so nothing pinned further up (About) shows through the gaps. */
+.main > .closing-wrap {
+  position: relative;
+  z-index: 1;
+  max-width: none;
+  margin: 0 calc(-1 * var(--main-x)) -32px;
+  padding: 72px 8px 32px;
+  background: var(--bg);
+}
+.closing {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: min(78svh, 720px);
+  padding: 72px 24px;
+  overflow: clip;
+  text-align: center;
+  background: var(--bg-alt);
+  border-radius: 28px;
+  transform-origin: 50% 100%;
+}
+.closing-inner {
+  display: grid;
+  justify-items: center;
+  gap: 24px;
+  max-width: 760px;
+}
+.closing-pill {
+  margin: 0;
+  padding: 7px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.closing-title {
+  margin: 0;
+  font-size: clamp(40px, 7.4vw, 96px);
+  font-weight: 400;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.closing-text {
+  max-width: 44ch;
+  margin: 0;
+  font-size: clamp(16px, 1.6vw, 18px);
+  color: var(--fg-muted);
+  text-wrap: balance;
+}
+.closing-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  height: 52px;
+  margin-top: 8px;
+  padding: 0 10px 0 26px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--fg);
+  border: 0;
+  border-radius: 999px;
+  transition: scale 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.closing-button:active {
+  scale: 0.97;
+}
+.closing-arrow {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  background: color-mix(in srgb, var(--bg) 16%, transparent);
+  border-radius: 50%;
+}
+.closing-arrow svg {
+  width: 15px;
+  height: 15px;
+  transition: translate 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.closing-shade {
+  position: absolute;
+  inset: 0;
+  background: var(--frame);
+  opacity: 0;
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .closing-button:hover .closing-arrow svg {
+    translate: 2px -2px;
+  }
+}
+@media (max-width: 639.98px) {
+  .main > .closing-wrap {
+    padding: 48px 4px 32px;
+  }
+  .closing {
+    min-height: auto;
+    padding: 64px 20px;
+    border-radius: 24px;
+  }
+  .closing-inner {
+    gap: 20px;
+  }
+}
+
+/* The message form rises in, not pops (closing stays instant: its form moves back to the page). */
+.contact-dialog[open] {
+  transition:
+    opacity 220ms cubic-bezier(0.23, 1, 0.32, 1),
+    translate 220ms cubic-bezier(0.23, 1, 0.32, 1),
+    scale 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.contact-dialog[open]::backdrop {
+  transition: background-color 220ms ease-out;
+}
+@starting-style {
+  .contact-dialog[open] {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.97;
+  }
+  .contact-dialog[open]::backdrop {
+    background-color: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .contact-dialog[open] {
+    transition: opacity 160ms ease-out;
+  }
+  @starting-style {
+    .contact-dialog[open] {
+      translate: none;
+      scale: 1;
+    }
+  }
+  .closing-button,
+  .closing-arrow svg {
+    transition: none;
+  }
+}
+
 /* 18. Footer ============================================================== */
 /* On every page. The email is the headline across the width; under one rule,
    everything else sits in four short labelled columns (CK, Pages, Elsewhere,

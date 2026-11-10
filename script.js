@@ -4321,6 +4321,11 @@
       const dealing = moving && Boolean(grid) && cards.length > 1
         && getComputedStyle(grid).gridTemplateColumns.split(' ').length >= cards.length;
       const progress = dealing ? (0.9 * vh - grid.getBoundingClientRect().top) / (0.6 * vh) : 1;
+      // The closing panel sinks back as the page lifts off the footer (only while the footer is pinned under it).
+      const closing = $('.closing');
+      const footer = $('.footer');
+      const lifting = Boolean(closing && footer) && root.classList.contains('footer-reveal') && !prefersReducedMotion() && closing.getClientRects().length > 0;
+      const lifted = lifting ? clamp((vh - closing.getBoundingClientRect().bottom) / footer.offsetHeight, 0, 1) : 0;
       // Write.
       about.style.top = home ? `${stickTop(vh, aboutHeight)}px` : '';
       about.style.scale = moving ? String(coverZoom(top, vh)) : '';
@@ -4328,6 +4333,11 @@
       wordLight.apply(lit);
       // The screenshot in each featured card drifts a little slower than its card.
       imgs.forEach((img, i) => { img.style.translate = moving ? `0 ${drift[i]}px` : ''; });
+      if (closing) {
+        closing.style.scale = lifting ? String(Math.round((1 - 0.08 * lifted) * 1000) / 1000) : '';
+        const closingShade = $('.closing-shade', closing);
+        if (closingShade) closingShade.style.opacity = lifting ? String(Math.round(0.85 * lifted * 1000) / 1000) : '';
+      }
       // The certifications arrive stacked on the middle card and deal out into their row.
       cards.forEach((card, i) => {
         const { x, rotate } = dealing ? dealOffset(i, cards.length, progress) : { x: 0, rotate: 0 };
@@ -4530,9 +4540,10 @@
      ========================================================================== */
   const contactForm = (() => {
     const initDialog = (form, enabled) => {
-      const trigger = $('.sidebar-contact');
+      // Contact in the footer and Get in touch on the closing panel both open it.
+      const triggers = $$('.sidebar-contact, [data-contact]');
       const dialog = $('.contact-dialog');
-      if (!trigger || !dialog || typeof dialog.showModal !== 'function') return;
+      if (!triggers.length || !dialog || typeof dialog.showModal !== 'function') return;
       const stage = $('.contact-dialog-body', dialog);
       const fallback = $('.contact-dialog-fallback', dialog);
       let placeholder = null;
@@ -4543,7 +4554,7 @@
         return event.clientX < rect.left || event.clientX > rect.right
           || event.clientY < rect.top || event.clientY > rect.bottom;
       };
-      trigger.addEventListener('click', (event) => {
+      const openFrom = (trigger, event) => {
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         if (dialog.open) return;
@@ -4575,7 +4586,8 @@
         document.body.classList.add('contact-open');
         // The close button receives focus; fields wait for the visitor's choice.
         dialog.showModal();
-      });
+      };
+      triggers.forEach((trigger) => trigger.addEventListener('click', (event) => openFrom(trigger, event)));
       $('.contact-dialog-close', dialog).addEventListener('click', () => dialog.close());
       dialog.addEventListener('keydown', (event) => {
         event.stopPropagation();

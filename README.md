@@ -85,6 +85,8 @@ three projects named in `featured`, with View all projects under them; pixel CK 
 up on the panel's edge and opens the chat. Stack rows draw their lines in, and the
 certifications deal out from a stack as they arrive.
 
+Every page ends on a closing panel just above the footer: "Open to OJT / Internship", **Let’s build something together.**, one line about what you are looking for, and Get in touch, which opens the message form (it rises in). While the page lifts off the footer the panel shrinks a little and sinks into the frame colour.
+
 A big footer on every page holds what CK's menu used to: CK to poke with the shared
 count, the email as a big headline with a copy button, then four labelled columns (CK, Pages, Elsewhere: GitHub · LinkedIn · Résumé · Links · Contact, and With CK: Chat with me, Play
 chimken, the theme toggle), and the time in
