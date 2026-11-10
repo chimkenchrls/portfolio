@@ -3161,6 +3161,8 @@
       const poster = $('.poster');
       if (!poster) return;
       const touch = window.matchMedia('(hover: none)');
+      // Touch screens cannot hover to see him in colour, so they start in colour and a tap shows black and white.
+      if (touch.matches) poster.classList.add('is-colour');
       poster.addEventListener('click', (event) => {
         // A tap during the intro only skips it (see posterIntro); links and buttons keep their own job.
         if (!touch.matches || root.classList.contains('intro-play') || posterIntro.justSkipped()) return;

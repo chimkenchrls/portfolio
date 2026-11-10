@@ -1292,15 +1292,20 @@ body {
   }
   .poster-photo-phone {
     display: block;
-    inset: max(64px, 14%) 0 auto;
-    height: 54%;
+    inset: max(64px, 22%) 0 auto;
+    height: 44%;
     object-position: 44% 0;
     -webkit-mask-image: linear-gradient(#000 72%, transparent 98%);
     mask-image: linear-gradient(#000 72%, transparent 98%);
   }
   /* On phones the name sits below him, so it never crosses the photo. */
-  .poster .poster-name-over {
+  .poster .poster-name-over,
+  .poster.is-colour .poster-name-over {
     display: none;
+  }
+  .poster.is-colour .poster-name {
+    color: #ffffff;
+    mix-blend-mode: difference;
   }
   .poster-name {
     inset: auto 0 calc(84px + var(--overlap));
