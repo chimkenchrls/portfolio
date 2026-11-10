@@ -119,5 +119,27 @@ with sync_playwright() as pw:
     check("reduced motion: the screenshots do not drift", still)
     check("reduced motion: the cards and rows are simply there", p.evaluate("[...document.querySelectorAll('#projects .project-feature, #stack .stack-group')].every(n => getComputedStyle(n).opacity === '1')"))
     ctx.close()
+
+    # Certifications deal out ----------------------------------------------------
+    centres = "[...document.querySelectorAll('#certifications .certification')].map(n => { const r = n.getBoundingClientRect(); return [Math.round(r.left + r.width / 2), getComputedStyle(n).transform]; })"
+    ctx, p, errors = new_page(b, 1280, 800)
+    at(p, "#certifications .certification-grid", 0.95)
+    stacked = p.evaluate(centres)
+    check("arriving, the three cards sit stacked on the middle one", len(stacked) == 3 and abs(stacked[0][0] - stacked[1][0]) <= 40 and abs(stacked[2][0] - stacked[1][0]) <= 40, str(stacked))
+    at(p, "#certifications .certification-grid", 0.2)
+    dealt = p.evaluate(centres)
+    check("scrolled up, they are dealt into a row, straight", len(dealt) == 3 and dealt[0][0] < dealt[1][0] - 100 and dealt[2][0] > dealt[1][0] + 100 and all(t in ("none", "matrix(1, 0, 0, 1, 0, 0)") for _, t in dealt), str(dealt))
+    check("deal: no errors", not errors, str(errors))
+    ctx.close()
+    for opts in ({"reduced_motion": "reduce"},):
+        ctx, p, errors = new_page(b, 1280, 800, **opts)
+        at(p, "#certifications .certification-grid", 0.95)
+        row = p.evaluate(centres)
+        check("reduced motion: they are in their row at once", row[0][0] < row[1][0] - 100 and all(t in ("none", "matrix(1, 0, 0, 1, 0, 0)") for _, t in row), str(row))
+        ctx.close()
+    ctx, p, errors = new_page(b, 390, 844, is_mobile=True, has_touch=True)
+    at(p, "#certifications .certification-grid", 0.9)
+    check("phone (cards stacked in a column): no dealing", all(t in ("none", "matrix(1, 0, 0, 1, 0, 0)") for _, t in p.evaluate(centres)))
+    ctx.close()
     b.close()
 finish()

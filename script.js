@@ -3073,7 +3073,8 @@
 
   const reveal = (() => {
     const SINGLE = ['.github-panel', '.contact-intro', '.terminal', '.terminal-chips', '.divider', '.timeline-block'];
-    const STAGGERED = ['.stack-group', '.project', '.project-feature-item', '.certification', '.outside-text', '.deck'];
+    // (Certifications have their own entrance: they deal out, in panelStack.)
+    const STAGGERED = ['.stack-group', '.project', '.project-feature-item', '.outside-text', '.deck'];
     const STAGGER_MS = 60;
     const STAGGER_CAP = 8;
 
@@ -4315,6 +4316,17 @@
         const r = img.parentElement.getBoundingClientRect();
         const from = (r.top + r.height / 2 - window.innerHeight / 2) / window.innerHeight;
         img.style.translate = `0 ${Math.round(Math.max(-1, Math.min(1, from)) * -12)}px`;
+      });
+      // The certifications arrive stacked on the middle card and deal out into their row.
+      const grid = $('#certifications .certification-grid');
+      const cards = $$('#certifications .certification');
+      const inRow = Boolean(grid) && getComputedStyle(grid).gridTemplateColumns.split(' ').length >= cards.length;
+      const dealing = moving && inRow && cards.length > 1;
+      const progress = grid ? (0.9 * window.innerHeight - grid.getBoundingClientRect().top) / (0.6 * window.innerHeight) : 1;
+      cards.forEach((card, i) => {
+        const { x, rotate } = dealing ? dealOffset(i, cards.length, progress) : { x: 0, rotate: 0 };
+        card.style.transform = x || rotate ? `translateX(${x}%) rotate(${rotate}deg)` : '';
+        card.style.zIndex = dealing ? String(cards.length - Math.abs(i - (cards.length - 1) / 2)) : '';
       });
     };
     const schedule = () => {
