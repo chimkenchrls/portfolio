@@ -4297,32 +4297,38 @@
      ========================================================================== */
   const panelStack = (() => {
     let queued = false;
+    // All measuring first, then all writing, so a frame costs one style pass.
     const update = () => {
       queued = false;
       const about = $('#about');
       const projects = $('#projects');
       if (!about || !projects) return;
+      const vh = window.innerHeight;
       const shade = $('.cover-shade', about);
       const home = root.classList.contains('is-home');
       const moving = home && !prefersReducedMotion();
-      const top = projects.getBoundingClientRect().top;
-      about.style.top = home ? `${stickTop(window.innerHeight, about.offsetHeight)}px` : '';
-      about.style.scale = moving ? String(coverZoom(top, window.innerHeight)) : '';
-      if (shade) shade.style.opacity = moving ? String(coverShade(top, window.innerHeight)) : '';
-      wordLight.update();
-      // The screenshot in each featured card drifts a little slower than its card.
-      $$('#projects .project-feature img').forEach((img) => {
-        if (!moving) { img.style.translate = ''; return; }
-        const r = img.parentElement.getBoundingClientRect();
-        const from = (r.top + r.height / 2 - window.innerHeight / 2) / window.innerHeight;
-        img.style.translate = `0 ${Math.round(Math.max(-1, Math.min(1, from)) * -12)}px`;
-      });
-      // The certifications arrive stacked on the middle card and deal out into their row.
+      const imgs = $$('#projects .project-feature img');
       const grid = $('#certifications .certification-grid');
       const cards = $$('#certifications .certification');
-      const inRow = Boolean(grid) && getComputedStyle(grid).gridTemplateColumns.split(' ').length >= cards.length;
-      const dealing = moving && inRow && cards.length > 1;
-      const progress = grid ? (0.9 * window.innerHeight - grid.getBoundingClientRect().top) / (0.6 * window.innerHeight) : 1;
+      // Read.
+      const top = moving ? projects.getBoundingClientRect().top : 0;
+      const aboutHeight = home ? about.offsetHeight : 0;
+      const lit = wordLight.measure();
+      const drift = moving ? imgs.map((img) => {
+        const r = img.parentElement.getBoundingClientRect();
+        return Math.round(Math.max(-1, Math.min(1, (r.top + r.height / 2 - vh / 2) / vh)) * -12);
+      }) : [];
+      const dealing = moving && Boolean(grid) && cards.length > 1
+        && getComputedStyle(grid).gridTemplateColumns.split(' ').length >= cards.length;
+      const progress = dealing ? (0.9 * vh - grid.getBoundingClientRect().top) / (0.6 * vh) : 1;
+      // Write.
+      about.style.top = home ? `${stickTop(vh, aboutHeight)}px` : '';
+      about.style.scale = moving ? String(coverZoom(top, vh)) : '';
+      if (shade) shade.style.opacity = moving ? String(coverShade(top, vh)) : '';
+      wordLight.apply(lit);
+      // The screenshot in each featured card drifts a little slower than its card.
+      imgs.forEach((img, i) => { img.style.translate = moving ? `0 ${drift[i]}px` : ''; });
+      // The certifications arrive stacked on the middle card and deal out into their row.
       cards.forEach((card, i) => {
         const { x, rotate } = dealing ? dealOffset(i, cards.length, progress) : { x: 0, rotate: 0 };
         card.style.transform = x || rotate ? `translateX(${x}%) rotate(${rotate}deg)` : '';
@@ -4370,19 +4376,21 @@
   // About's sentence lights up word by word as it scrolls up (all at once off Home or under reduced motion).
   const wordLight = (() => {
     let lit = -1;
-    const update = () => {
+    // How many words should be lit (a read), then light them (a write).
+    const measure = () => {
       const box = $('#about .statement');
-      if (!box) return;
-      const words = $$('.word', box);
+      if (!box) return null;
+      const count = $$('.word', box).length;
+      if (!root.classList.contains('is-home') || prefersReducedMotion()) return count;
       const r = box.getBoundingClientRect();
-      const count = !root.classList.contains('is-home') || prefersReducedMotion()
-        ? words.length
-        : litWords(r.top, r.height, window.innerHeight, words.length);
-      if (count === lit) return;
-      lit = count;
-      words.forEach((word, i) => word.classList.toggle('is-lit', i < count));
+      return litWords(r.top, r.height, window.innerHeight, count);
     };
-    return { update };
+    const apply = (count) => {
+      if (count === null || count === lit) return;
+      lit = count;
+      $$('#about .statement .word').forEach((word, i) => word.classList.toggle('is-lit', i < count));
+    };
+    return { measure, apply };
   })();
 
   /* ==========================================================================
