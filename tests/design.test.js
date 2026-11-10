@@ -204,10 +204,16 @@ test('the head marks Home and starts the intro only on a plain, motion-friendly 
   assert.match(head, /history\.scrollRestoration = "manual";/, 'a reload still starts at the poster');
 });
 
-// Poster redesign: Home as ink and paper panels.
-test('Home panels alternate paper and ink in section order', () => {
-  const tone = (id) => (new RegExp(`<section[^>]*class="([^"]*)"[^>]*\\sid="${id}"|<section[^>]*\\sid="${id}"[^>]*class="([^"]*)"`).exec(html.replace(/\n\s*/g, ' ')) || []).slice(1).join('');
-  assert.deepEqual(['about', 'projects', 'stack', 'certifications', 'contact'].map((id) => (/panel-(paper|ink)/.exec(tone(id)) || [])[1]), ['paper', 'ink', 'paper', 'ink', 'paper']);
+// Home in one tone: no ink and paper panels.
+test('Home sections use the page tokens, not ink and paper tones', () => {
+  assert.doesNotMatch(html, /panel-(paper|ink)/);
+  assert.doesNotMatch(css, /--ink|--paper-|--paper:|panel-(paper|ink)/);
+});
+
+test('the frame is fixed to the window: a rounded hole the page scrolls under', () => {
+  assert.match(css, /\.frame::after \{[^}]*position:\s*fixed/);
+  assert.match(css, /\.frame::after \{[^}]*pointer-events:\s*none/);
+  assert.match(css, /\.frame::after \{[^}]*box-shadow:\s*0 0 0 100vmax var\(--frame\)/);
 });
 
 test('each Home panel is labelled by panelLabel and titled with its real name', () => {
@@ -220,12 +226,8 @@ test('each Home panel is labelled by panelLabel and titled with its real name', 
   }
 });
 
-test('panel tokens exist in both themes and read well', () => {
-  for (const rule of [light, dark]) {
-    for (const name of ['--ink', '--ink-2', '--ink-fg', '--ink-mut', '--ink-line', '--paper', '--paper-2', '--paper-fg', '--paper-mut', '--paper-line', '--frame']) token(rule, name);
-  }
-  assert.ok(contrast(token(light, '--paper-fg'), token(light, '--paper')) >= 7);
-  assert.ok(contrast(token(light, '--ink-fg'), token(light, '--ink')) >= 7);
+test('the frame colour exists in both themes', () => {
+  for (const rule of [light, dark]) token(rule, '--frame');
 });
 
 test('only About stays pinned, so Projects slides over it; the rest scrolls normally', () => {

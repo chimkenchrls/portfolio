@@ -54,16 +54,6 @@
 
   --topbar-h: 56px;
   --frame: #dcdbd7;
-  --ink: #0f0f11;
-  --ink-2: #19191c;
-  --ink-fg: #ececee;
-  --ink-mut: #8b8b91;
-  --ink-line: #26262b;
-  --paper: #f3f2f0;
-  --paper-2: #ffffff;
-  --paper-fg: #111113;
-  --paper-mut: #6e6e73;
-  --paper-line: #e2e1de;
   --notch-h: 52px;
   --main-top: 48px; /* .main's top padding */
   --notch-fg: #55555a;
@@ -85,16 +75,6 @@
   --status: #5fd08a;
   --surface: #19191c;
   --frame: #000000;
-  --ink: #0f0f11;
-  --ink-2: #19191c;
-  --ink-fg: #ececee;
-  --ink-mut: #8b8b91;
-  --ink-line: #26262b;
-  --paper: #f3f2f0;
-  --paper-2: #ffffff;
-  --paper-fg: #111113;
-  --paper-mut: #6e6e73;
-  --paper-line: #e2e1de;
   --notch-fg: #a9a9ae;
   --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
   --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
@@ -117,16 +97,6 @@
   --status: #5fd08a;
   --surface: #19191c;
   --frame: #000000;
-  --ink: #0f0f11;
-  --ink-2: #19191c;
-  --ink-fg: #ececee;
-  --ink-mut: #8b8b91;
-  --ink-line: #26262b;
-  --paper: #f3f2f0;
-  --paper-2: #ffffff;
-  --paper-fg: #111113;
-  --paper-mut: #6e6e73;
-  --paper-line: #e2e1de;
   --notch-fg: #a9a9ae;
   --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
   --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
@@ -457,12 +427,23 @@ body {
   background-color: var(--frame);
 }
 .frame {
+  --frame-inset: 12px;
   position: relative;
-  min-height: calc(100vh - 24px);
-  margin: 12px;
+  min-height: 100vh;
+  padding: var(--frame-inset) var(--frame-inset) 0;
   background: var(--bg);
-  border-radius: 28px;
   isolation: isolate;
+}
+/* The frame itself stays put: a rounded hole cut into --frame, laid over the page,
+   so the corners never scroll away. Clicks pass through it. */
+.frame::after {
+  content: "";
+  position: fixed;
+  inset: var(--frame-inset);
+  z-index: 30;
+  border-radius: 28px;
+  box-shadow: 0 0 0 100vmax var(--frame);
+  pointer-events: none;
 }
 .notch {
   position: sticky;
@@ -1009,7 +990,9 @@ body {
     --notch-h: 44px;
   }
   .frame {
-    margin: 8px;
+    --frame-inset: 8px;
+  }
+  .frame::after {
     border-radius: 32px;
   }
   .notch {
@@ -1400,41 +1383,7 @@ body {
 }
 
 /* 11. Panels ============================================================== */
-/* After the poster, each Home section is a rounded panel that slides up over the
-   one before it, alternating paper and ink. Inside a panel the page tokens take
-   that panel's tone, so the components in it follow without their own rules. */
-html.is-home .panel-paper {
-  --bg: var(--paper);
-  --surface: var(--paper-2);
-  --bg-alt: color-mix(in srgb, var(--paper) 92%, var(--paper-fg));
-  --fg: var(--paper-fg);
-  --fg-muted: var(--paper-mut);
-  --border: var(--paper-line);
-  --panel-edge: var(--paper-line);
-  --panel-frame: var(--paper);
-  --panel-shine: #ffffff;
-  --control-start: #ffffff;
-  --control-end: color-mix(in srgb, var(--paper) 96%, var(--paper-fg));
-  --cursor: url("./assets/icons/cursor-on-light.svg") 4 3, auto;
-  --cursor-link: url("./assets/icons/cursor-on-light.svg") 4 3, pointer;
-  color-scheme: light;
-}
-html.is-home .panel-ink {
-  --bg: var(--ink);
-  --surface: var(--ink-2);
-  --bg-alt: #212125;
-  --fg: var(--ink-fg);
-  --fg-muted: var(--ink-mut);
-  --border: var(--ink-line);
-  --panel-edge: var(--ink-line);
-  --panel-frame: var(--ink-2);
-  --panel-shine: color-mix(in srgb, var(--ink-2) 84%, white);
-  --control-start: color-mix(in srgb, var(--ink-2) 98%, white);
-  --control-end: color-mix(in srgb, var(--ink-2) 96%, var(--ink-fg));
-  --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
-  --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
-  color-scheme: dark;
-}
+/* After the poster, each Home section is a wide panel in the page's own tone. */
 html.is-home .main > .panel {
   position: relative;
   max-width: none;

@@ -150,6 +150,15 @@ with sync_playwright() as pw:
     if SHOTS: p.screenshot(path=f"{SHOTS}/poster-tablet.png")
     ctx.close()
 
+    for theme, frame in (("dark", (0, 0, 0)), ("light", (0xdc, 0xdb, 0xd7))):
+        ctx, p, errors = page(b, 1280, 800, theme=theme, reduced_motion="reduce")
+        p.wait_for_timeout(500)
+        corners = lambda: [shot(p, {"x": x, "y": y, "width": 1, "height": 1}).getpixel((0, 0)) for x, y in ((3, 400), (1276, 400), (640, 796))]
+        check(f"{theme}: the frame shows on both sides and the bottom at the top of the page", all(c == frame for c in corners()), str(corners()))
+        p.evaluate("scrollTo(0, 2400)"); p.wait_for_timeout(200)
+        check(f"{theme}: and still there after scrolling (fixed to the window)", all(c == frame for c in corners()), str(corners()))
+        check(f"{theme}: About uses the page background", p.evaluate("getComputedStyle(document.querySelector('#about')).backgroundColor === getComputedStyle(document.querySelector('.frame')).backgroundColor"))
+        ctx.close()
     ctx, p, errors = page(b, 1280, 800, reduced_motion="reduce")
     p.wait_for_timeout(500)
     check("1280×800: the poster fills the first screen (About starts below it)", box(p, "#about")["y"] >= 799, str(box(p, "#about")))
