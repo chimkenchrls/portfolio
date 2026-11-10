@@ -155,7 +155,10 @@ with sync_playwright() as pw:
         p.wait_for_timeout(500)
         corners = lambda: [shot(p, {"x": x, "y": y, "width": 1, "height": 1}).getpixel((0, 0)) for x, y in ((3, 400), (1276, 400), (640, 796))]
         check(f"{theme}: the frame shows on both sides and the bottom at the top of the page", all(c == frame for c in corners()), str(corners()))
+        notch = lambda: p.evaluate("(() => { const r = document.querySelector('.notch').getBoundingClientRect(); return [r.top, r.height]; })()")
+        before = notch()
         p.evaluate("scrollTo(0, 2400)"); p.wait_for_timeout(200)
+        check(f"{theme}: the notch keeps its place and height when scrolling", notch() == before, f"{before} -> {notch()}")
         check(f"{theme}: and still there after scrolling (fixed to the window)", all(c == frame for c in corners()), str(corners()))
         check(f"{theme}: About uses the page background", p.evaluate("getComputedStyle(document.querySelector('#about')).backgroundColor === getComputedStyle(document.querySelector('.frame')).backgroundColor"))
         ctx.close()
