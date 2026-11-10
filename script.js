@@ -62,17 +62,6 @@
 
   const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
-  // Keep a pointer preview clear of the cursor and inside the viewport.
-  const projectPreviewPosition = ({ x, y, width, height, viewportWidth, viewportHeight }) => {
-    const gutter = 12;
-    const left = x + 20 + width <= viewportWidth - gutter ? x + 20 : x - width - 20;
-    const top = y + 24 + height <= viewportHeight - gutter ? y + 24 : y - height - 24;
-    return {
-      x: clamp(left, gutter, Math.max(gutter, viewportWidth - width - gutter)),
-      y: clamp(top, gutter, Math.max(gutter, viewportHeight - height - gutter)),
-    };
-  };
-
   // How long before a message appears, and how long the bot "types" first (ms).
   const chatTiming = (message) => {
     const length = String((message && message.text) || '').length;
@@ -1253,7 +1242,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, stickTop, coverZoom, coverShade, aboutFacts, featuredProjects, litWords, dealOffset, footerFits, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
+      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, stickTop, coverZoom, coverShade, aboutFacts, featuredProjects, litWords, dealOffset, footerFits, guestbookProblems, guestbookPage, safeDemo, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
@@ -1692,7 +1681,7 @@
       });
       return box;
     };
-    const projectRow = (project) => {
+    const projectFeature = (project) => {
       const shots = projectShots(project);
       const avatar = project.chat && SHOT_PATH.test(String(project.chat.botAvatar)) ? project.chat.botAvatar : null;
       const picture = shots.length ? (shots.find((shot) => shot.kind === 'desktop') || shots[0]).src : avatar;
@@ -1712,19 +1701,18 @@
       line.append(el('h3', 'project-title', project.title), el('span', project.status === 'done' ? 'project-meta' : 'badge', project.meta));
       const main = el('span', 'project-main');
       main.append(line, el('span', 'project-summary', project.summary || project.description || 'Details coming soon.'));
-      const link = el('a', 'project-row-link');
+      const link = el('a', 'project-feature');
       link.href = projectLink(project);
-      link.dataset.projectPreview = projectSlug(project.title);
       link.append(thumb, main);
       const tag = project.kind || (project.tags || []).find(Boolean);
       if (tag) link.append(el('span', 'project-kind', tag));
-      const li = el('li', 'project-row');
+      const li = el('li', 'project-feature-item');
       li.append(link);
       return li;
     };
-    // Home: rows. The Projects page: every full card. A case study page
+    // Home: the featured cards (data.js featured). The Projects page: every full card. A case study page
     // (?view=case&p=<slug>): that one project's card with its case study under it.
-    const projects = ({ projects: items = [], stack = [] }) => {
+    const projects = ({ projects: items = [], stack = [], featured = null }) => {
       if (root.classList.contains('view-case')) {
         const wanted = `project-${new URLSearchParams(window.location.search).get('p')}`;
         const one = items.find((project) => project.caseStudy && projectSlug(project.title) === wanted);
@@ -1732,7 +1720,8 @@
         // An unknown ?p= is the Projects page.
         root.classList.replace('view-case', 'view-projects');
       }
-      return items.map(root.classList.contains('view-projects') ? projectCard : projectRow);
+      if (root.classList.contains('view-projects')) return items.map(projectCard);
+      return featuredProjects(items, featured).map(projectFeature);
     };
     // A project's screenshots or replayed chat, whichever it has.
     const projectMedia = (project) => {
@@ -1985,11 +1974,6 @@
     };
     const moreHeading = ({ more }) => pageHeading(more);
     const projectsHeading = ({ projectsPage }) => pageHeading(projectsPage, 'projects-page-intro');
-    const projectListHeading = ({ projectsPage, projects = [] }) => {
-      if (/\bview-/.test(root.className) || !projects.length) return [];
-      const count = el('span', 'project-list-count', String(projects.length).padStart(2, '0'));
-      return [el('h3', null, projectsPage.homeTitle || projectsPage.title), count];
-    };
     const stackHeading = ({ stackPage }) => pageHeading(stackPage, 'stack-page-intro');
     // The short line beside a Home panel's title, only where data.js has one.
     const projectsIntro = ({ projectsPage }) => (projectsPage && projectsPage.intro ? [document.createTextNode(projectsPage.intro)] : []);
@@ -2240,7 +2224,7 @@
       li.append(el('span', 'fact-value', value), el('span', 'fact-caption', caption));
       return li;
     });
-    const renderers = { statement, aboutFacts: facts, projectsIntro, stackIntro, social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, resources, resourcesHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
+    const renderers = { statement, aboutFacts: facts, projectsIntro, stackIntro, social, experience, education, stack, stackHeading, projects, projectsHeading, certifications, outside, moreHeading, personal, resources, resourcesHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -2399,7 +2383,7 @@
           showLoadError(container);
         }
       });
-      $$('[data-render="projects"], [data-render="stack"], [data-render="projectListHeading"]').forEach((container) => {
+      $$('[data-render="projects"], [data-render="stack"]').forEach((container) => {
         variants.set(container, { mode: modeFor(container.dataset.render), cache: new Map() });
       });
       headings(data);
@@ -3088,8 +3072,8 @@
      ========================================================================== */
 
   const reveal = (() => {
-    const SINGLE = ['.github-panel', '.contact-intro', '.terminal', '.terminal-chips', '.divider', '.about-bio', '.timeline-block'];
-    const STAGGERED = ['.stack-group', '.project', '.certification', '.outside-text', '.deck'];
+    const SINGLE = ['.github-panel', '.contact-intro', '.terminal', '.terminal-chips', '.divider', '.timeline-block'];
+    const STAGGERED = ['.stack-group', '.project', '.project-feature-item', '.certification', '.outside-text', '.deck'];
     const STAGGER_MS = 60;
     const STAGGER_CAP = 8;
 
@@ -3458,7 +3442,7 @@
           title: textOf('.poster-title'),
           location: textOf('.poster-location').replace(/ · GMT\+8$/, ''),
           status: box.dataset.status || null,
-          bio: $$('.about-bio p').map((node) => node.textContent.replace(/\s+/g, ' ').trim()),
+          bio: [textOf('#about .statement')].filter(Boolean),
         },
       };
       let cursor = 0;
@@ -3646,146 +3630,6 @@
       }
     };
 
-    return { init };
-  })();
-
-  /* ==========================================================================
-     15b. Home project previews — one mouse-following media layer
-     ========================================================================== */
-
-  const projectHover = (() => {
-    let started = false;
-    const init = (data) => {
-      const links = $$('.project-row-link');
-      if (started || !links.length || !data || !Array.isArray(data.projects)) return;
-      started = true;
-      const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-      const projects = new Map(data.projects.map((project) => [projectSlug(project.title), project]));
-      const layer = el('div', 'project-hover');
-      layer.hidden = true;
-      layer.setAttribute('aria-hidden', 'true');
-      layer.inert = true;
-      const stage = el('div', 'project-hover-stage');
-      const image = el('img');
-      image.alt = '';
-      image.decoding = 'async';
-      const video = el('video');
-      video.muted = true;
-      video.defaultMuted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.preload = 'none';
-      video.hidden = true;
-      const conversation = el('div', 'chat project-hover-chat');
-      conversation.hidden = true;
-      const caption = el('p', 'project-hover-caption');
-      stage.append(image, video, conversation);
-      layer.append(stage, caption);
-      document.body.append(layer);
-      let active = null;
-      let suppressedLink = null;
-      let timer = null;
-      let frame = null;
-      let point = { x: 0, y: 0 };
-
-      const hide = () => {
-        window.clearTimeout(timer);
-        timer = null;
-        if (frame !== null) cancelAnimationFrame(frame);
-        frame = null;
-        active = null;
-        layer.hidden = true;
-        video.pause();
-        if (video.hasAttribute('src')) {
-          video.removeAttribute('src');
-          video.load();
-        }
-        video.hidden = true;
-        image.hidden = false;
-        conversation.hidden = true;
-        conversation.replaceChildren();
-      };
-      const paint = () => {
-        frame = null;
-        if (layer.hidden) return;
-        const { width, height } = layer.getBoundingClientRect();
-        const position = projectPreviewPosition({ ...point, width, height, viewportWidth: innerWidth, viewportHeight: innerHeight });
-        layer.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
-      };
-      const schedule = () => {
-        if (frame === null && !layer.hidden && !prefersReducedMotion()) frame = requestAnimationFrame(paint);
-      };
-      const begin = (event, link, project) => {
-        if (event.pointerType === 'touch' || !finePointer.matches || suppressedLink === link || document.hidden || $('dialog[open]')) return;
-        point = { x: event.clientX, y: event.clientY };
-        if (active && active.link === link) { schedule(); return; }
-        hide();
-        const demo = safeDemo(project.demo) ? project.demo : null;
-        const shots = projectShots(project);
-        const scenes = !demo && project.chat && Array.isArray(project.chat.scenes) ? project.chat.scenes : [];
-        const scene = scenes.find((item) => item.label === project.chat.previewScene) || scenes[0];
-        const avatar = project.chat && SHOT_PATH.test(String(project.chat.botAvatar)) ? project.chat.botAvatar : null;
-        const picture = demo ? demo.poster : shots.length ? (shots.find((shot) => shot.kind === 'desktop') || shots[0]).src : avatar;
-        if (!picture && !scene) return;
-        active = { link, project };
-        timer = window.setTimeout(() => {
-          timer = null;
-          if (!active || active.link !== link) return;
-          layer.classList.toggle('is-chat', Boolean(scene));
-          stage.classList.toggle('is-chat', Boolean(scene));
-          stage.classList.toggle('is-avatar', !scene && !demo && !shots.length);
-          if (scene) {
-            const bar = el('div', 'chat-bar');
-            bar.append(el('span', 'chat-title', project.chat.bot), el('span', 'chat-scene', scene.label));
-            const log = el('div', 'chat-log');
-            scene.messages.filter((message) => message.from !== 'system').slice(0, 2)
-              .forEach((message) => log.append(chatReplay.message(message, project.chat)));
-            conversation.append(bar, log);
-            conversation.hidden = false;
-            image.hidden = true;
-          } else image.src = picture;
-          caption.textContent = project.title;
-          layer.hidden = false;
-          paint();
-          if (demo && !prefersReducedMotion()) {
-            video.poster = demo.poster;
-            video.src = demo.src;
-            video.hidden = false;
-            video.play().catch(() => { /* the poster remains if autoplay is refused */ });
-          }
-        }, 140);
-      };
-      video.addEventListener('playing', () => {
-        if (!layer.hidden && !video.paused && !prefersReducedMotion()) image.hidden = true;
-      });
-      video.addEventListener('error', () => {
-        if (!video.hasAttribute('src')) return;
-        video.hidden = true;
-        image.hidden = false;
-      });
-      links.forEach((link) => {
-        const project = projects.get(link.dataset.projectPreview);
-        if (!project) return;
-        link.addEventListener('pointerenter', (event) => begin(event, link, project));
-        link.addEventListener('pointermove', (event) => begin(event, link, project), { passive: true });
-        link.addEventListener('pointerleave', () => {
-          if (suppressedLink === link) suppressedLink = null;
-          if (active && active.link === link) hide();
-        });
-      });
-      document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') suppressedLink = active && active.link;
-        hide();
-      });
-      document.addEventListener('pointerdown', hide, { passive: true });
-      document.addEventListener('visibilitychange', hide);
-      document.addEventListener('portfolio:navigate', hide);
-      window.addEventListener('scroll', hide, { passive: true, capture: true });
-      window.addEventListener('resize', hide);
-      window.addEventListener('blur', hide);
-      finePointer.addEventListener('change', hide);
-      motionQuery.addEventListener('change', hide);
-    };
     return { init };
   })();
 
@@ -4465,6 +4309,13 @@
       about.style.scale = moving ? String(coverZoom(top, window.innerHeight)) : '';
       if (shade) shade.style.opacity = moving ? String(coverShade(top, window.innerHeight)) : '';
       wordLight.update();
+      // The screenshot in each featured card drifts a little slower than its card.
+      $$('#projects .project-feature img').forEach((img) => {
+        if (!moving) { img.style.translate = ''; return; }
+        const r = img.parentElement.getBoundingClientRect();
+        const from = (r.top + r.height / 2 - window.innerHeight / 2) / window.innerHeight;
+        img.style.translate = `0 ${Math.round(Math.max(-1, Math.min(1, from)) * -12)}px`;
+      });
     };
     const schedule = () => {
       if (queued) return;
@@ -4478,6 +4329,28 @@
       motionQuery.addEventListener('change', schedule);
       document.addEventListener('portfolio:navigate', schedule);
       if (typeof ResizeObserver === 'function' && $('#about')) new ResizeObserver(schedule).observe($('#about'));
+    };
+    return { init };
+  })();
+
+  // Pixel CK pops up over the covering panel's edge when it arrives; on touch he wiggles once.
+  const peekCk = (() => {
+    const init = () => {
+      const peek = $('.peek-ck');
+      const panel = $('.cover-panel');
+      if (!peek || !panel) return;
+      if (prefersReducedMotion() || !('IntersectionObserver' in window)) { peek.classList.add('is-up'); return; }
+      let wiggled = false;
+      new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          peek.classList.toggle('is-up', entry.isIntersecting);
+          if (entry.isIntersecting && !wiggled && window.matchMedia('(hover: none)').matches) {
+            wiggled = true;
+            peek.classList.add('is-wiggle');
+            peek.addEventListener('animationend', () => peek.classList.remove('is-wiggle'), { once: true });
+          }
+        });
+      }, { rootMargin: '0px 0px -15% 0px' }).observe(panel);
     };
     return { init };
   })();
@@ -4999,7 +4872,6 @@
         if (route.view !== 'home') root.classList.add(`view-${route.view}`);
         render.changeView(data);
         chatReplay.init();
-        projectHover.init(data);
         guestbook.init(data);
         labelDecode.init();
         nav.sync();
@@ -5113,7 +4985,6 @@
     githubGraph.init(data);
     photoDeck.init(data);
     terminal.init(data);
-    projectHover.init(data);
     shotViewer.init();
     chatReplay.init();
     portfolioAssistant.init(data);
@@ -5121,6 +4992,7 @@
     nightSky.init();
     posterIntro.init();
     panelStack.init();
+    peekCk.init();
     clickBurst.init();
     contactForm.init(data);
     guestbook.init(data);

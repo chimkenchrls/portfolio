@@ -90,7 +90,7 @@ with sync_playwright() as pw:
     check('Resources lists its four groups, links opening in a new tab', page.locator('#resources .links-group:visible').count() == 4 and page.locator('#resources a.profile-link[target="_blank"]').count() == 12)
     page.click('.notch-ck')
     page.wait_for_function('document.documentElement.classList.contains("is-home")')
-    check('Home restores every project card under the same notch', page.locator('.project-row:visible').count() == 5 and page.evaluate('shellProof.notch === document.querySelector(".notch")') and page.get_attribute('.notch [aria-current]', 'data-notch') == 'home')
+    check('Home restores its featured cards under the same notch', page.locator('.project-feature:visible').count() == 3 and page.evaluate('shellProof.notch === document.querySelector(".notch")') and page.get_attribute('.notch [aria-current]', 'data-notch') == 'home')
     if SHOTS:
         page.screenshot(path=f'{SHOTS}/navigation-home.png')
     check('internal visits made no document requests', documents == [], str(documents))
@@ -104,7 +104,7 @@ with sync_playwright() as pw:
     check('Home from a direct case-study URL replays the poster intro', page.locator('html.intro-play').count() == 1)
     page.keyboard.press('Escape')
     check('a key press skips it and the same notch is in place', not page.locator('html.intro-play').count() and page.evaluate('firstNotch === document.querySelector(".notch") && firstNotch.getBoundingClientRect().top >= 0'))
-    check('the Home preview hooks initialize when entering from another page', page.locator('.project-hover').count() == 1 and page.locator('.project-row').count() == 5)
+    check("Home's featured cards are there when entering from another page", page.locator('.project-feature').count() == 3)
     page.evaluate('document.querySelector("#about").scrollIntoView({behavior:"instant"})')
     page.wait_for_timeout(250)
     check('the notch stays pinned at the top while scrolling', page.evaluate('Math.abs(firstNotch.getBoundingClientRect().top) <= 1'))

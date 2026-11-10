@@ -22,15 +22,6 @@ test('in-place routes stay in this document and preserve relative deployment pat
   assert.equal(portfolioRoute('./?view=resume', base, data).view, 'resume');
 });
 
-test('project previews follow below the pointer and flip clear of viewport edges', () => {
-  const { projectPreviewPosition } = require('../script.js');
-  const size = { width: 320, height: 236, viewportWidth: 1280, viewportHeight: 900 };
-  assert.deepEqual(projectPreviewPosition({ ...size, x: 400, y: 300 }), { x: 420, y: 324 });
-  assert.deepEqual(projectPreviewPosition({ ...size, x: 1250, y: 870 }), { x: 910, y: 610 });
-  const narrow = projectPreviewPosition({ ...size, width: 296, viewportWidth: 320, x: 300, y: 10 });
-  assert.deepEqual(narrow, { x: 12, y: 34 });
-});
-
 test('SECTIONS lists the six nav targets in order', () => {
   assert.deepEqual(SECTIONS.map((s) => [s.id, s.key]), [
     ['home', '1'], ['about', '2'], ['projects', '3'], ['stack', '4'], ['certifications', '5'], ['contact', '6'],

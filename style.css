@@ -357,7 +357,8 @@ dd {
   outline: none;
   transition: margin-left var(--t) var(--ease);
 }
-.main > * {
+.main > *,
+.cover-panel > * {
   max-width: 880px;
   margin-inline: auto;
 }
@@ -1531,6 +1532,141 @@ html.is-home .main > .panel {
   border-radius: 34px 34px 0 0;
   cursor: var(--cursor);
 }
+/* Projects and Stack share one panel that slides up over About: one step lighter
+   than the page, a rounded top edge with a hairline, a soft shadow above it. */
+.cover-panel {
+  display: contents;
+}
+html.is-home .cover-panel {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: none;
+  margin: 0 calc(-1 * var(--main-x));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 34px 34px 0 0;
+  box-shadow: 0 -24px 48px -24px rgb(0 0 0 / 35%);
+}
+html.is-home .cover-panel > .panel {
+  position: relative;
+  max-width: none;
+  margin: 0;
+  /* The panel is already as wide as the page, so the column needs no extra inset. */
+  padding: 84px max(var(--main-x), calc((100% - 880px) / 2)) 110px;
+  color: var(--fg);
+  background: transparent;
+  cursor: var(--cursor);
+}
+html.is-home .cover-panel > #stack {
+  padding-top: 24px;
+}
+.projects-all {
+  display: none;
+}
+html.is-home .projects-all {
+  display: flex;
+  justify-content: center;
+  margin-top: 36px;
+}
+/* The featured cards: the screenshot drifts inside its frame (panelStack). */
+html.is-home #projects .project-thumb img {
+  scale: 1.08;
+}
+/* Stack rows draw their hairline from the left as they arrive, then the icons follow. */
+html.is-home #stack .stack-group.reveal {
+  position: relative;
+  border-top-color: transparent;
+}
+html.is-home #stack .stack-group.reveal::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: var(--border);
+  transform-origin: left;
+  scale: 0 1;
+  transition: scale 700ms cubic-bezier(0.23, 1, 0.32, 1) var(--stagger, 0ms);
+}
+html.is-home #stack .stack-group.reveal-visible::before {
+  scale: 1 1;
+}
+/* Pixel CK on the panel's top edge: he rises from behind it when the panel arrives. */
+.peek-ck {
+  display: none;
+}
+html.is-home .peek-ck {
+  position: absolute;
+  right: max(40px, calc((100% - 880px) / 2));
+  bottom: 100%;
+  z-index: 1;
+  display: block;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.peek-window {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.peek-sprite {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: url("./assets/mascot/mini-ck-reactions.webp") 50% 0 / 300% 300% no-repeat;
+  image-rendering: pixelated;
+  filter: grayscale(1);
+  translate: 0 100%;
+  transition: translate 420ms cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.peek-ck.is-up .peek-sprite {
+  translate: 0 0;
+}
+.peek-ck.is-wiggle .peek-sprite {
+  animation: peek-wiggle 520ms ease-in-out 420ms;
+}
+@keyframes peek-wiggle {
+  25% { rotate: -8deg; }
+  75% { rotate: 8deg; }
+}
+.peek-bubble {
+  position: absolute;
+  right: calc(100% + 6px);
+  top: 8px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--bg);
+  background: var(--fg);
+  box-shadow: 3px 3px 0 var(--border);
+  opacity: 0;
+  translate: 4px 0;
+  transition: opacity 160ms ease-out, translate 160ms ease-out;
+  pointer-events: none;
+}
+.peek-ck:is(:hover, :focus-visible) .peek-bubble {
+  opacity: 1;
+  translate: 0 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .peek-sprite,
+  .peek-bubble,
+  html.is-home #stack .stack-group.reveal::before {
+    transition: none;
+  }
+  .peek-ck.is-wiggle .peek-sprite {
+    animation: none;
+  }
+}
 html.is-home .main > .panel:last-of-type {
   border-radius: 34px;
   padding-bottom: 72px;
@@ -1567,19 +1703,6 @@ html.is-home .main > .panel:last-of-type {
 }
 .panel-intro:empty {
   display: none;
-}
-/* Pixel CK peeks over the Projects panel's top edge. */
-html.is-home #projects::before {
-  content: "";
-  position: absolute;
-  top: -70px;
-  right: max(40px, calc((100% - 880px) / 2));
-  width: 72px;
-  height: 72px;
-  background: url("./assets/mascot/mini-ck-reactions.webp") 50% 0 / 300% 300% no-repeat;
-  image-rendering: pixelated;
-  filter: grayscale(1);
-  pointer-events: none;
 }
 /* About: a statement screen. The sentence big and centred, lighting up word by word
    (wordLight); three buttons; two facts. A shade in the frame colour darkens it as
@@ -1700,16 +1823,22 @@ html.is-home .main > .footer {
   position: relative;
 }
 @media (max-width: 639.98px) {
-  html.is-home .main > .panel {
+  html.is-home .main > .panel,
+  html.is-home .cover-panel > .panel {
     padding: 56px 20px 72px;
     border-radius: 28px 28px 0 0;
+  }
+  html.is-home .cover-panel {
+    border-radius: 28px 28px 0 0;
+  }
+  html.is-home .peek-ck {
+    right: 24px;
+    width: 56px;
+    height: 56px;
   }
   .panel-head {
     grid-template-columns: 1fr;
     margin-bottom: 32px;
-  }
-  html.is-home #projects::before {
-    display: none;
   }
 }
 
@@ -1719,10 +1848,10 @@ html.is-home #projects .project-list {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 20px;
 }
-html.is-home #projects .project-row + .project-row {
+html.is-home #projects .project-feature-item + .project-feature-item {
   border-top: 0;
 }
-html.is-home #projects .project-row-link {
+html.is-home #projects .project-feature {
   grid-template-columns: 1fr;
   grid-template-rows: auto 1fr auto;
   align-items: start;
@@ -1749,7 +1878,7 @@ html.is-home #projects :is(.project-main, .project-kind) {
   padding-inline: 18px;
 }
 @media (hover: hover) and (pointer: fine) {
-  html.is-home #projects .project-row-link:hover {
+  html.is-home #projects .project-feature:hover {
     background: var(--surface);
     border-color: var(--fg-muted);
   }
@@ -2260,30 +2389,10 @@ html.view-projects .projects-back {
 html:not(.view-projects):not(.view-case) .project-list {
   gap: 0;
 }
-.project-list-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--border);
-  color: var(--fg-muted);
-}
-.project-list-heading:empty {
-  display: none;
-}
-.project-list-heading h3 {
-  font-size: 14px;
-  font-weight: 400;
-}
-.project-list-count {
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-}
-.project-row + .project-row {
+.project-feature-item + .project-feature-item {
   border-top: 1px solid var(--border);
 }
-.project-row-link {
+.project-feature {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr) auto;
   gap: 20px;
@@ -2293,10 +2402,10 @@ html:not(.view-projects):not(.view-case) .project-list {
   border-radius: var(--radius-lg);
   transition: background-color var(--t-fast) ease;
 }
-.project-row-link:active {
+.project-feature:active {
   background: var(--bg-alt);
 }
-.project-row-link:focus-visible {
+.project-feature:focus-visible {
   outline-offset: -2px;
 }
 .project-thumb {
@@ -2332,10 +2441,10 @@ html:not(.view-projects):not(.view-case) .project-list {
   align-items: center;
   gap: 4px 10px;
 }
-.project-row .project-title {
+.project-feature-item .project-title {
   font-size: 16px;
 }
-.project-row .project-title::before {
+.project-feature-item .project-title::before {
   content: none;
 }
 .project-summary {
@@ -2352,83 +2461,20 @@ html:not(.view-projects):not(.view-case) .project-list {
   color: var(--fg-muted);
   white-space: nowrap;
 }
-.project-hover {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 35;
-  width: min(320px, calc(100vw - 24px));
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  pointer-events: none;
-  animation: project-preview-in 120ms var(--ease) both;
-}
-.project-hover-stage {
-  position: relative;
-  aspect-ratio: 8 / 5;
-  background: var(--bg-alt);
-}
-.project-hover-stage > img,
-.project-hover-stage > video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top;
-}
-.project-hover-stage > img { z-index: 1; }
-.project-hover-stage.is-avatar > img {
-  padding: 32px;
-  object-fit: contain;
-  image-rendering: pixelated;
-}
-.project-hover.is-chat {
-  width: min(360px, calc(100vw - 24px));
-}
-.project-hover-stage.is-chat {
-  aspect-ratio: auto;
-}
-.project-hover .project-hover-chat {
-  border: 0;
-  border-radius: 0;
-}
-.project-hover-chat .chat-log {
-  height: auto;
-  max-height: min(300px, calc(100vh - 120px));
-  overflow: hidden;
-}
-.project-hover-caption {
-  padding: 10px 12px;
-  font-size: 13px;
-}
-@keyframes project-preview-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .project-hover { animation: none; }
-}
-@media (hover: none), (pointer: coarse) {
-  .project-hover { display: none; }
-}
 @media (hover: hover) and (pointer: fine) {
-  .project-row-link:hover {
+  .project-feature:hover {
     background: var(--bg-alt);
   }
 }
 [data-home],
-html.view-projects .main > .section:not(#projects),
-html.view-case .main > .section:not(#projects),
-html.view-stack .main > .section:not(#stack),
-html.view-more .main > .section:not(#personal):not(#now):not(#background):not(#outside):not(#contact),
-html.view-guestbook .main > .section:not(#guestbook),
-html.view-resources .main > .section:not(#resources),
-html.view-links .main > .section:not(#links),
-html.view-resume .main > .section:not(#resume),
+html.view-projects .main .section:not(#projects),
+html.view-case .main .section:not(#projects),
+html.view-stack .main .section:not(#stack),
+html.view-more .main .section:not(#personal):not(#now):not(#background):not(#outside):not(#contact),
+html.view-guestbook .main .section:not(#guestbook),
+html.view-resources .main .section:not(#resources),
+html.view-links .main .section:not(#links),
+html.view-resume .main .section:not(#resume),
 html:not(.view-resume) #resume,
 html.view-more #contact .contact-form,
 html.is-home #personal,
@@ -4828,7 +4874,7 @@ html.intro-play .notch {
   .project {
     padding: 18px 16px;
   }
-  .project-row-link {
+  .project-feature {
     grid-template-columns: 56px minmax(0, 1fr);
     gap: 4px 14px;
     margin-inline: -8px;
