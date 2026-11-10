@@ -1292,9 +1292,9 @@ body {
   }
   .poster-photo-phone {
     display: block;
-    inset: max(64px, 22%) 0 auto;
+    inset: max(64px, 25%) 0 auto;
     height: 44%;
-    object-position: 44% 0;
+    object-position: 54% 0;
     -webkit-mask-image: linear-gradient(#000 72%, transparent 98%);
     mask-image: linear-gradient(#000 72%, transparent 98%);
   }
