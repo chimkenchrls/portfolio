@@ -54,6 +54,16 @@
 
   --topbar-h: 56px;
   --frame: #dcdbd7;
+  --ink: #0f0f11;
+  --ink-2: #19191c;
+  --ink-fg: #ececee;
+  --ink-mut: #8b8b91;
+  --ink-line: #26262b;
+  --paper: #f3f2f0;
+  --paper-2: #ffffff;
+  --paper-fg: #111113;
+  --paper-mut: #6e6e73;
+  --paper-line: #e2e1de;
   --notch-h: 52px;
   --main-top: 48px; /* .main's top padding */
   --notch-fg: #55555a;
@@ -75,6 +85,16 @@
   --status: #5fd08a;
   --surface: #19191c;
   --frame: #000000;
+  --ink: #0f0f11;
+  --ink-2: #19191c;
+  --ink-fg: #ececee;
+  --ink-mut: #8b8b91;
+  --ink-line: #26262b;
+  --paper: #f3f2f0;
+  --paper-2: #ffffff;
+  --paper-fg: #111113;
+  --paper-mut: #6e6e73;
+  --paper-line: #e2e1de;
   --notch-fg: #a9a9ae;
   --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
   --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
@@ -97,6 +117,16 @@
   --status: #5fd08a;
   --surface: #19191c;
   --frame: #000000;
+  --ink: #0f0f11;
+  --ink-2: #19191c;
+  --ink-fg: #ececee;
+  --ink-mut: #8b8b91;
+  --ink-line: #26262b;
+  --paper: #f3f2f0;
+  --paper-2: #ffffff;
+  --paper-fg: #111113;
+  --paper-mut: #6e6e73;
+  --paper-line: #e2e1de;
   --notch-fg: #a9a9ae;
   --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
   --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
@@ -1292,6 +1322,187 @@ body {
   }
 }
 
+/* 11. Panels ============================================================== */
+/* After the poster, each Home section is a rounded panel that slides up over the
+   one before it, alternating paper and ink. Inside a panel the page tokens take
+   that panel's tone, so the components in it follow without their own rules. */
+.panel-paper {
+  --bg: var(--paper);
+  --surface: var(--paper-2);
+  --bg-alt: color-mix(in srgb, var(--paper) 92%, var(--paper-fg));
+  --fg: var(--paper-fg);
+  --fg-muted: var(--paper-mut);
+  --border: var(--paper-line);
+  --panel-edge: var(--paper-line);
+  --panel-frame: var(--paper);
+  --panel-shine: #ffffff;
+  --control-start: #ffffff;
+  --control-end: color-mix(in srgb, var(--paper) 96%, var(--paper-fg));
+  --cursor: url("./assets/icons/cursor-on-light.svg") 4 3, auto;
+  --cursor-link: url("./assets/icons/cursor-on-light.svg") 4 3, pointer;
+  color-scheme: light;
+}
+.panel-ink {
+  --bg: var(--ink);
+  --surface: var(--ink-2);
+  --bg-alt: #212125;
+  --fg: var(--ink-fg);
+  --fg-muted: var(--ink-mut);
+  --border: var(--ink-line);
+  --panel-edge: var(--ink-line);
+  --panel-frame: var(--ink-2);
+  --panel-shine: color-mix(in srgb, var(--ink-2) 84%, white);
+  --control-start: color-mix(in srgb, var(--ink-2) 98%, white);
+  --control-end: color-mix(in srgb, var(--ink-2) 96%, var(--ink-fg));
+  --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
+  --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
+  color-scheme: dark;
+}
+html.is-home .main > .panel {
+  position: relative;
+  max-width: none;
+  margin: -34px calc(-1 * var(--main-x)) 0;
+  padding: 84px max(var(--main-x), calc((100% - 880px) / 2 + var(--main-x))) 110px;
+  color: var(--fg);
+  background: var(--bg);
+  border-radius: 34px 34px 0 0;
+  cursor: var(--cursor);
+}
+html.is-home .main > .panel:last-of-type {
+  border-radius: 34px;
+  padding-bottom: 72px;
+}
+.panel-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px);
+  gap: 16px 40px;
+  align-items: end;
+  margin-bottom: 48px;
+}
+.panel-label {
+  margin: 0 0 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.panel-title {
+  margin: 0;
+  font-size: clamp(48px, 7.5vw, 88px);
+  font-weight: 500;
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
+}
+.panel-intro {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--fg-muted);
+}
+.panel-intro:empty {
+  display: none;
+}
+/* Pixel CK peeks over the Projects panel's top edge. */
+html.is-home #projects::before {
+  content: "";
+  position: absolute;
+  top: -70px;
+  right: max(40px, calc((100% - 880px) / 2));
+  width: 72px;
+  height: 72px;
+  background: url("./assets/mascot/mini-ck-reactions.webp") 50% 0 / 300% 300% no-repeat;
+  image-rendering: pixelated;
+  filter: grayscale(1);
+  pointer-events: none;
+}
+/* About: the bio large; the rows beside it. */
+html.is-home #about .about-bio p:first-child {
+  font-size: clamp(19px, 2vw, 24px);
+  line-height: 1.4;
+  letter-spacing: -0.012em;
+  color: var(--fg);
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    html.is-home .main > .panel,
+    html.is-home .poster {
+      transform-origin: 50% 100%;
+      animation: panel-cover linear both;
+      animation-timeline: view();
+      animation-range: exit 0% exit 60%;
+    }
+  }
+}
+@keyframes panel-cover {
+  to {
+    scale: 0.97;
+    filter: brightness(0.75);
+  }
+}
+@media (max-width: 639.98px) {
+  html.is-home .main > .panel {
+    margin-top: -28px;
+    padding: 56px 20px 72px;
+    border-radius: 28px 28px 0 0;
+  }
+  .panel-head {
+    grid-template-columns: 1fr;
+    margin-bottom: 32px;
+  }
+  html.is-home #projects::before {
+    display: none;
+  }
+}
+
+/* Home's Projects panel: the rows become screenshot cards, three across. */
+html.is-home #projects .project-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+html.is-home #projects .project-row + .project-row {
+  border-top: 0;
+}
+html.is-home #projects .project-row-link {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr auto;
+  align-items: start;
+  gap: 14px;
+  height: 100%;
+  margin: 0;
+  padding: 0 0 18px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+}
+html.is-home #projects .project-thumb {
+  display: grid;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 10;
+  font-size: 40px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
+}
+html.is-home #projects :is(.project-main, .project-kind) {
+  padding-inline: 18px;
+}
+@media (hover: hover) and (pointer: fine) {
+  html.is-home #projects .project-row-link:hover {
+    background: var(--surface);
+    border-color: var(--fg-muted);
+  }
+}
+@media (max-width: 860px) {
+  html.is-home #projects .project-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* 12. Dividers & section heads ============================================ */
 .divider {
   display: flex;
@@ -1980,10 +2191,10 @@ html.view-projects [data-home] {
   display: inline;
 }
 /* A case study has its own title, so the section divider is left to screen readers. */
-html.view-projects #projects .divider,
-html.view-stack #stack .divider,
+html.view-projects #projects :is(.divider, .panel-head),
+html.view-stack #stack :is(.divider, .panel-head),
 html.view-resources #resources .divider,
-html.view-case #projects .divider {
+html.view-case #projects :is(.divider, .panel-head) {
   position: absolute;
   width: 1px;
   height: 1px;

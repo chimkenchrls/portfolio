@@ -1933,6 +1933,9 @@
       return [el('h3', null, projectsPage.homeTitle || projectsPage.title), count];
     };
     const stackHeading = ({ stackPage }) => pageHeading(stackPage, 'stack-page-intro');
+    // The short line beside a Home panel's title, only where data.js has one.
+    const projectsIntro = ({ projectsPage }) => (projectsPage && projectsPage.intro ? [document.createTextNode(projectsPage.intro)] : []);
+    const stackIntro = ({ stackPage }) => (stackPage && stackPage.intro ? [document.createTextNode(stackPage.intro)] : []);
     const resourcesHeading = ({ resourcesPage }) => pageHeading(resourcesPage, 'resources-page-intro');
     const guestbookHeading = ({ guestbook }) => {
       const nodes = pageHeading(guestbook, 'guestbook-intro');
@@ -2163,7 +2166,7 @@
       section.append(heading, list);
       return section;
     });
-    const renderers = { social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, resources, resourcesHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
+    const renderers = { projectsIntro, stackIntro, social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, resources, resourcesHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -2258,12 +2261,20 @@
       const head = (id, index, label) => {
         const heading = $(`#${id}-heading`);
         if (!heading) return;
-        $('.divider-index', heading).textContent = index;
-        heading.lastChild.textContent = ` ${label} `;
+        const tag = $('.divider-index', heading);
+        if (tag) {
+          tag.textContent = index;
+          heading.lastChild.textContent = ` ${label} `;
+          return;
+        }
+        // A Home panel head: the title, and the small numbered label above it.
+        heading.textContent = label;
+        const small = $('.panel-label', heading.parentElement);
+        if (small) small.textContent = `${index.replace(' //', '')} · ${label === 'Get in touch' ? 'Contact' : label}`;
       };
-      head('projects', '03 //', 'Projects');
-      head('stack', '04 //', 'Stack');
-      head('contact', '06 //', 'Get in touch');
+      head('projects', '02 //', 'Projects');
+      head('stack', '03 //', 'Stack');
+      head('contact', '05 //', 'Get in touch');
       if (root.classList.contains('view-more')) { head('outside', '01 //', 'Outside the IDE'); head('contact', '03 //', 'Terminal'); }
       if (/\bview-(projects|case)\b/.test(root.className)) head('projects', '01 //', 'All projects');
       if (root.classList.contains('view-stack')) head('stack', '01 //', 'Stack');

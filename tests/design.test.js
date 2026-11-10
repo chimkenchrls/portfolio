@@ -55,9 +55,9 @@ test('depth comes from surfaces: cards read as raised in both themes, and text s
   assert.match(noJs.slice(0, noJs.indexOf('}')), /--surface:/, 'the no-JS dark fallback has the surface too');
 });
 
-test('section headings keep the original centered divider style', () => {
-  const sections = [['about', '02 //', 'About'], ['projects', '03 //', 'Projects'], ['stack', '04 //', 'Stack'],
-    ['certifications', '05 //', 'Certifications'], ['outside', '06 //', 'Outside the IDE'], ['contact', '06 //', 'Get in touch']];
+test('More-page section headings keep the centered divider style', () => {
+  // Home's sections have panel heads now (see the panel tests); the More page keeps the divider.
+  const sections = [['outside', '06 //', 'Outside the IDE']];
   for (const [id, tag, title] of sections) {
     const start = html.indexOf(`id="${id}"`);
     const head = html.slice(start, start + 700);
@@ -202,4 +202,33 @@ test('the head marks Home and starts the intro only on a plain, motion-friendly 
   assert.match(head, /root\.classList\.add\("is-home"\);\s*if \(!window\.location\.hash && !calm\) root\.classList\.add\("intro-play"\);/);
   assert.match(head, /getAttribute\("data-intro"\) !== "ready"\)\s*root\.classList\.remove\("intro-play"\)/, 'a failsafe if script.js never loads');
   assert.match(head, /history\.scrollRestoration = "manual";/, 'a reload still starts at the poster');
+});
+
+// Poster redesign: Home as ink and paper panels.
+test('Home panels alternate paper and ink in section order', () => {
+  const tone = (id) => (new RegExp(`<section[^>]*class="([^"]*)"[^>]*\\sid="${id}"|<section[^>]*\\sid="${id}"[^>]*class="([^"]*)"`).exec(html.replace(/\n\s*/g, ' ')) || []).slice(1).join('');
+  assert.deepEqual(['about', 'projects', 'stack', 'certifications', 'contact'].map((id) => (/panel-(paper|ink)/.exec(tone(id)) || [])[1]), ['paper', 'ink', 'paper', 'ink', 'paper']);
+});
+
+test('each Home panel is labelled by panelLabel and titled with its real name', () => {
+  const { panelLabel } = require('../script.js');
+  const titles = { about: 'About', projects: 'Projects', stack: 'Stack', certifications: 'Certifications', contact: 'Get in touch' };
+  for (const [id, title] of Object.entries(titles)) {
+    const section = between(html, `id="${id}"`, '</section>');
+    assert.match(section, new RegExp(`class="panel-label divider-label"[^>]*>${panelLabel(id).replace('·', '&middot;')}<`), `${id} label`);
+    assert.match(section, new RegExp(`class="panel-title" id="${id}-heading">${title}<`), `${id} title`);
+  }
+});
+
+test('panel tokens exist in both themes and read well', () => {
+  for (const rule of [light, dark]) {
+    for (const name of ['--ink', '--ink-2', '--ink-fg', '--ink-mut', '--ink-line', '--paper', '--paper-2', '--paper-fg', '--paper-mut', '--paper-line', '--frame']) token(rule, name);
+  }
+  assert.ok(contrast(token(light, '--paper-fg'), token(light, '--paper')) >= 7);
+  assert.ok(contrast(token(light, '--ink-fg'), token(light, '--ink')) >= 7);
+});
+
+test('panel motion is progressive and off for reduced motion', () => {
+  assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{\s*@supports \(animation-timeline: view\(\)\) \{[^@]*animation-timeline: view\(\)/);
+  assert.equal(css.split('animation-timeline: view();').length, 2, 'used in that one place only');
 });
