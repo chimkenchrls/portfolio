@@ -114,9 +114,9 @@ test('"Get in touch" terminal is the last section, with a no-JS contact fallback
   assert.ok(fs.existsSync(path.join(ROOT, 'assets', 'icons', 'contact.svg')));
 });
 
-test("CK's menu has no visible shortcut badges; keys live in hover tooltips", () => {
+test("the footer has no visible shortcut badges; keys live in hover tooltips", () => {
   const html = read('index.html');
-  const sidebar = html.slice(html.indexOf('<dialog class="ck-panel"'), html.indexOf('</dialog>', html.indexOf('<dialog class="ck-panel"')));
+  const sidebar = html.slice(html.indexOf('<footer class="footer"'), html.indexOf('</footer>'));
   assert.doesNotMatch(sidebar, /<kbd/, 'no kbd badges in the menu');
   for (const [id, label, key] of [['home', 'Home', 1]]) {
     assert.match(html, new RegExp(`data-section="${id}"\\s+title="${label} \\(${key}\\)"`), `${label} tooltip`);
@@ -200,12 +200,12 @@ test('Projects comes before Stack, in the page and in the nav', () => {
   assert.match(notch, /<a class="notch-ck" href="\.\/" data-notch="home"/, 'CK is Home');
 });
 
-test("CK's menu: no status line or visitor counter; a chimken score row instead", () => {
+test("the footer: no status line or visitor counter; a chimken score row instead", () => {
   const html = read('index.html');
-  const sidebar = html.slice(html.indexOf('<dialog class="ck-panel"'), html.indexOf('</dialog>', html.indexOf('<dialog class="ck-panel"')));
+  const sidebar = html.slice(html.indexOf('<footer class="footer"'), html.indexOf('</footer>'));
   assert.doesNotMatch(sidebar, /Open to OJT/, 'status line removed from the sidebar');
   assert.doesNotMatch(html + read('style.css') + read('script.js'), /visitors|abacus|status-dot|status-pulse/);
-  assert.match(sidebar, /<button\s+class="score-row"[^>]*type="button"[^>]*hidden/, 'hidden until the script fills it');
+  assert.match(sidebar, /<button class="score-row" type="button"[^>]*hidden/, 'hidden until the script fills it');
   assert.match(read('script.js'), /\$\$\('\.game-trigger, \.score-row'\)/, 'the score row opens the game');
   assert.match(html, /class="terminal" data-status="Open to OJT \/ Internship"/, 'the terminal still knows the status');
 });

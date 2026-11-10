@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from common import URL, check, finish, offline_api
+from common import URL, check, finish, offline_api, to_bottom
 
 BASE = URL.split('#')[0].split('?')[0]
 SHOTS = os.environ.get('SHOTS')
@@ -28,16 +28,19 @@ def session(browser, width=1280, height=900, reduced='reduce', **options):
     return ctx, page, errors, reads
 
 
-NOTCH = ('projects', 'stack', 'more')
+NOTCH = ('projects', 'stack', 'resources', 'more')
 
 
 def click_view(page, view, phone=False):
-    # Projects, Stack and More sit in the notch on wider screens; everything is in CK's menu.
+    # The four pages sit in the notch (in CK's menu on phones); Links, Guestbook and Résumé in the footer.
     if view in NOTCH and not phone:
         page.hover('.notch-ck'); page.click(f'.notch .nav-link[data-notch="{view}"]')
-    else:
+    elif view in NOTCH:
         page.click('.notch-ck')
-        page.click(f'.ck-panel [data-view="{view}"]')
+        page.click(f'.phone-menu [data-view="{view}"]')
+    else:
+        to_bottom(page)
+        page.click(f'footer [data-view="{view}"]')
     page.wait_for_function('view => document.documentElement.classList.contains("view-" + view)', arg=view)
 
 
@@ -54,7 +57,7 @@ with sync_playwright() as pw:
         check(f'{view}: the shell and document survive', page.evaluate('shellProof.notch === document.querySelector(".notch") && shellProof.main === document.querySelector("main") && shellProof.sky === document.querySelector(".sky") && shellProof.origin === performance.timeOrigin'))
         lit = page.evaluate('[...document.querySelectorAll(".notch [aria-current]")].map(n => n.dataset.notch)')
         check(f'{view}: the notch lights its own link, or none', lit == ([view] if view in NOTCH else []), str(lit))
-        check(f'{view}: CK\'s menu is closed after the visit', not page.locator('.ck-panel[open]').count())
+        check(f'{view}: no menu is left open after the visit', not page.locator('dialog[open]').count())
     page.locator('.guestbook-form').wait_for(state='visible')
     page.fill('#guestbook-name', 'Browser fixture')
     click_view(page, 'links')
@@ -79,13 +82,13 @@ with sync_playwright() as pw:
     page.wait_for_selector('.project-open')
     page.evaluate('window.scrollTo(0, 500)')
     page.wait_for_timeout(100)
-    click_view(page, 'links')
+    click_view(page, 'resources')
     page.go_back()
     page.wait_for_function('document.documentElement.classList.contains("view-projects") && Math.abs(scrollY - 500) < 2')
     check('Back restores the previous scroll position', abs(page.evaluate('scrollY') - 500) < 2)
     click_view(page, 'resources')
     check('Resources lists its four groups, links opening in a new tab', page.locator('#resources .links-group:visible').count() == 4 and page.locator('#resources a.profile-link[target="_blank"]').count() == 12)
-    page.hover('.notch-ck'); page.click('.notch .nav-link[data-notch="home"]')
+    page.click('.notch-ck')
     page.wait_for_function('document.documentElement.classList.contains("is-home")')
     check('Home restores every project card under the same notch', page.locator('.project-row:visible').count() == 5 and page.evaluate('shellProof.notch === document.querySelector(".notch")') and page.get_attribute('.notch [aria-current]', 'data-notch') == 'home')
     if SHOTS:
@@ -97,7 +100,7 @@ with sync_playwright() as pw:
     ctx, page, errors, _ = session(browser, reduced='no-preference')
     page.goto(BASE + '?view=case&p=ambiancy')
     page.evaluate('window.firstNotch = document.querySelector(".notch")')
-    page.hover('.notch-ck'); page.click('.notch .nav-link[data-notch="home"]')
+    page.click('.notch-ck')
     check('Home from a direct case-study URL replays the poster intro', page.locator('html.intro-play').count() == 1)
     page.keyboard.press('Escape')
     check('a key press skips it and the same notch is in place', not page.locator('html.intro-play').count() and page.evaluate('firstNotch === document.querySelector(".notch") && firstNotch.getBoundingClientRect().top >= 0'))
@@ -110,16 +113,14 @@ with sync_playwright() as pw:
     check('scrolling back to the poster does not replay the intro', not page.locator('html.intro-play').count())
     ctx.close()
 
-    # Keyboard: CK's menu is reachable, traps focus like a dialog and gives it back.
+    # Keyboard: CK is the Home link; the page shortcuts still work.
     ctx, page, errors, _ = session(browser)
-    page.goto(BASE + '#about')
+    page.goto(BASE + '?view=links')
     page.focus('.notch-ck')
+    check('focusing CK opens the notch sides', page.evaluate("getComputedStyle(document.querySelector('.notch-side')).width") != '0px')
     page.keyboard.press('Enter')
-    check('Enter on CK opens his menu with focus inside', page.locator('.ck-panel[open]').count() == 1 and page.evaluate('!!document.activeElement.closest(".ck-panel")'))
-    page.keyboard.press('Escape')
-    check('Escape closes it and focus returns to CK', not page.locator('.ck-panel[open]').count() and page.evaluate('document.activeElement.matches(".notch-ck")'))
-    page.click('.notch-ck'); page.mouse.click(5, 600)
-    check('a click outside closes it', not page.locator('.ck-panel[open]').count())
+    page.wait_for_function('document.documentElement.classList.contains("is-home")')
+    check('Enter on CK goes Home', True)
     page.keyboard.press('t')
     check('T still toggles the theme with the menu closed', page.evaluate('document.documentElement.dataset.theme') == 'light')
     page.keyboard.press('Alt+k'); page.wait_for_timeout(200)
@@ -148,9 +149,9 @@ with sync_playwright() as pw:
     page.evaluate('window.phoneNotch = document.querySelector(".notch")')
     for view in ('more', 'projects', 'stack', 'guestbook', 'resources'):
         click_view(page, view, phone=True)
-        check(f'phone {view}: CK\'s menu closes and the notch stays mounted', not page.locator('.ck-panel[open]').count() and page.evaluate('phoneNotch === document.querySelector(".notch")'))
+        check(f'phone {view}: the menu closes and the notch stays mounted', not page.locator('dialog[open]').count() and page.evaluate('phoneNotch === document.querySelector(".notch")'))
     page.click('.notch-ck')
-    page.click('.ck-panel .nav-link[data-notch="home"]')
+    page.click('.phone-menu .nav-link[data-notch="home"]')
     page.wait_for_function('document.documentElement.classList.contains("is-home")')
     check('phone Home has no overflow and the notch shows CK alone', page.evaluate('document.documentElement.scrollWidth <= innerWidth') and page.is_visible('.notch-ck') and not page.is_visible('.notch .nav-link'))
     if SHOTS:

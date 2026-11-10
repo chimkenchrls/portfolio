@@ -143,12 +143,13 @@ test('the notch holds four page links and CK, who is Home', () => {
   assert.match(notch, /<a class="notch-ck" href="\.\/" data-notch="home"/);
 });
 
-test("CK's panel holds the old sidebar controls", () => {
-  const panel = between(html, '<dialog class="ck-panel" id="ck-panel"', '</dialog>');
-  for (const part of ['sidebar-chat', 'game-trigger', 'score-row', 'poke-button', 'poke-value', 'theme-toggle', 'data-email', 'data-profile-link="github"', 'data-profile-link="linkedin"']) {
-    assert.ok(panel.includes(part), `panel lacks ${part}`);
+test("the footer holds what CK's menu held", () => {
+  const footer = between(html, '<footer class="footer"', '</footer>');
+  for (const part of ['data-chat', 'game-trigger', 'score-row', 'poke-button', 'poke-value', 'theme-toggle', 'data-profile-link="github"', 'data-profile-link="linkedin"', 'data-copy=']) {
+    assert.ok(footer.includes(part), `footer lacks ${part}`);
   }
-  for (const view of ['resume', 'resources', 'links', 'guestbook']) assert.ok(panel.includes(`href="./?view=${view}"`), `panel lacks ${view}`);
+  for (const view of ['resume', 'resources', 'links', 'guestbook']) assert.ok(footer.includes(`href="./?view=${view}"`), `footer lacks ${view}`);
+  assert.doesNotMatch(html, /\b(ck-panel|ck-hint|sidebar-chat)\b/);
 });
 
 // Poster redesign: the opening screen.

@@ -36,7 +36,7 @@ with sync_playwright() as p:
     page.wait_for_function("location.search.includes('view=resume')")
     page.wait_for_function("!document.querySelector('.resume-fly') && !document.documentElement.classList.contains('resume-opening')")
     check("in place, through the router, and cleaned up", page.locator(".resume-sheet").is_visible() and page.evaluate("getComputedStyle(document.querySelector('#main')).opacity") == "1" and not errors, str(errors))
-    check("no notch link for it; CK's menu has one", page.locator('.notch [data-view="resume"]').count() == 0 and page.locator('.ck-panel a[href="./?view=resume"]').count() == 1)
+    check("no notch link for it; the footer has one", page.locator('.notch [data-view="resume"]').count() == 0 and page.locator('footer a[href="./?view=resume"]').count() == 1)
     page.go_back()
     page.wait_for_function("!location.search.includes('view=resume')")
     check("back goes home and hides it", not page.locator("#resume").is_visible())

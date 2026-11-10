@@ -39,3 +39,9 @@ def finish():
         print(("PASS " if ok else "FAIL ") + name + (f"  [{detail}]" if detail and not ok else ""))
     print(f"{len(results) - len(failed)}/{len(results)} passed")
     sys.exit(1 if failed else 0)
+
+
+def to_bottom(page):
+    """Scroll straight to the end of the page, where the footer is fully in view."""
+    page.evaluate("scrollTo({top: document.documentElement.scrollHeight, behavior: 'instant'})")
+    page.wait_for_timeout(150)

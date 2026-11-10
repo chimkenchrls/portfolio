@@ -2,7 +2,7 @@
 import os
 import re
 from playwright.sync_api import sync_playwright
-from common import URL, check, finish, new_page, offline_api
+from common import URL, check, finish, new_page, offline_api, to_bottom
 
 SHOTS = os.environ.get("SHOTS")  # optional: directory for screenshots
 score = lambda p: p.inner_text(".game-score")
@@ -54,7 +54,7 @@ with sync_playwright() as pw:
         if name == "desktop":
             p.keyboard.press("Alt+k"); p.keyboard.press("Space")
         else:
-            p.tap(".notch-ck"); p.wait_for_timeout(350); p.tap(".ck-panel .game-trigger"); p.wait_for_timeout(300); p.tap(".game-canvas")
+            to_bottom(p); p.tap("footer .game-trigger"); p.wait_for_timeout(300); p.tap(".game-canvas")
         blinked = False
         biggest_jump, last = 0, points(p)
         for i in range(26):  # ~8s on the ground: invincible, so it runs through every corn

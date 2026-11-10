@@ -542,10 +542,69 @@
         </form>
       </section>
 
-      <footer class="footer">
-        <p>© <span class="footer-year">2026</span> Kenneth Charles</p>
-      </footer>
     </main>
+    <footer class="footer" id="footer">
+      <div class="footer-inner">
+        <div class="footer-top-row">
+          <div class="poke" hidden>
+            <button class="poke-button" type="button" aria-label="Poke CK" title="Poke me">
+              <span class="assistant-sprite" aria-hidden="true"></span>
+            </button>
+            <p class="poke-count" aria-live="polite">
+              <span class="poke-label">Total pokes</span>
+              <span class="poke-value">0</span>
+            </p>
+          </div>
+          <a class="footer-top" href="#main" aria-label="Back to the top" title="Back to the top">
+            <span class="footer-arrow" aria-hidden="true"></span>
+          </a>
+        </div>
+        <div class="footer-center">
+          <p class="footer-name">Kenneth Charles Valdez</p>
+          <p class="footer-email">
+            <a href="mailto:charleskenneth129@gmail.com">charleskenneth129@gmail.com</a>
+            <button class="copy-button" type="button" data-copy="charleskenneth129@gmail.com" aria-label="Copy email address" title="Copy email address">
+              <span class="icon icon-sm icon-copy" aria-hidden="true"></span><span class="footer-copied" data-copy-label>copy</span>
+            </button>
+          </p>
+          <p class="footer-links">
+            <a data-profile-link="github" href="https://github.com/chimkenchrls" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <span aria-hidden="true">&middot;</span>
+            <a data-profile-link="linkedin" href="https://www.linkedin.com/in/kennethcharlesvaldez" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+            <span aria-hidden="true">&middot;</span>
+            <a href="./?view=resume" data-view="resume">R&eacute;sum&eacute;</a>
+          </p>
+          <div class="footer-extras">
+            <button class="footer-chat" type="button" data-chat aria-haspopup="dialog" aria-controls="assistant-dialog">
+              <span class="icon icon-chat" aria-hidden="true"></span><span>Chat with me</span>
+            </button>
+            <button class="game-trigger" type="button" aria-haspopup="dialog" title="Play chimken (Alt + K)">
+              <span class="icon icon-chimken" aria-hidden="true"></span><span class="nav-text">Play chimken</span>
+            </button>
+            <button class="score-row" type="button" aria-haspopup="dialog" title="Play chimken (Alt + K)" hidden>
+              <span class="meta-label score-label">beat ck</span><span class="score-value">00000</span>
+            </button>
+            <button class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme (T)">
+              <span class="icon icon-sm icon-sun theme-icon" aria-hidden="true"></span><span class="theme-label">Light mode</span>
+            </button>
+          </div>
+        </div>
+        <nav class="footer-nav" aria-label="Footer">
+          <a href="./" data-section="home">Home</a>
+          <a href="./?view=projects" data-view="projects">Projects</a>
+          <a href="./?view=stack" data-view="stack">Stack</a>
+          <a href="./?view=resources" data-view="resources">Resources</a>
+          <a href="./?view=more" data-view="more">More</a>
+          <a href="./?view=links" data-view="links">Links</a>
+          <a href="./?view=guestbook" data-view="guestbook">Guestbook</a>
+          <a class="sidebar-contact" href="mailto:charleskenneth129@gmail.com" data-email aria-haspopup="dialog" aria-controls="contact-dialog">Contact</a>
+        </nav>
+        <div class="footer-bottom">
+          <p>All rights reserved<br />&copy; <span class="footer-year">2026</span> Kenneth Charles</p>
+          <p>Sariaya, Quezon, Philippines<br />GMT+8 &middot; <span class="footer-clock">--:--</span></p>
+        </div>
+      </div>
+    </footer>
     </div>
 
     <dialog class="phone-menu" id="phone-menu" aria-label="Menu">
@@ -576,113 +635,6 @@
       </div>
     </dialog>
 
-    <dialog class="ck-panel" id="ck-panel" aria-label="CK's menu">
-      <div class="ck-panel-head">
-        <div class="poke" hidden>
-          <p class="ck-panel-hi">Hi, I&#8217;m CK</p>
-          <p class="poke-count" aria-live="polite">
-            <span class="poke-label">Total pokes</span>
-            <span class="poke-value">0</span>
-          </p>
-          <button
-            class="poke-button"
-            type="button"
-            aria-label="Poke CK"
-            title="Poke me"
-          >
-            <span class="assistant-sprite" aria-hidden="true"></span>
-          </button>
-        </div>
-      </div>
-      <nav class="ck-panel-pages" aria-label="Pages in the menu">
-        <a class="nav-link" href="./" data-notch="home" data-section="home">Home</a>
-        <a class="nav-link" href="./?view=projects" data-notch="projects" data-view="projects">Projects</a>
-        <a class="nav-link" href="./?view=stack" data-notch="stack" data-view="stack">Stack</a>
-        <a class="nav-link" href="./?view=more" data-notch="more" data-view="more">More</a>
-      </nav>
-      <button
-          class="sidebar-chat"
-          type="button"
-          aria-haspopup="dialog"
-          aria-controls="assistant-dialog"
-          title="Chat with me"
-          hidden
-        >
-          <span class="icon icon-chat" aria-hidden="true"></span
-          ><span class="nav-text">Chat with me</span>
-        </button>
-      <button
-        class="game-trigger"
-        type="button"
-        aria-haspopup="dialog"
-        title="Play chimken (Alt + K)"
-      >
-        <span class="icon icon-chimken" aria-hidden="true"></span
-        ><span class="nav-text">Play chimken</span>
-      </button>
-      <button
-        class="score-row"
-        type="button"
-        aria-haspopup="dialog"
-        title="Play chimken (Alt + K)"
-        hidden
-      >
-        <span class="meta-label score-label">beat ck</span
-        ><span class="score-value">00000</span>
-      </button>
-      <a
-        class="sidebar-contact"
-        href="mailto:charleskenneth129@gmail.com"
-        data-email
-        aria-haspopup="dialog"
-        aria-controls="contact-dialog"
-        title="Contact"
-      >
-        <span class="icon icon-email" aria-hidden="true"></span
-        ><span class="nav-text">Contact</span>
-      </a>
-      <ul class="ck-panel-links">
-        <li><a href="./?view=resume" data-view="resume">R&eacute;sum&eacute;</a></li>
-        <li><a href="./?view=resources" data-view="resources">Resources</a></li>
-        <li><a href="./?view=links" data-view="links">Links</a></li>
-        <li><a href="./?view=guestbook" data-view="guestbook">Guestbook</a></li>
-      </ul>
-        <div class="sidebar-controls">
-          <span class="sidebar-zone">GMT+8</span>
-          <button
-            class="theme-toggle"
-            type="button"
-            aria-label="Toggle color theme"
-            title="Toggle theme (T)"
-          >
-            <span
-              class="icon icon-sm icon-sun theme-icon"
-              aria-hidden="true"
-            ></span
-            ><span class="theme-label visually-hidden">[MODE: LIGHT]</span>
-          </button>
-          <a
-            class="sidebar-icon"
-            data-profile-link="github"
-            href="https://github.com/chimkenchrls"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="GitHub"
-            title="GitHub"
-            ><span class="icon icon-sm icon-github" aria-hidden="true"></span
-          ></a>
-          <a
-            class="sidebar-icon"
-            data-profile-link="linkedin"
-            href="https://www.linkedin.com/in/kennethcharlesvaldez"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="LinkedIn"
-            title="LinkedIn"
-            ><span class="icon icon-sm icon-linkedin" aria-hidden="true"></span
-          ></a>
-        </div>
-    </dialog>
 
     <dialog class="contact-dialog" id="contact-dialog" aria-labelledby="contact-dialog-title">
       <div class="contact-dialog-header">

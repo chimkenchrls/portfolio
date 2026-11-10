@@ -3,7 +3,7 @@ import json
 import os
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from common import URL, check, finish, offline_api
+from common import URL, check, finish, offline_api, to_bottom
 
 SHOTS = os.environ.get("SHOTS")
 sent = []
@@ -89,13 +89,13 @@ with sync_playwright() as pw:
     check("one click applies it", p.input_value("#contact-email") == "ada@gmail.com" and not p.is_visible(".contact-suggest"))
 
     p.fill("#contact-message", "A draft to keep when the dialog closes.")
-    p.click(".notch-ck"); p.click(".sidebar-contact")
+    to_bottom(p); p.click(".sidebar-contact")
     check("Contact in CK's menu opens a labelled modal with the existing live form", p.is_visible(".contact-dialog[open]") and p.locator(".contact-dialog .contact-form").count() == 1 and p.locator("#contact-message").count() == 1)
     check("Home keeps a visible, inert copy while the live form is in the modal", p.is_visible("#contact > .contact-form") and p.locator("#contact > .contact-form[inert][aria-hidden=true]").count() == 1)
     check("the Home copy preserves the draft without duplicate IDs", p.input_value("#contact .contact-placeholder textarea") == "A draft to keep when the dialog closes." and p.evaluate("(() => { const ids = [...document.querySelectorAll('[id]')].map(n => n.id); return new Set(ids).size === ids.length; })()"))
     check("desktop: the close button takes focus and the draft survives", p.evaluate("document.activeElement.matches('.contact-dialog-close')") and p.input_value("#contact-message") == "A draft to keep when the dialog closes.")
     panel = box(p, ".contact-dialog")
-    check("desktop: the modal is centred and CK's menu has closed", abs(panel["x"] + panel["w"] / 2 - 640) < 1 and not p.locator(".ck-panel[open]").count(), str(panel))
+    check("desktop: the modal is centred", abs(panel["x"] + panel["w"] / 2 - 640) < 1, str(panel))
     if SHOTS: p.locator(".contact-dialog").screenshot(path=f"{SHOTS}/contact-modal-dark.png")
     p.evaluate("document.documentElement.setAttribute('data-theme', 'light')")
     if SHOTS: p.locator(".contact-dialog").screenshot(path=f"{SHOTS}/contact-modal-light.png")
@@ -112,16 +112,16 @@ with sync_playwright() as pw:
     p.keyboard.press("Tab")
     check("Tab wraps back to the close button", p.evaluate("document.activeElement.matches('.contact-dialog-close')"))
     p.keyboard.press("Escape")
-    check("Escape restores the form, its draft and the opener's focus", not p.locator(".contact-dialog[open]").count() and p.locator("#contact > .contact-form").count() == 1 and p.input_value("#contact-message") == "A draft to keep when the dialog closes." and p.evaluate("document.activeElement.matches('.notch-ck')"))
-    p.click(".notch-ck"); p.click(".sidebar-contact")
+    check("Escape restores the form, its draft and the opener's focus", not p.locator(".contact-dialog[open]").count() and p.locator("#contact > .contact-form").count() == 1 and p.input_value("#contact-message") == "A draft to keep when the dialog closes." and p.evaluate("document.activeElement.matches('.sidebar-contact')"))
+    to_bottom(p); p.click(".sidebar-contact")
     p.mouse.click(5, 5)
     check("clicking the backdrop closes the modal", not p.locator(".contact-dialog[open]").count())
     for view in ("more", "projects", "stack", "links", "resources"):
         p.goto(URL.split("#")[0] + "?view=" + view, wait_until="domcontentloaded")
-        p.click(".notch-ck"); p.click(".sidebar-contact")
+        to_bottom(p); p.click(".sidebar-contact")
         check(f"Contact works on the {view} page", p.is_visible(".contact-dialog .contact-form") and p.is_visible("#contact-message"))
         p.click(".contact-dialog-close")
-    p.click(".notch-ck"); p.click(".sidebar-contact")
+    to_bottom(p); p.click(".sidebar-contact")
     mode["next"] = "ok"
     before = len(sent)
     p.fill("#contact-name", "Ada")
@@ -143,14 +143,14 @@ with sync_playwright() as pw:
     check("phone: fields stack and the button is full width", email["y"] > name["b"] and send["w"] > 300 and p.evaluate("document.documentElement.scrollWidth <= innerWidth"))
     check("phone: inputs are 16px so iOS does not zoom", p.eval_on_selector("#contact-email", "n => getComputedStyle(n).fontSize") == "16px")
     if SHOTS: p.locator(".contact-form").screenshot(path=f"{SHOTS}/contact-phone.png")
-    p.click(".notch-ck"); p.click(".sidebar-contact")
-    check("phone: Contact closes CK's menu and opens the form", p.is_visible(".contact-dialog[open]") and not p.locator(".ck-panel[open]").count() and p.is_visible("#contact-message"))
+    to_bottom(p); p.click(".sidebar-contact")
+    check("phone: Contact in the footer opens the form", p.is_visible(".contact-dialog[open]") and p.is_visible("#contact-message"))
     check("phone: it fits the viewport and waits to open the keyboard", p.evaluate("document.querySelector('.contact-dialog').getBoundingClientRect().width <= innerWidth - 24") and p.evaluate("document.activeElement.matches('.contact-dialog-close')"))
     panel = box(p, ".contact-dialog")
     check("phone: the modal stays centered", abs(panel["x"] + panel["w"] / 2 - 187.5) < 1 and not p.locator(".contact-dialog[data-anchored]").count(), str(panel))
     if SHOTS: p.locator(".contact-dialog").screenshot(path=f"{SHOTS}/contact-modal-phone.png")
     p.click(".contact-dialog-close")
-    check("phone: closing restores focus to CK in the notch", p.evaluate("document.activeElement.matches('.notch-ck')") and not p.locator("body.contact-open").count())
+    check("phone: closing restores focus to Contact in the footer", p.evaluate("document.activeElement.matches('.sidebar-contact')") and not p.locator("body.contact-open").count())
     ctx.close()
 
     ctx = b.new_context(viewport={"width": 1280, "height": 900}, reduced_motion="reduce")
@@ -163,7 +163,7 @@ with sync_playwright() as pw:
     ctx.route("**/assets/data.js", lambda r: r.fulfill(content_type="text/javascript", body=data))
     p = ctx.new_page()
     p.goto(URL, wait_until="domcontentloaded")
-    p.click(".notch-ck"); p.click(".sidebar-contact")
+    to_bottom(p); p.click(".sidebar-contact")
     check("without a contact endpoint, the modal offers a direct email link", p.is_visible(".contact-dialog-fallback a") and p.get_attribute(".contact-dialog-fallback a", "href").startswith("mailto:") and not p.is_visible(".contact-form"))
     ctx.close()
     b.close()

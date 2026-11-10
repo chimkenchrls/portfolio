@@ -2397,7 +2397,7 @@
     const syncButton = () => {
       if (!button) return;
       const t = current();
-      $('.theme-label', button).textContent = `[MODE: ${t.toUpperCase()}]`;
+      $('.theme-label', button).textContent = t === 'dark' ? 'Light mode' : 'Dark mode';
       const icon = $('.theme-icon', button);
       icon.classList.toggle('icon-sun', t === 'light');
       icon.classList.toggle('icon-moon', t === 'dark');
@@ -3843,7 +3843,6 @@
       const character = $('.assistant-character', dialog);
       const pointerQuery = window.matchMedia('(hover: hover) and (pointer: fine)');
       const sprites = [$('.assistant-sprite', launcher), $('.assistant-sprite', character)];
-      const chatButton = $('.sidebar-chat');
       const poke = $('.poke');
       const pokeButton = $('.poke-button');
       const pokeValue = $('.poke-value');
@@ -4203,10 +4202,6 @@
         sprite.animate(sway, { duration: DIZZY_MS - 300, easing: 'ease-in-out' });
         showEmote(host, 'dizzy', DIZZY_MS);
       };
-      if (chatButton) {
-        chatButton.hidden = false;
-        chatButton.addEventListener('click', () => open(chatButton));
-      }
       // Every other way into the chat: About, the peeking CK, the footer, the phone menu.
       $$('[data-chat]').forEach((button) => button.addEventListener('click', () => open(button)));
       if (poke && pokeSprite) {
@@ -4248,8 +4243,12 @@
         cancelAnimationFrame(pointerFrame);
         pointerFrame = requestAnimationFrame(() => {
           pointerFrame = 0;
-          // The chat's CK while it is open, the menu's CK while that is open, else the notch CK.
-          const watcher = dialog.open ? character : pokeButton && pokeButton.getClientRects().length ? pokeButton : launcher;
+          // The chat's CK while it is open, the footer's CK while he is on screen, else the notch CK.
+          // (The footer can sit under the page, so "on screen" means nothing covers him.)
+          const footerBox = pokeButton && pokeButton.getClientRects().length ? pokeButton.getBoundingClientRect() : null;
+          const footerHit = footerBox && document.elementFromPoint(footerBox.left + footerBox.width / 2, footerBox.top + footerBox.height / 2);
+          const footerShown = Boolean(footerHit && pokeButton.contains(footerHit));
+          const watcher = dialog.open ? character : footerShown ? pokeButton : launcher;
           const box = watcher.getBoundingClientRect();
           const dx = x - box.left - box.width / 2;
           const dy = y - box.top - box.height * 0.4;
@@ -4452,6 +4451,44 @@
       motionQuery.addEventListener('change', schedule);
       document.addEventListener('portfolio:navigate', schedule);
       if (typeof ResizeObserver === 'function' && $('#about')) new ResizeObserver(schedule).observe($('#about'));
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
+     19e. Footer — the clock, back to the top, and the page lifting off it
+     ========================================================================== */
+  const siteFooter = (() => {
+    const footer = $('.footer');
+    const update = () => {
+      if (!footer) return;
+      // Measured as an ordinary footer, so the answer does not depend on the last one.
+      const on = footerFits(footer.offsetHeight, window.innerHeight) && !prefersReducedMotion();
+      root.style.setProperty('--footer-h', `${footer.offsetHeight}px`);
+      root.classList.toggle('footer-reveal', on);
+    };
+    const init = () => {
+      if (!footer) return;
+      const clock = $('.footer-clock', footer);
+      const tick = () => { if (clock) clock.textContent = manilaClock(Date.now()); };
+      tick();
+      window.setInterval(tick, 30000);
+      const top = $('.footer-top', footer);
+      if (top) top.addEventListener('click', (event) => {
+        event.preventDefault();
+        window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+        const main = $('#main');
+        if (main) main.focus({ preventScroll: true });
+      });
+      // Tabbing into a footer still under the page brings it into view.
+      footer.addEventListener('focusin', () => {
+        if (root.classList.contains('footer-reveal')) window.scrollTo({ top: root.scrollHeight, behavior: 'auto' });
+      });
+      update();
+      window.addEventListener('resize', update);
+      motionQuery.addEventListener('change', update);
+      document.addEventListener('portfolio:navigate', update);
+      if (typeof ResizeObserver === 'function') new ResizeObserver(update).observe(footer);
     };
     return { init };
   })();
@@ -5044,6 +5081,7 @@
     guestbook.init(data);
     scrollAids.init();
     navigation.init(data);
+    siteFooter.init();
     const year = $('.footer-year');
     if (year) year.textContent = String(new Date().getFullYear());
   };

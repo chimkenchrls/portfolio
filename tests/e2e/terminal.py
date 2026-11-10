@@ -21,7 +21,7 @@ with sync_playwright() as pw:
     order = p.evaluate("[...document.querySelectorAll('main > section')].filter(s => s.offsetParent).map(s => s.id)")
     check("More about me orders photos, intro, background, then terminal", order[-4:] == ["outside", "personal", "background", "contact"], str(order))
     more_link = p.locator('.notch .nav-link[data-notch="more"]')
-    check("the terminal is on the More about me page, linked from the notch, no shortcut badges", more_link.inner_text().strip() == "More" and p.is_visible(".terminal") and p.locator(".notch kbd, .ck-panel kbd").count() == 0)
+    check("the terminal is on the More about me page, linked from the notch, no shortcut badges", more_link.inner_text().strip() == "More" and p.is_visible(".terminal") and p.locator(".notch kbd, footer kbd").count() == 0)
     check("intro: nothing is printed before the terminal is on screen", EMAIL not in screen(p), screen(p))
     p.keyboard.press("6"); p.wait_for_timeout(450)
     mid = screen(p)
@@ -167,7 +167,8 @@ with sync_playwright() as pw:
     check("phone: no page overflow", p.evaluate("document.documentElement.scrollWidth <= 375"), str(p.evaluate("document.documentElement.scrollWidth")))
     check("phone: prompt text is 16px (no iOS zoom)", p.eval_on_selector(".terminal-input", "i => getComputedStyle(i).fontSize") == "16px")
     p.click(".notch-ck"); p.wait_for_timeout(300)
-    check("phone: CK's menu has the More about me link", p.is_visible('.ck-panel .nav-link[data-notch="more"]'))
+    check("phone: CK's menu has the More about me link", p.is_visible('.phone-menu .nav-link[data-notch="more"]'))
+    p.keyboard.press("Escape"); p.wait_for_timeout(300)
     check("no console errors (phone)", not errors, "; ".join(errors))
     ctx.close()
 

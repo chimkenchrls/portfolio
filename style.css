@@ -4160,14 +4160,215 @@ body.contact-open {
 }
 
 /* 18. Footer ============================================================== */
+/* On every page: CK to poke, the email big, the pages, CK's extras. When it fits
+   the window the page slides up off it (html.footer-reveal, set by siteFooter). */
 .footer {
-  margin-top: 8px;
-  padding: 24px 0 8px;
+  position: relative;
+  padding: clamp(28px, 4vw, 48px) clamp(20px, 5vw, 64px) 28px;
+  color: var(--fg);
+  background: var(--bg-alt);
+  border-radius: 28px 28px 0 0;
+}
+html.footer-reveal .footer {
+  position: fixed;
+  right: var(--frame-inset);
+  bottom: var(--frame-inset);
+  left: var(--frame-inset);
+  z-index: 0;
+}
+html.footer-reveal .frame {
+  padding-bottom: calc(var(--footer-h, 0px) + var(--frame-inset));
+}
+html.footer-reveal .main {
+  position: relative;
+  z-index: 1;
+  background: var(--bg);
+}
+.footer-inner {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "top top"
+    "center nav"
+    "bottom nav";
+  gap: 28px 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.footer-top-row {
+  grid-area: top;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+.footer .poke {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.footer .poke[hidden] {
+  display: none;
+}
+.footer .poke-button .assistant-sprite {
+  width: 72px;
+  height: 72px;
+}
+/* He sits on the left, so his emote hops beside the top-left of his head. */
+.footer .poke-emote {
+  top: 0;
+  right: auto;
+  left: 10px;
+}
+.footer .poke-count {
+  display: grid;
   font-family: var(--font-mono);
   font-size: 11px;
-  text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--fg-muted);
-  border-top: 1px solid var(--border);
+}
+.footer .poke-value {
+  font-size: 20px;
+  color: var(--fg);
+}
+.footer-top {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.footer-arrow {
+  width: 12px;
+  height: 12px;
+  margin-top: 5px;
+  border-top: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  rotate: 45deg;
+}
+.footer-center {
+  grid-area: center;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.footer-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.footer-email {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.footer-email a {
+  font-size: clamp(18px, 3.6vw, 40px);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  color: var(--fg);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.footer-copied {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.footer-links {
+  display: flex;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--fg-muted);
+}
+.footer-links a {
+  color: var(--fg-muted);
+  text-decoration: none;
+}
+.footer-extras {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.footer-extras > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.footer-extras > button[hidden] {
+  display: none;
+}
+.footer-nav {
+  grid-area: nav;
+  display: grid;
+  align-content: end;
+  justify-items: end;
+  gap: 10px;
+}
+.footer-nav a {
+  font-size: 15px;
+  text-transform: uppercase;
+  color: var(--fg);
+  text-decoration: none;
+}
+.footer-bottom {
+  grid-area: bottom;
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.footer-bottom p:last-child {
+  text-align: center;
+}
+@media (hover: hover) and (pointer: fine) {
+  .footer-nav a:hover,
+  .footer-links a:hover,
+  .footer-email a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+}
+@media (max-width: 639.98px) {
+  .footer-inner {
+    grid-template-columns: 1fr;
+    grid-template-areas: "top" "center" "nav" "bottom";
+  }
+  .footer-nav {
+    grid-template-columns: 1fr 1fr;
+    justify-items: start;
+  }
+  .footer-bottom {
+    flex-direction: column;
+  }
+  .footer-bottom p:last-child {
+    text-align: left;
+  }
 }
 
 /* 18b. Portfolio assistant ================================================ */

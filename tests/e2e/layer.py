@@ -1,8 +1,8 @@
-"""The photo deck must never draw over CK's menu, the notch, or the game popup."""
+"""The photo deck must never draw over the phone menu, the notch, or the game popup."""
 from playwright.sync_api import sync_playwright
 from common import MORE, check, finish, new_page
 
-PROBE = "(pt) => { const e = document.elementFromPoint(pt[0], pt[1]); return e ? [!!e.closest('.ck-panel'), !!e.closest('.deck'), String(e.className)] : null; }"
+PROBE = "(pt) => { const e = document.elementFromPoint(pt[0], pt[1]); return e ? [!!e.closest('.phone-menu'), !!e.closest('.deck'), String(e.className)] : null; }"
 
 with sync_playwright() as pw:
     b = pw.chromium.launch()
@@ -10,11 +10,11 @@ with sync_playwright() as pw:
     p.evaluate("document.querySelector('.deck').scrollIntoView({ block: 'center' }); 0"); p.wait_for_timeout(900)
     box = p.locator(".deck").bounding_box()
     p.click(".notch-ck"); p.wait_for_timeout(400)
-    side = p.locator(".ck-panel").bounding_box()
+    side = p.locator(".phone-menu").bounding_box()
     pts = [[box["x"] + 20, box["y"] + 40], [box["x"] + 60, box["y"] + box["height"] / 2], [box["x"] + 30, box["y"] + box["height"] - 30]]
     pts = [pt for pt in pts if pt[0] < side["x"] + side["width"] - 4 and side["y"] < pt[1] < side["y"] + side["height"]]
     res = [p.evaluate(PROBE, pt) for pt in pts]
-    check("open CK menu covers the photo deck", len(res) >= 2 and all(r and r[0] and not r[1] for r in res), str(res))
+    check("the open phone menu covers the photo deck", len(res) >= 2 and all(r and r[0] and not r[1] for r in res), str(res))
     p.keyboard.press("Escape"); p.wait_for_timeout(300)
     p.evaluate("(() => { const d = document.querySelector('.deck').getBoundingClientRect(); window.scrollBy(0, d.top - 20); return 0; })()"); p.wait_for_timeout(400)
     top = p.evaluate("(() => { const n = document.querySelector('.notch').getBoundingClientRect(); const e = document.elementFromPoint(n.left + n.width / 2, n.top + n.height / 2); return [!!e.closest('.notch'), !!e.closest('.deck')]; })()")
