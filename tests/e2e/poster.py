@@ -150,6 +150,11 @@ with sync_playwright() as pw:
     if SHOTS: p.screenshot(path=f"{SHOTS}/poster-tablet.png")
     ctx.close()
 
+    ctx, p, errors = page(b, 1280, 800, reduced_motion="reduce")
+    looks = p.evaluate("[...document.querySelectorAll('.poster-meta .social a, .poster-meta .social button')].map(n => [n.textContent.trim(), getComputedStyle(n).textTransform, getComputedStyle(n).letterSpacing])")
+    check("the bottom row's links all set the same way (DISCORD in capitals too)", len(looks) == 3 and all(l[1:] == looks[0][1:] for l in looks) and looks[0][1] == "uppercase", str(looks))
+    check("no Scroll link on the poster", p.locator(".poster a[href='#about']").count() == 0)
+    ctx.close()
     for theme, frame in (("dark", (0, 0, 0)), ("light", (0xdc, 0xdb, 0xd7))):
         ctx, p, errors = page(b, 1280, 800, theme=theme, reduced_motion="reduce")
         p.wait_for_timeout(500)
