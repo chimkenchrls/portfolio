@@ -429,7 +429,8 @@ test('notchCurrent lights one notch link per view', () => {
   assert.equal(notchCurrent('case'), 'projects');
   assert.equal(notchCurrent('stack'), 'stack');
   assert.equal(notchCurrent('more'), 'more');
-  for (const v of ['resume', 'resources', 'links', 'guestbook', '', undefined]) assert.equal(notchCurrent(v), null);
+  assert.equal(notchCurrent('resources'), 'resources');
+  for (const v of ['resume', 'links', 'guestbook', '', undefined]) assert.equal(notchCurrent(v), null);
 });
 
 test('posterTimeline follows the spec windows and ends at 2s', () => {
@@ -465,8 +466,56 @@ test('coverZoom shrinks About as Projects slides over it', () => {
   const { coverZoom } = require('../script.js');
   assert.equal(coverZoom(900, 900), 1, 'Projects not on screen yet: full size');
   assert.equal(coverZoom(1200, 900), 1);
-  assert.equal(coverZoom(0, 900), 0.9, 'Projects at the top: zoomed out');
-  assert.equal(coverZoom(-300, 900), 0.9);
-  assert.equal(coverZoom(450, 900), 0.95, 'halfway');
+  assert.equal(coverZoom(0, 900), 0.86, 'Projects at the top: zoomed out');
+  assert.equal(coverZoom(-300, 900), 0.86);
+  assert.equal(coverZoom(450, 900), 0.93, 'halfway');
   assert.equal(coverZoom(NaN, 900), 1);
+});
+
+test('coverShade darkens About to 0.9 as Projects covers it', () => {
+  const { coverShade, coverZoom } = require('../script.js');
+  assert.equal(coverShade(900, 800), 0); assert.equal(coverShade(400, 800), 0.45); assert.equal(coverShade(-50, 800), 0.9);
+  assert.equal(coverShade(NaN, 800), 0); assert.equal(coverZoom(1, 0), 1);
+});
+test('aboutFacts derives the two facts from data', () => {
+  const { aboutFacts } = require('../script.js');
+  const data = { education: [{ short: 'BSCS', year: 4, school: 'STI College Lucena', current: true }], projects: [{}, {}, {}, {}, {}] };
+  assert.deepEqual(aboutFacts(data), [
+    { value: 'BSCS', caption: '4th year · STI College Lucena' },
+    { value: '5 PROJECTS', caption: 'shipped and in progress' },
+  ]);
+  assert.equal(aboutFacts({ ...data, projects: [{}] })[1].value, '1 PROJECT');
+  assert.deepEqual(aboutFacts({ education: [{ short: null, year: null, school: 'X' }], projects: [] }), []);
+  assert.equal(aboutFacts({ education: [{ short: 'BSCS', year: null, school: 'STI' }], projects: [] })[0].caption, 'STI');
+  for (const [n, s] of [[1, '1st'], [2, '2nd'], [3, '3rd'], [11, '11th'], [22, '22nd']]) assert.equal(aboutFacts({ education: [{ short: 'B', year: n, school: 'S' }], projects: [] })[0].caption, `${s} year · S`);
+  assert.deepEqual(aboutFacts({}), []);
+});
+test('featuredProjects keeps the chosen order and skips unknown slugs', () => {
+  const { featuredProjects } = require('../script.js');
+  const projects = [{ title: 'Ambiancy' }, { title: 'Pakisuyo Express' }, { title: 'OwlSet' }, { title: 'Thready' }];
+  assert.deepEqual(featuredProjects(projects, ['ambiancy', 'thready', 'pakisuyo-express', 'nope']).map((p) => p.title), ['Ambiancy', 'Thready', 'Pakisuyo Express']);
+  assert.deepEqual(featuredProjects(projects, null), []);
+  assert.deepEqual(featuredProjects(null, ['ambiancy']), []);
+});
+test('litWords lights the sentence as it scrolls from 85% to 35% of the screen', () => {
+  const { litWords } = require('../script.js');
+  assert.equal(litWords(900, 200, 1000, 20), 0);
+  assert.equal(litWords(400, 200, 1000, 20), 15);
+  assert.equal(litWords(-1000, 200, 1000, 20), 20);
+  assert.equal(litWords(400, 200, 1000, 0), 0);
+  assert.equal(litWords(NaN, 200, 1000, 20), 0);
+});
+test('dealOffset stacks the cards on the middle one, then deals them out', () => {
+  const { dealOffset } = require('../script.js');
+  assert.deepEqual(dealOffset(1, 3, 0), { x: 0, rotate: 0 });
+  assert.deepEqual(dealOffset(0, 3, 0), { x: 100, rotate: -6 });
+  assert.deepEqual(dealOffset(2, 3, 0), { x: -100, rotate: 6 });
+  for (let i = 0; i < 3; i++) assert.deepEqual(dealOffset(i, 3, 1), { x: 0, rotate: 0 });
+  assert.deepEqual(dealOffset(0, 3, 2), { x: 0, rotate: 0 });
+  assert.deepEqual(dealOffset(0, 3, 0.5), { x: 50, rotate: -3 });
+});
+test('footerFits only when the footer is no taller than the window', () => {
+  const { footerFits } = require('../script.js');
+  assert.equal(footerFits(500, 800), true); assert.equal(footerFits(800, 800), true);
+  assert.equal(footerFits(801, 800), false); assert.equal(footerFits(NaN, 800), false); assert.equal(footerFits(0, 800), false);
 });

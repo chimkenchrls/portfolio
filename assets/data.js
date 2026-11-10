@@ -270,6 +270,9 @@ const PORTFOLIO_DATA = {
     {
       school: "STI College Lucena",
       degree: "Bachelor of Science in Computer Science",
+      // Shown big on Home's About with the year: "BSCS · 4th year". null hides it.
+      short: "BSCS",
+      year: 4,
       dates: "2023 — Current",
       current: true,
       bullets: [
@@ -351,6 +354,9 @@ const PORTFOLIO_DATA = {
       ],
     },
   ],
+
+  // The three projects shown on Home, by name in lower case with dashes. null shows none.
+  featured: ["ambiancy", "thready", "pakisuyo-express"],
 
   projects: [
     {

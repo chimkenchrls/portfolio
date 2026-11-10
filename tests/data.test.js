@@ -196,3 +196,16 @@ test('education lists the degree only, with optional relevant coursework', () =>
   const js = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', 'script.js'), 'utf8');
   assert.match(js, /el\('p', 'coursework-label', 'Relevant coursework'\)/);
 });
+
+test('About facts and the featured projects come from data', () => {
+  const data = require('../assets/data.js');
+  const { featuredProjects, validateData } = require('../script.js');
+  assert.equal(data.education[0].short, 'BSCS');
+  assert.equal(data.education[0].year, 4);
+  assert.deepEqual(featuredProjects(data.projects, data.featured).map((p) => p.title), ['Ambiancy', 'Thready', 'Pakisuyo Express']);
+  const bad = JSON.parse(JSON.stringify(data));
+  bad.featured = 'ambiancy';
+  assert.ok(validateData(bad).some((e) => e.startsWith('featured')));
+  bad.featured = null; bad.education[0].year = 0;
+  assert.ok(validateData(bad).some((e) => e.startsWith('education[0].year')));
+});

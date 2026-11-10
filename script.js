@@ -690,7 +690,7 @@
     }
   };
   // Which notch link is lit for a page (case studies belong to Projects).
-  const notchCurrent = (view) => ({ home: 'home', projects: 'projects', case: 'projects', stack: 'stack', more: 'more' })[view] || null;
+  const notchCurrent = (view) => ({ home: 'home', projects: 'projects', case: 'projects', stack: 'stack', resources: 'resources', more: 'more' })[view] || null;
   // The poster intro's windows in ms: lights on, photo steps in, name sweeps, the rest settles, notch drops.
   const posterTimeline = () => ({ light: [0, 600], photo: [400, 1100], name: [900, 1600], rest: [1400, 2000], notch: [1600, 2000], end: 2000 });
   // Where a stacked Home section sticks: at the top if it fits the screen, otherwise
@@ -699,13 +699,55 @@
     const gap = Number(viewportHeight) - Number(height);
     return Number.isFinite(gap) && gap < 0 ? gap : 0;
   };
-  // How small About gets while Projects slides over it: full size until Projects
-  // enters the screen, 90% once Projects reaches the top.
-  const coverZoom = (projectsTop, viewportHeight) => {
-    const covered = 1 - Number(projectsTop) / Number(viewportHeight);
-    if (!Number.isFinite(covered)) return 1;
-    return Math.round((1 - 0.1 * Math.min(1, Math.max(0, covered))) * 1000) / 1000;
+  // How much of the screen Projects has covered: 0 until it enters, 1 once it reaches the top.
+  const covered = (projectsTop, viewportHeight) => {
+    const share = 1 - Number(projectsTop) / Number(viewportHeight);
+    return Number.isFinite(share) ? Math.min(1, Math.max(0, share)) : 0;
   };
+  // How small About gets while Projects slides over it: full size, then 86%.
+  const coverZoom = (projectsTop, viewportHeight) => Math.round((1 - 0.14 * covered(projectsTop, viewportHeight)) * 1000) / 1000;
+  // How dark the shade over About gets meanwhile: clear, then 0.9.
+  const coverShade = (projectsTop, viewportHeight) => Math.round(0.9 * covered(projectsTop, viewportHeight) * 1000) / 1000;
+  const ordinal = (n) => {
+    const tens = n % 100;
+    const suffix = tens >= 11 && tens <= 13 ? 'th' : ({ 1: 'st', 2: 'nd', 3: 'rd' })[n % 10] || 'th';
+    return `${n}${suffix}`;
+  };
+  // About's two facts, from data only: the degree (with year and school) and the project count.
+  const aboutFacts = (data = {}) => {
+    const facts = [];
+    const schools = Array.isArray(data.education) ? data.education.filter(Boolean) : [];
+    const school = schools.find((e) => e.current) || schools[0];
+    if (school && typeof school.short === 'string' && school.short.trim()) {
+      const year = Number.isInteger(school.year) && school.year > 0 ? `${ordinal(school.year)} year` : null;
+      facts.push({ value: school.short.trim().toUpperCase(), caption: [year, school.school].filter(Boolean).join(' · ') });
+    }
+    const count = Array.isArray(data.projects) ? data.projects.length : 0;
+    if (count) facts.push({ value: `${count} PROJECT${count === 1 ? '' : 'S'}`, caption: 'shipped and in progress' });
+    return facts;
+  };
+  // The projects named in data.featured, in that order; unknown names are skipped.
+  const featuredProjects = (projects, slugs) => {
+    if (!Array.isArray(projects) || !Array.isArray(slugs)) return [];
+    return slugs.map((slug) => projects.find((p) => p && projectSlug(p.title) === `project-${slug}`)).filter(Boolean);
+  };
+  // How many words of About's sentence are lit: none while its top is below 85% of the
+  // screen, all once it has scrolled up through half the screen plus half its height.
+  const litWords = (top, height, viewportHeight, count) => {
+    const progress = (0.85 * viewportHeight - top) / (0.5 * viewportHeight + 0.5 * height);
+    if (!Number.isFinite(progress) || !(count > 0)) return 0;
+    return Math.round(Math.min(1, Math.max(0, progress)) * count);
+  };
+  // Where a certification card sits while they deal out: stacked on the middle card
+  // (x in % of a card's width) and tilted at 0, in its own place at 1.
+  const dealOffset = (i, count, progress) => {
+    const left = 1 - Math.min(1, Math.max(0, Number(progress) || 0));
+    const mid = (count - 1) / 2;
+    const tidy = (n) => Math.round(n * 1000) / 1000 || 0;
+    return { x: tidy(left * (mid - i) * 100), rotate: tidy(left * (i - mid) * 6) };
+  };
+  // The page lifts off the footer only when the whole footer fits on the screen.
+  const footerFits = (footerHeight, viewportHeight) => footerHeight > 0 && footerHeight <= viewportHeight;
   // "01 · About" for the Home panels after the poster; null for Home itself or an unknown id.
   const panelLabel = (id) => {
     const index = SECTIONS.findIndex((section) => section.id === id);
@@ -1043,7 +1085,10 @@
       if (!isText(e.school) || !isText(e.degree) || !isText(e.dates)) errors.push(`${p}: school, degree, dates required`);
       if (e.bullets != null && !Array.isArray(e.bullets)) errors.push(`${p}.bullets: must be an array or null`);
       if (e.coursework != null && !(Array.isArray(e.coursework) && e.coursework.every(isText))) errors.push(`${p}.coursework: an array of course names or null`);
+      if (!isOptionalText(e.short)) errors.push(`${p}.short: text or null`);
+      if (e.year != null && !(Number.isInteger(e.year) && e.year > 0)) errors.push(`${p}.year: a positive whole number or null`);
     });
+    if (data.featured != null && !(Array.isArray(data.featured) && data.featured.every(isText))) errors.push('featured: an array of project names (slugs) or null');
     checkList('stack', data.stack, (g, p) => {
       if (!isText(g.category)) errors.push(`${p}.category: required text`);
       checkList(`${p}.items`, g.items, (item, ip) => {
@@ -1208,7 +1253,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, stickTop, coverZoom, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
+      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, stickTop, coverZoom, coverShade, aboutFacts, featuredProjects, litWords, dealOffset, footerFits, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
