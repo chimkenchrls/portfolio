@@ -2224,7 +2224,23 @@
       section.append(heading, list);
       return section;
     });
-    const renderers = { projectsIntro, stackIntro, social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, resources, resourcesHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
+    // About's sentence (data.js profile.bio): one aria-label, a span per word so it can light up.
+    const statement = ({ profile = {} }) => {
+      const text = typeof profile.bio === 'string' ? profile.bio.trim() : '';
+      const box = $('#about .statement');
+      if (box) box.setAttribute('aria-label', text);
+      return text.split(/\s+/).filter(Boolean).flatMap((word, i) => {
+        const span = el('span', 'word', word);
+        span.setAttribute('aria-hidden', 'true');
+        return i ? [document.createTextNode(' '), span] : [span];
+      });
+    };
+    const facts = (data) => aboutFacts(data).map(({ value, caption }) => {
+      const li = el('li', 'fact');
+      li.append(el('span', 'fact-value', value), el('span', 'fact-caption', caption));
+      return li;
+    });
+    const renderers = { statement, aboutFacts: facts, projectsIntro, stackIntro, social, experience, education, stack, stackHeading, projects, projectsHeading, projectListHeading, certifications, outside, moreHeading, personal, resources, resourcesHeading, linksHeading, profileLinks, resumeHeading, resume, now, guestbookHeading, guestbook: guestbookShell };
 
     const showLoadError = (container) => {
       if (container.dataset.render === 'social') return; // static github link stays
@@ -2293,19 +2309,25 @@
     const applyResume = (data) => {
       const { profile = {} } = data;
       const href = safeResume(profile.resume);
+      if (!href) return;
+      const button = (text) => {
+        const link = el('a', 'btn btn-secondary', text);
+        // The Resume page when there is one; otherwise straight to the PDF.
+        if (data.resumePage) {
+          link.href = './?view=resume';
+          link.addEventListener('click', openResume);
+        } else {
+          link.href = href;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+        }
+        return link;
+      };
       const actions = $('.poster-actions');
-      if (!href || !actions) return;
-      const link = el('a', 'btn btn-secondary', 'Résumé');
-      // The Resume page when there is one; otherwise straight to the PDF.
-      if (data.resumePage) {
-        link.href = './?view=resume';
-        link.addEventListener('click', openResume);
-      } else {
-        link.href = href;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-      }
-      actions.append(link);
+      if (actions) actions.append(button('Résumé'));
+      // About's row: Chat with CK · View résumé · Explore all projects.
+      const about = $('#about .about-actions');
+      if (about) about.insertBefore(button('View résumé'), about.lastElementChild);
     };
 
 
@@ -3139,7 +3161,7 @@
           play(entry.target);
         });
       }, { threshold: 0.1, rootMargin: '0px 0px -10% 0px' });
-      $$('#main .divider-label').forEach((label) => observer.observe(label));
+      $$('#main .divider-label, #main .fact-value').forEach((label) => observer.observe(label));
     };
     return { init };
   })();
@@ -4435,9 +4457,14 @@
       const about = $('#about');
       const projects = $('#projects');
       if (!about || !projects) return;
+      const shade = $('.cover-shade', about);
       const home = root.classList.contains('is-home');
+      const moving = home && !prefersReducedMotion();
+      const top = projects.getBoundingClientRect().top;
       about.style.top = home ? `${stickTop(window.innerHeight, about.offsetHeight)}px` : '';
-      about.style.scale = home && !prefersReducedMotion() ? String(coverZoom(projects.getBoundingClientRect().top, window.innerHeight)) : '';
+      about.style.scale = moving ? String(coverZoom(top, window.innerHeight)) : '';
+      if (shade) shade.style.opacity = moving ? String(coverShade(top, window.innerHeight)) : '';
+      wordLight.update();
     };
     const schedule = () => {
       if (queued) return;
@@ -4453,6 +4480,24 @@
       if (typeof ResizeObserver === 'function' && $('#about')) new ResizeObserver(schedule).observe($('#about'));
     };
     return { init };
+  })();
+
+  // About's sentence lights up word by word as it scrolls up (all at once off Home or under reduced motion).
+  const wordLight = (() => {
+    let lit = -1;
+    const update = () => {
+      const box = $('#about .statement');
+      if (!box) return;
+      const words = $$('.word', box);
+      const r = box.getBoundingClientRect();
+      const count = !root.classList.contains('is-home') || prefersReducedMotion()
+        ? words.length
+        : litWords(r.top, r.height, window.innerHeight, words.length);
+      if (count === lit) return;
+      lit = count;
+      words.forEach((word, i) => word.classList.toggle('is-lit', i < count));
+    };
+    return { update };
   })();
 
   /* ==========================================================================

@@ -211,33 +211,19 @@
         <div class="panel-head">
           <div>
             <p class="panel-label divider-label" aria-hidden="true">01 &middot; About</p>
-            <h2 class="panel-title" id="about-heading">About</h2>
+            <h2 class="panel-title visually-hidden" id="about-heading">About</h2>
           </div>
         </div>
-        <div class="about-bio">
-          <p>
-            I’m a 4th-year BS Computer Science student at STI College Lucena
-            with a genuine interest in understanding how technology works. My
-            interest in DevOps Engineering grew from my curiosity about how
-            different systems work together and how to make deployments more
-            efficient, reliable, and scalable.
-          </p>
-          <p>
-            Right now, I’m just building side projects to sharpen my skills. I
-            really enjoy turning rough ideas into practical tools that people
-            can actually use.
-          </p>
+        <p class="statement" data-render="statement">
+          A 4th-year BS Computer Science student at STI College Lucena, building
+          side projects and learning how to make deployments smooth and scalable.
+        </p>
+        <div class="about-actions">
+          <button class="btn btn-primary" type="button" data-chat aria-haspopup="dialog" aria-controls="assistant-dialog">Chat with CK</button>
+          <a class="btn btn-secondary" href="./?view=projects" data-view="projects">Explore all projects</a>
         </div>
-        <div class="about-grid">
-          <div class="timeline-block">
-            <h3 class="block-title">Experience</h3>
-            <ul class="rows" data-render="experience"></ul>
-          </div>
-          <div class="timeline-block">
-            <h3 class="block-title">Education</h3>
-            <ul class="rows" data-render="education"></ul>
-          </div>
-        </div>
+        <ul class="facts" data-render="aboutFacts"></ul>
+        <div class="cover-shade" aria-hidden="true"></div>
       </section>
 
       <section class="section panel" id="projects" aria-labelledby="projects-heading">

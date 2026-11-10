@@ -1581,12 +1581,112 @@ html.is-home #projects::before {
   filter: grayscale(1);
   pointer-events: none;
 }
-/* About: the bio large; the rows beside it. */
-html.is-home #about .about-bio p:first-child {
-  font-size: clamp(19px, 2vw, 24px);
-  line-height: 1.4;
-  letter-spacing: -0.012em;
+/* About: a statement screen. The sentence big and centred, lighting up word by word
+   (wordLight); three buttons; two facts. A shade in the frame colour darkens it as
+   Projects covers it (coverShade). */
+html.is-home #about {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100svh - var(--frame-inset));
+  text-align: center;
+  overflow: clip;
+}
+html.is-home #about .panel-head {
+  display: block;
+  margin-bottom: 28px;
+}
+.statement {
+  max-width: 20em;
+  margin: 0 auto;
+  font-size: clamp(28px, 4.4vw, 58px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
   color: var(--fg);
+}
+html.is-home .statement .word {
+  color: color-mix(in srgb, var(--fg-muted) 55%, var(--bg));
+  transition: color 200ms ease-out;
+}
+html.is-home .statement .word.is-lit {
+  color: var(--fg);
+}
+.about-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 36px;
+}
+.facts {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 760px);
+  margin: 48px auto 0;
+  padding: 22px 0;
+  list-style: none;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.fact {
+  display: grid;
+  flex: 1;
+  align-content: start;
+  gap: 10px;
+  justify-items: center;
+  padding: 0 16px;
+}
+.fact + .fact {
+  border-left: 1px solid var(--border);
+}
+.fact-value {
+  white-space: nowrap;
+  font-size: clamp(26px, 4.6vw, 60px);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.fact-caption {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+.cover-shade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--frame);
+  opacity: 0;
+  pointer-events: none;
+}
+html:not(.is-home) .cover-shade {
+  display: none;
+}
+@media (max-width: 639.98px) {
+  .about-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  .fact-value {
+    font-size: 24px;
+  }
+}
+/* The narrowest phones: the facts sit one above the other. */
+@media (max-width: 399.98px) {
+  .facts {
+    flex-direction: column;
+    gap: 18px;
+  }
+  .fact + .fact {
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+    border-left: 0;
+  }
 }
 /* The poster and About scroll normally; then About stays put once its bottom reaches
    the bottom of the screen (script.js sets its top with stickTop) and zooms out a
@@ -4320,6 +4420,30 @@ html.footer-reveal .main {
 }
 .footer-extras > button[hidden] {
   display: none;
+}
+/* The buttons that came from the old sidebar keep their hooks but take the footer's look. */
+.footer-extras > :is(.game-trigger, .score-row, .theme-toggle) {
+  flex: none;
+  width: auto;
+  margin: 0;
+  color: var(--fg);
+  border-style: solid;
+}
+.footer-extras .nav-text,
+.footer-extras .theme-label {
+  flex: none;
+  white-space: nowrap;
+}
+.footer-nav .sidebar-contact {
+  display: inline;
+  width: auto;
+  height: auto;
+  padding: 0;
+  font-size: 15px;
+  font-weight: inherit;
+  background: none;
+  border: 0;
+  box-shadow: none;
 }
 .footer-nav {
   grid-area: nav;

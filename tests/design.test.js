@@ -223,7 +223,7 @@ test('each Home panel is labelled by panelLabel and titled with its real name', 
   for (const [id, title] of Object.entries(titles)) {
     const section = between(html, `id="${id}"`, '</section>');
     assert.match(section, new RegExp(`class="panel-label divider-label"[^>]*>${panelLabel(id).replace('·', '&middot;')}<`), `${id} label`);
-    assert.match(section, new RegExp(`class="panel-title" id="${id}-heading">${title}<`), `${id} title`);
+    assert.match(section, new RegExp(`class="panel-title(?: visually-hidden)?" id="${id}-heading">${title}<`), `${id} title`);
   }
 });
 
