@@ -1326,7 +1326,7 @@ body {
 /* After the poster, each Home section is a rounded panel that slides up over the
    one before it, alternating paper and ink. Inside a panel the page tokens take
    that panel's tone, so the components in it follow without their own rules. */
-.panel-paper {
+html.is-home .panel-paper {
   --bg: var(--paper);
   --surface: var(--paper-2);
   --bg-alt: color-mix(in srgb, var(--paper) 92%, var(--paper-fg));
@@ -1342,7 +1342,7 @@ body {
   --cursor-link: url("./assets/icons/cursor-on-light.svg") 4 3, pointer;
   color-scheme: light;
 }
-.panel-ink {
+html.is-home .panel-ink {
   --bg: var(--ink);
   --surface: var(--ink-2);
   --bg-alt: #212125;
@@ -3094,6 +3094,14 @@ html.view-more .outside-intro {
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.02em;
+}
+/* Every page's title is set like a Home panel title: big, uppercase, tight. */
+:is(.more-page-header, .projects-page-header, .stack-page-header, .resume-page-header, .links-page-header, .guestbook-page-header, .resources-page-header) .personal-title {
+  margin: 16px 0 20px;
+  font-size: clamp(44px, 7.5vw, 88px);
+  line-height: 0.88;
+  letter-spacing: -0.045em;
+  text-transform: uppercase;
 }
 .personal-identity {
   margin-bottom: 24px;

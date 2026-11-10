@@ -232,3 +232,16 @@ test('panel motion is progressive and off for reduced motion', () => {
   assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{\s*@supports \(animation-timeline: view\(\)\) \{[^@]*animation-timeline: view\(\)/);
   assert.equal(css.split('animation-timeline: view();').length, 2, 'used in that one place only');
 });
+
+// Poster redesign: the other pages wear the poster headings.
+test('every page title uses the poster heading style', () => {
+  assert.match(css, /:is\(\.more-page-header, \.projects-page-header, \.stack-page-header, \.resume-page-header, \.links-page-header, \.guestbook-page-header, \.resources-page-header\) \.personal-title \{[^}]*text-transform:\s*uppercase[^}]*\}/);
+});
+
+test('404 keeps to itself and wears the frame', () => {
+  const page = read('404.html');
+  assert.doesNotMatch(page, /script\.js|data\.js/);
+  assert.match(page, /class="frame"/);
+  assert.match(page, /<nav class="notch"[^>]*>\s*<a class="notch-ck" href="https:\/\/kenchrls\.vercel\.app\/" aria-label="Home">/);
+  assert.match(page, /text-transform: uppercase/);
+});

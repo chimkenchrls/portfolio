@@ -20,7 +20,7 @@
     <!-- Served at any missing path, so every URL here is absolute and the styles are inline. -->
     <style>
       html {
-        background: #0f0f11;
+        background: #000000;
         color: #ececee;
         font-family: Geist, system-ui, sans-serif;
         cursor:
@@ -28,12 +28,36 @@
           auto;
       }
       body {
-        display: grid;
-        place-content: center;
-        min-height: 100svh;
         margin: 0;
+      }
+      .frame {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: calc(100svh - 24px);
+        margin: 12px;
+        background: #0f0f11;
+        border-radius: 28px;
+      }
+      .notch {
+        display: grid;
+        place-items: center;
+        width: 96px;
+        height: 52px;
+        margin: 0 auto;
+        background: #000000;
+        border-radius: 0 0 22px 22px;
+      }
+      .notch-ck {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        background: url("https://kenchrls.vercel.app/assets/mascot/mini-ck-directions.webp") 50% 50% / 300% 300% no-repeat;
+        image-rendering: pixelated;
+        filter: grayscale(1);
+      }
+      main {
+        place-self: center;
         padding: 16px;
-        box-sizing: border-box;
       }
       p {
         margin: 0;
@@ -46,8 +70,11 @@
       }
       h1 {
         margin: 12px 0 24px;
-        font-size: 24px;
-        font-weight: 600;
+        font-size: clamp(40px, 9vw, 88px);
+        font-weight: 500;
+        line-height: 0.88;
+        letter-spacing: -0.045em;
+        text-transform: uppercase;
       }
       a {
         display: inline-block;
@@ -58,10 +85,15 @@
     </style>
   </head>
   <body>
-    <main>
-      <p class="code">404</p>
-      <h1>This page doesn't exist.</h1>
-      <a href="https://kenchrls.vercel.app/">← Home</a>
-    </main>
+    <div class="frame">
+      <nav class="notch" aria-label="Site">
+        <a class="notch-ck" href="https://kenchrls.vercel.app/" aria-label="Home"></a>
+      </nav>
+      <main>
+        <p class="code">404</p>
+        <h1>This page doesn't exist.</h1>
+        <a href="https://kenchrls.vercel.app/">← Home</a>
+      </main>
+    </div>
   </body>
 </html>
