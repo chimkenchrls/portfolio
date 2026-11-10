@@ -50,7 +50,7 @@ test('sidebar labels are in title case, not forced lowercase', () => {
   const navRule = css.slice(css.indexOf('.nav-link,\n.quick-jump-trigger {'), css.indexOf('.nav-link:hover'));
   assert.doesNotMatch(navRule, /text-transform:\s*lowercase/);
   const html = read('index.html');
-  for (const text of ['Play chimken', '>Kenneth Charles</a>']) {
+  for (const text of ['Play chimken']) {
     assert.ok(html.includes(text), `missing "${text}"`);
   }
 });
@@ -72,14 +72,6 @@ test('quick jump is replaced by the chimken game', () => {
   assert.match(html, /class="game-close"/, 'touch users need a close button');
   assert.ok(fs.existsSync(path.join(ROOT, 'assets', 'icons', 'chimken.svg')));
   assert.doesNotMatch(read('style.css'), /quick-jump/);
-});
-
-test('sidebar shows the public name on desktop; rail keeps the CK mark', () => {
-  const html = read('index.html');
-  assert.match(html, /class="brand-name"[^>]*>Kenneth Charles</);
-  assert.match(html, /<a[^>]*class="brand"[^>]*aria-label="Kenneth Charles/);
-  assert.match(html, /class="brand-mark"[^>]*>CK</);
-  assert.match(html, /class="topbar-brand"[^>]*>Kenneth Charles</);
 });
 
 test('"Outside the IDE" is the last section before the footer and is not in the nav', () => {
@@ -122,12 +114,12 @@ test('"Get in touch" terminal is the last section, with a no-JS contact fallback
   assert.ok(fs.existsSync(path.join(ROOT, 'assets', 'icons', 'contact.svg')));
 });
 
-test('sidebar has no visible shortcut badges; keys live in hover tooltips', () => {
+test("CK's menu has no visible shortcut badges; keys live in hover tooltips", () => {
   const html = read('index.html');
-  const sidebar = html.slice(html.indexOf('<aside'), html.indexOf('</aside>'));
-  assert.doesNotMatch(sidebar, /<kbd/, 'no kbd badges in the sidebar');
+  const sidebar = html.slice(html.indexOf('<dialog class="ck-panel"'), html.indexOf('</dialog>', html.indexOf('<dialog class="ck-panel"')));
+  assert.doesNotMatch(sidebar, /<kbd/, 'no kbd badges in the menu');
   for (const [id, label, key] of [['home', 'Home', 1]]) {
-    assert.match(sidebar, new RegExp(`data-section="${id}"\\s+title="${label} \\(${key}\\)"`), `${label} tooltip`);
+    assert.match(html, new RegExp(`data-section="${id}"\\s+title="${label} \\(${key}\\)"`), `${label} tooltip`);
   }
   assert.match(sidebar, /title="Play chimken \(Alt \+ K\)"/);
   assert.match(sidebar, /title="Toggle theme \(T\)"/);
@@ -202,25 +194,19 @@ test('Projects comes before Stack, in the page and in the nav', () => {
   const order = ['home', 'about', 'projects', 'stack', 'certifications', 'resume', 'links', 'guestbook', 'outside', 'personal', 'now', 'background', 'resources', 'contact'];
   const found = [...html.matchAll(/<section[^>]*\sid="([\w-]+)"/g)].map((m) => m[1]);
   assert.deepEqual(found, order);
-  const links = [...html.matchAll(/class="nav-link"\s+href="\.\/([^"]*)"/g)].map((m) => m[1]);
-  assert.deepEqual(links, ['', '?view=links', '?view=resources', '?view=more', '?view=projects', '?view=stack', '?view=guestbook'], 'Menu: Home, Links, Resources. Explore: More about me, Projects, Stack, hello, world!');
+  const notch = html.slice(html.indexOf('<nav class="notch"'), html.indexOf('</nav>', html.indexOf('<nav class="notch"')));
+  const links = [...notch.matchAll(/class="nav-link"\s+href="\.\/([^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(links, ['', '?view=projects', '?view=stack', '?view=more'], 'Notch: Home, Projects, Stack, More');
 });
 
-test('sidebar footer: no status line or visitor counter; a chimken score row instead', () => {
+test("CK's menu: no status line or visitor counter; a chimken score row instead", () => {
   const html = read('index.html');
-  const sidebar = html.slice(html.indexOf('<aside'), html.indexOf('</aside>'));
+  const sidebar = html.slice(html.indexOf('<dialog class="ck-panel"'), html.indexOf('</dialog>', html.indexOf('<dialog class="ck-panel"')));
   assert.doesNotMatch(sidebar, /Open to OJT/, 'status line removed from the sidebar');
   assert.doesNotMatch(html + read('style.css') + read('script.js'), /visitors|abacus|status-dot|status-pulse/);
   assert.match(sidebar, /<button\s+class="score-row"[^>]*type="button"[^>]*hidden/, 'hidden until the script fills it');
   assert.match(read('script.js'), /\$\$\('\.game-trigger, \.score-row'\)/, 'the score row opens the game');
   assert.match(html, /class="terminal" data-status="Open to OJT \/ Internship"/, 'the terminal still knows the status');
-});
-
-test('"Play chimken" sits at the bottom of the sidebar, right above the footer rows', () => {
-  const html = read('index.html');
-  const trigger = html.indexOf('class="game-trigger"');
-  assert.ok(trigger > html.indexOf('</nav>') && trigger < html.indexOf('class="sidebar-bottom"'));
-  assert.match(read('style.css'), /\.game-trigger\s*\{\s*margin-top:\s*auto;/);
 });
 
 const webpInfo = (name) => {

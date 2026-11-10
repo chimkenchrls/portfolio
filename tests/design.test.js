@@ -53,7 +53,6 @@ test('depth comes from surfaces: cards read as raised in both themes, and text s
   }
   const noJs = css.slice(css.indexOf(':root:not([data-theme])'));
   assert.match(noJs.slice(0, noJs.indexOf('}')), /--surface:/, 'the no-JS dark fallback has the surface too');
-  assert.match(block('.nav-link.is-active'), /background:\s*var\(--bg-alt\)/, 'the active nav item has a distinct background');
 });
 
 test('section headings keep the original centered divider style', () => {
@@ -83,7 +82,6 @@ test('cards are kept for projects and certifications; the other sections are rul
   for (const name of ['.stack-group', '.timeline-block', '.github-panel']) {
     assert.doesNotMatch(block(name), /box-shadow|background:\s*var\(--surface\)/, `${name} is flat`);
   }
-  assert.match(block('.sidebar'), /background:\s*var\(--surface\)/, 'the sidebar is still a surface');
   assert.match(js, /el\('li', 'project'\)/);
 });
 
@@ -100,14 +98,6 @@ test('new motion is switched off for reduced-motion users', () => {
   const reduced = css.slice(css.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
   assert.doesNotMatch(css, /\.card:hover/, 'nothing lifts on hover any more');
   assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{[^@]*\.btn:active[^}]*\{\s*scale: none;/, 'press feedback is off too');
-});
-
-test('on phones the hero fills the first screen, so About starts below the fold', () => {
-  const phone = css.slice(css.indexOf('@media (max-width: 639.98px)'));
-  const hero = /\n  \.hero \{([^}]*)\}/.exec(phone);
-  assert.ok(hero, 'a phone-only hero rule exists');
-  assert.match(hero[1], /min-height:\s*calc\(100svh - var\(--topbar-h\) - 28px\)/);
-  assert.match(hero[1], /justify-content:\s*center/);
 });
 
 test('the cursor is one rounded arrowhead per theme: white on dark, black on light', () => {
@@ -133,4 +123,33 @@ test('the cursor is one rounded arrowhead per theme: white on dark, black on lig
   assert.match(burst, /event\.pointerType !== 'mouse'/, 'no burst on touch');
   assert.match(burst, /prefersReducedMotion\(\)/);
   assert.match(burst, /const RAYS = \[165, 205, 245, 285, 325\];/);
+});
+
+// Poster redesign: the frame, the notch and CK's panel replace the sidebar.
+const between = (text, start, end) => {
+  const a = text.indexOf(start);
+  assert.ok(a > -1, `missing ${start}`);
+  return text.slice(a, text.indexOf(end, a));
+};
+
+test('the sidebar, top bar, drawer and floating CK are gone', () => {
+  for (const gone of ['class="sidebar"', 'class="topbar"', 'class="backdrop"', 'assistant-launcher', 'collapse-toggle', 'menu-toggle']) {
+    assert.ok(!html.includes(gone), `index.html still has ${gone}`);
+  }
+  for (const gone of [/^\.sidebar \{/m, /^\.topbar \{/m, /body\.is-rail/, /\.assistant-launcher/]) assert.doesNotMatch(css, gone);
+});
+
+test('the notch holds four page links and CK', () => {
+  const notch = between(html, '<nav class="notch"', '</nav>');
+  const order = [...notch.matchAll(/data-notch="([a-z]+)"|class="notch-ck"/g)].map((m) => m[1] || 'ck');
+  assert.deepEqual(order, ['home', 'projects', 'ck', 'stack', 'more']);
+  assert.match(notch, /class="notch-ck"[^>]*aria-controls="ck-panel"/);
+});
+
+test("CK's panel holds the old sidebar controls", () => {
+  const panel = between(html, '<dialog class="ck-panel" id="ck-panel"', '</dialog>');
+  for (const part of ['sidebar-chat', 'game-trigger', 'score-row', 'poke-button', 'poke-value', 'theme-toggle', 'data-email', 'data-profile-link="github"', 'data-profile-link="linkedin"']) {
+    assert.ok(panel.includes(part), `panel lacks ${part}`);
+  }
+  for (const view of ['resume', 'resources', 'links', 'guestbook']) assert.ok(panel.includes(`href="./?view=${view}"`), `panel lacks ${view}`);
 });

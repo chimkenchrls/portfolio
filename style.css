@@ -52,9 +52,9 @@
   --cursor: url("./assets/icons/cursor-on-light.svg") 4 3, auto;
   --cursor-link: url("./assets/icons/cursor-on-light.svg") 4 3, pointer;
 
-  --sidebar-w: 248px;
-  --rail-w: 56px;
   --topbar-h: 56px;
+  --frame: #dcdbd7;
+  --notch-fg: #55555a;
   --radius: 6px;
   --radius-lg: 12px;
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
@@ -72,6 +72,8 @@
   --border: #232327;
   --status: #5fd08a;
   --surface: #19191c;
+  --frame: #000000;
+  --notch-fg: #a9a9ae;
   --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
   --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
   --chimken-line: #000000;
@@ -92,6 +94,8 @@
   --border: #232327;
   --status: #5fd08a;
   --surface: #19191c;
+  --frame: #000000;
+  --notch-fg: #a9a9ae;
   --cursor: url("./assets/icons/cursor-on-dark.svg") 4 3, auto;
   --cursor-link: url("./assets/icons/cursor-on-dark.svg") 4 3, pointer;
   --chimken-line: #000000;
@@ -332,38 +336,8 @@ dd {
 }
 
 /* 6. Layout =============================================================== */
-.topbar {
-  display: none;
-}
-.backdrop {
-  display: none;
-}
 
-.sidebar {
-  position: fixed;
-  inset: 18px auto 18px 18px;
-  z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: var(--sidebar-w);
-  padding: 18px 16px 0;
-  overflow-y: auto;
-  scrollbar-width: none;
-  background: var(--surface);
-  background-image: var(--grain), linear-gradient(var(--panel-frame), var(--bg-alt));
-  border: 1px solid var(--panel-edge);
-  border-radius: 26px;
-  isolation: isolate;
-  box-shadow:
-    inset 0 1px 0 var(--panel-shine),
-    var(--shadow-lift);
-  transition:
-    width var(--t) var(--ease),
-    padding var(--t) var(--ease);
-}
 /* An inset panel leaves the textured five-pixel frame visible. */
-.sidebar::before,
 .contact-dialog::before {
   content: "";
   position: absolute;
@@ -376,7 +350,6 @@ dd {
   pointer-events: none;
 }
 .main {
-  margin-left: calc(var(--sidebar-w) + 36px);
   padding: 48px clamp(24px, 5vw, 64px) 32px;
   outline: none;
   transition: margin-left var(--t) var(--ease);
@@ -444,38 +417,109 @@ dd {
   transform-origin: left;
 }
 
-/* 7. Sidebar ============================================================== */
-/* Full desktop sidebar shows the name; the rail shows a CK mark; the mobile
-   drawer shows neither (the top bar already has the name). */
-.sidebar-head {
+/* 7. Frame & notch ======================================================== */
+/* The whole page sits in a rounded frame; the notch at its top holds the page
+   links and CK, who opens his menu (section 8). */
+body {
+  background-color: var(--frame);
+}
+.frame {
+  position: relative;
+  min-height: calc(100vh - 24px);
+  margin: 12px;
+  background: var(--bg);
+  border-radius: 28px;
+  isolation: isolate;
+}
+.notch {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 40px;
-  padding-left: 10px;
-}
-.brand {
-  display: block;
-  min-width: 0;
-}
-.brand-mark {
-  display: none;
-  font-family: var(--font-pixel);
-  font-size: 20px;
-  line-height: 1;
-}
-.brand-name {
-  display: block;
-  overflow: hidden;
+  gap: 28px;
+  width: max-content;
+  height: 52px;
+  margin: 0 auto;
+  padding: 0 28px;
   font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 500;
+  color: var(--notch-fg);
+  background: var(--frame);
+  border-radius: 0 0 22px 22px;
 }
-/* Small square icon buttons: collapse, theme, profile links. */
-.collapse-toggle,
+.notch .nav-link {
+  position: relative;
+  width: auto;
+  height: auto;
+  padding: 6px 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--notch-fg);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.notch .nav-link[aria-current],
+.notch .nav-link.is-active {
+  color: var(--fg);
+  background: none;
+  box-shadow: none;
+}
+/* The lit link wears a short bar underneath; on a page change it slides across. */
+.notch .nav-link[aria-current]::after,
+.notch .nav-link.is-active::after {
+  content: "";
+  position: absolute;
+  inset: auto 30% 0;
+  height: 2px;
+  background: var(--fg);
+  border-radius: 1px;
+}
+.notch .nav-link.nav-slide::before {
+  display: none;
+}
+.notch .nav-link.nav-slide::after {
+  animation: nav-slide 260ms cubic-bezier(0.77, 0, 0.175, 1) both;
+}
+.notch-ck {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+}
+.notch-ck > .assistant-sprite {
+  width: 40px;
+  height: 40px;
+  transition: scale 160ms ease-out;
+}
+.notch-ck:active > .assistant-sprite {
+  scale: 0.92;
+}
+.ck-hint {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  translate: -50% 0;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--bg);
+  background: var(--fg);
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .notch .nav-link:hover {
+    color: var(--fg);
+  }
+}
+
+/* Small square icon buttons: theme, profile links. */
 .theme-toggle,
 .sidebar-icon {
   display: grid;
@@ -494,7 +538,7 @@ dd {
 .sidebar-icon {
   border: 1px solid var(--border);
 }
-.collapse-toggle:active,
+
 .theme-toggle:active,
 .sidebar-icon:active {
   scale: 0.94;
@@ -539,26 +583,6 @@ dd {
 }
 .sidebar-chat[hidden] {
   display: none;
-}
-.nav {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
-}
-.nav-list + .nav-label {
-  margin-top: 14px;
-}
-.nav-label {
-  padding: 0 12px 4px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--fg-muted);
-}
-.nav-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 .nav-link,
 .game-trigger {
@@ -627,7 +651,7 @@ dd {
 }
 @keyframes nav-slide {
   from {
-    translate: 0 var(--nav-from, 0);
+    translate: var(--nav-from, 0) 0;
   }
 }
 /* ...and the page column fades up into place. */
@@ -668,14 +692,6 @@ dd {
   .page-tiles {
     display: none;
   }
-}
-.nav-count {
-  flex: none;
-  color: var(--fg-muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  line-height: 1;
 }
 /* Sits at the bottom of the sidebar, just above the footer rows. */
 .game-trigger {
@@ -742,18 +758,6 @@ dd {
   width: 100%;
   height: 100%;
 }
-body.is-rail .poke-emote {
-  top: 0;
-  right: 25px;
-  width: 12px;
-  height: 12px;
-}
-.assistant-launcher .poke-emote {
-  top: 4px;
-  right: 56px;
-  width: 18px;
-  height: 18px;
-}
 .poke-count {
   display: flex;
   flex-direction: column;
@@ -815,7 +819,7 @@ body.is-rail .poke-emote {
     border-color: var(--panel-edge);
     box-shadow: inset 0 1px 0 var(--panel-shine), 0 1px 2px rgb(0 0 0 / 4%);
   }
-  .collapse-toggle:hover,
+
   .theme-toggle:hover,
   .sidebar-icon:hover {
     color: var(--fg);
@@ -835,7 +839,7 @@ body.is-rail .poke-emote {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .collapse-toggle:active,
+
   .theme-toggle:active,
   .sidebar-icon:active,
   .sidebar-contact:active,
@@ -845,51 +849,108 @@ body.is-rail .poke-emote {
   }
 }
 
-/* 8. Rail mode (tablet, or desktop collapsed) — body.is-rail set by JS ===== */
-body.is-rail .sidebar {
-  width: var(--rail-w);
-  padding: 12px 7px 0;
-  align-items: center;
+/* 8. CK panel ============================================================= */
+/* Tapping CK in the notch drops this menu: everything the old sidebar held. */
+.ck-panel {
+  position: fixed;
+  inset: 64px auto auto 50%;
+  translate: -50% 0;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100dvh - 80px);
+  margin: 0;
+  padding: 16px;
+  overflow-y: auto;
+  color: var(--fg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 22px;
 }
-body.is-rail .main {
-  margin-left: calc(var(--rail-w) + 36px);
-}
-body.is-rail :is(.nav-label, .nav-text, .nav-count, .score-row, .brand-name, .sidebar-zone, .poke-count, .sidebar-icon) {
-  display: none;
-}
-body.is-rail .brand-mark {
-  display: block;
-}
-body.is-rail .sidebar-head {
+.ck-panel[open] {
+  display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 6px 0 0;
 }
-body.is-rail :is(.nav-link, .game-trigger, .sidebar-contact, .sidebar-chat) {
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  padding: 0;
+.ck-panel::backdrop {
+  background: rgb(0 0 0 / 50%);
 }
-body.is-rail .poke {
-  padding: 0;
-}
-body.is-rail .poke-button {
-  width: 40px;
-  height: 40px;
-}
-body.is-rail .poke-button .assistant-sprite {
-  width: 44px;
-  height: 44px;
-  margin: -2px;
-}
-body.is-rail .sidebar-bottom {
+.ck-panel-head .poke {
+  display: flex;
   align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
 }
-body.is-rail .sidebar-controls {
-  flex-direction: column;
-  margin: 0 -8px;
-  padding: 12px 0;
+.ck-panel-hi {
+  order: 1;
+  font-weight: 600;
+}
+.ck-panel-head .poke-button {
+  order: 0;
+}
+.ck-panel-head .poke-count {
+  order: 2;
+  margin-left: auto;
+}
+.ck-panel-pages {
+  display: none;
+}
+.ck-panel-links {
+  display: grid;
+  gap: 2px;
+}
+.ck-panel-links a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 10px;
+}
+.ck-panel .sidebar-controls {
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+@media (hover: hover) and (pointer: fine) {
+  .ck-panel-links a:hover {
+    background: var(--bg-alt);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ck-panel {
+    transition: opacity 180ms ease-out, translate 180ms ease-out, overlay 180ms allow-discrete, display 180ms allow-discrete;
+  }
+  @starting-style {
+    .ck-panel[open] {
+      opacity: 0;
+      translate: -50% -8px;
+    }
+  }
+}
+@media (max-width: 639.98px) {
+  .frame {
+    margin: 8px;
+    border-radius: 32px;
+  }
+  .notch {
+    height: 44px;
+    padding: 0 18px;
+  }
+  .notch .nav-link {
+    display: none;
+  }
+  .ck-panel {
+    inset-block-start: 56px;
+  }
+  .ck-panel-pages {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ck-panel-pages .nav-link {
+    justify-content: center;
+    height: auto;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
 }
 
 /* 9. Hero ================================================================= */
@@ -1508,33 +1569,8 @@ html.resume-hold .main {
 }
 /* Leaving the cover for the Resume page: the sidebar (the top bar on phones) slides
    in and CK fades in alongside the flying sheet, instead of appearing at once. */
-html.resume-opening .sidebar {
-  transition:
-    width var(--t) var(--ease),
-    padding var(--t) var(--ease),
-    translate 480ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-html.resume-opening .topbar {
-  transition: translate 480ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-html.resume-opening .assistant-launcher {
-  transition: opacity 480ms ease;
-}
 /* The way back: returning to Home's cover from another page, the sidebar slides
    out (and only then hides), the top bar slides up and CK fades out. */
-html.cover-returning .sidebar {
-  transition:
-    width var(--t) var(--ease),
-    padding var(--t) var(--ease),
-    translate 480ms cubic-bezier(0.32, 0.72, 0, 1),
-    visibility 0s linear 480ms;
-}
-html.cover-returning .topbar {
-  transition: translate 480ms cubic-bezier(0.32, 0.72, 0, 1);
-}
-html.cover-returning .assistant-launcher {
-  transition: opacity 300ms ease;
-}
 /* Printing the Resume page prints only the sheet. */
 @media print {
   html.view-resume body * {
@@ -3604,34 +3640,6 @@ body.contact-open {
 }
 
 /* 18b. Portfolio assistant ================================================ */
-.assistant-launcher {
-  position: fixed;
-  right: max(20px, env(safe-area-inset-right));
-  bottom: max(14px, env(safe-area-inset-bottom));
-  z-index: 24;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0;
-  touch-action: manipulation;
-}
-.assistant-bubble {
-  padding: 10px 14px;
-  color: var(--fg);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px 12px 2px 12px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  box-shadow: var(--shadow);
-  transition: translate 180ms var(--ease);
-}
-@media (hover: hover) and (pointer: fine) {
-  .assistant-launcher:hover .assistant-bubble { translate: 0 -3px; }
-}
-.assistant-launcher > .assistant-sprite { transition: scale 160ms ease-out; }
-.assistant-launcher:active > .assistant-sprite { scale: 0.95; }
-.assistant-launcher.has-opened .assistant-bubble { display: none; }
 /* The running count floats up from his head after a poke. */
 .assistant-pop {
   position: absolute;
@@ -3656,10 +3664,7 @@ body.contact-open {
   pointer-events: none;
 }
 .assistant-sprite.is-reacting { background-image: url("./assets/mascot/mini-ck-reactions.webp"); }
-.assistant-launcher > .assistant-sprite { width: 88px; height: 88px; }
 body.assistant-open { overflow: hidden; }
-body.assistant-open .assistant-launcher,
-body.drawer-open .assistant-launcher { visibility: hidden; }
 .assistant-dialog {
   width: min(720px, calc(100vw - 48px));
   height: min(600px, calc(100dvh - 64px));
@@ -3775,11 +3780,10 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
   @keyframes assistant-caret { 50% { opacity: 0; } }
 }
 @media (prefers-reduced-motion: reduce) {
-  .assistant-bubble, .assistant-suggestion, .assistant-suggestion::before { transition: none; }
-  .assistant-launcher:hover .assistant-bubble { translate: none; }
+  .assistant-suggestion, .assistant-suggestion::before { transition: none; }
   .assistant-suggestion:hover:not(:disabled)::before { translate: none; }
-  .assistant-launcher > .assistant-sprite, .assistant-close, .assistant-send { transition: none; }
-  .assistant-launcher:active > .assistant-sprite, .assistant-close:active, .assistant-send:active:not(:disabled) { scale: none; }
+  .assistant-close, .assistant-send { transition: none; }
+  .assistant-close:active, .assistant-send:active:not(:disabled) { scale: none; }
 }
 
 /* 19. Motion ============================================================== */
@@ -3832,11 +3836,8 @@ body.drawer-open .assistant-launcher { visibility: hidden; }
    when About takes over and reverse on the way back up. The classes are set in
    the <head> so nothing flashes before script.js runs. */
 :root {
-  --main-offset: calc(var(--sidebar-w) + 36px); /* how far the sidebar pushes .main */
+  --main-offset: 0px;
   --main-top: 48px; /* .main's top padding */
-}
-body.is-rail {
-  --main-offset: calc(var(--rail-w) + 36px);
 }
 @media (max-width: 1024px) {
   :root {
@@ -3853,23 +3854,12 @@ body.is-rail {
   }
   /* Where the sidebar waits before script.js starts moving it with the scroll;
      it cannot be tabbed to while it is away. */
-  html.at-cover .sidebar {
-    visibility: hidden;
-    translate: calc(-100% - 48px) 0;
-  }
 }
 @media (min-width: 640px) and (max-width: 860px) {
   /* The stacked tablet hero is centred in the window too. */
   html.has-cover .hero {
     justify-content: center;
   }
-}
-html.at-cover .topbar {
-  translate: 0 -100%;
-}
-html.at-cover .assistant-launcher {
-  opacity: 0;
-  pointer-events: none;
 }
 /* The intro, on load or a Home click: script.js reveals the hero in turn. */
 html.intro-play .hero-photo,
@@ -3965,15 +3955,9 @@ html.at-cover:not(.intro-play) .intro-hint {
 
 @media (min-width: 1024.02px) {
   /* Desktop: the chat opens from the sidebar, so the floating CK is not needed. */
-  .assistant-launcher {
-    display: none;
-  }
 }
 
 @media (max-width: 1024px) {
-  .collapse-toggle {
-    display: none;
-  }
   .main {
     padding: 40px 32px 28px;
   }
@@ -4041,83 +4025,8 @@ html.at-cover:not(.intro-play) .intro-hint {
   .certification {
     padding: 24px 20px 14px;
   }
-  .topbar {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: var(--topbar-h);
-    padding: 0 16px;
-    background: color-mix(in srgb, var(--bg) 92%, transparent);
-    border-bottom: 1px solid var(--border);
-    backdrop-filter: blur(8px);
-  }
-  .topbar-brand {
-    margin-right: auto;
-    font-family: var(--font-mono);
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .menu-toggle {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    width: 40px;
-    height: 40px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-  }
-  .menu-bar {
-    width: 18px;
-    height: 1.5px;
-    background: var(--fg);
-    transition: transform var(--t) var(--ease);
-  }
-  .menu-toggle[aria-expanded="true"] .menu-bar:first-child {
-    transform: translateY(3.75px) rotate(45deg);
-  }
-  .menu-toggle[aria-expanded="true"] .menu-bar:last-child {
-    transform: translateY(-3.75px) rotate(-45deg);
-  }
 
-  .sidebar {
-    inset: var(--topbar-h) auto 0 0;
-    width: min(300px, 85vw);
-    padding-top: 18px;
-    /* Flush to the edge under the top bar, so it shares the bar's colour. */
-    background: var(--bg);
-    border-right: 1px solid var(--border);
-    border-radius: 0;
-    box-shadow: none;
-    visibility: hidden;
-    transform: translateX(-100%);
-    transition:
-      transform var(--t) var(--ease),
-      visibility 0s linear var(--t);
-  }
-  .sidebar.is-open {
-    visibility: visible;
-    transform: none;
-    transition: transform var(--t) var(--ease);
-  }
 
-  .backdrop {
-    position: fixed;
-    inset: var(--topbar-h) 0 0 0;
-    z-index: 25;
-    display: block;
-    background: rgba(0, 0, 0, 0.4);
-  }
-  body.drawer-open {
-    overflow: hidden;
-  }
-  .sidebar .sidebar-head {
-    display: none;
-  }
 
   /* chimken on phones: a centered card with a taller playfield for more sky. */
   .game {
@@ -4227,9 +4136,6 @@ html.at-cover:not(.intro-play) .intro-hint {
   }
   /* Portfolio assistant: a fixed sheet on the bottom edge. The bubble takes the full
      width so answers read at a normal line length; CK stands under its tail. */
-  .assistant-launcher { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); }
-  .assistant-launcher > .assistant-sprite { width: 72px; height: 72px; }
-  .assistant-bubble { font-size: 10px; padding: 9px 12px; }
   .assistant-dialog {
     top: auto;
     bottom: var(--assistant-bottom, 0px);

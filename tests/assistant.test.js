@@ -211,19 +211,6 @@ test('the saved poke count survives whatever storage hands back', () => {
   assert.equal(pokeCount(1e12), 9999999, 'capped so the label never overflows the sidebar');
 });
 
-test('on desktop the chat opens from the sidebar and the floating CK is hidden', () => {
-  const fs = require('node:fs');
-  const path = require('node:path');
-  const css = fs.readFileSync(path.join(__dirname, '..', 'style.css'), 'utf8');
-  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-  assert.match(css, /@media \(min-width: 1024\.02px\) \{[^}]*\.assistant-launcher \{\s*display: none;/);
-  const sidebar = html.slice(html.indexOf('<aside'), html.indexOf('</aside>'));
-  assert.ok(sidebar.indexOf('class="sidebar-chat"') < sidebar.indexOf('class="poke"'), '"Chat with me" sits above the poke row');
-  assert.match(sidebar, /class="poke-button"[^>]*aria-label="Poke CK"/);
-  assert.match(sidebar, /class="poke-label">Total pokes</, 'the counter is labelled');
-  assert.match(fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8'), /pokeEndpoint \? 'Total pokes' : 'Your pokes'/, 'the configured shared counter keeps its label while loading or unavailable');
-});
-
 test('the shared poke total is only trusted when the server sends a real count', () => {
   assert.equal(pokeTotal(0), 0);
   assert.equal(pokeTotal(1269215), 1269215);
@@ -255,12 +242,3 @@ test('five pokes inside two seconds make him dizzy; slower poking never does', (
   assert.equal(pokeDizzy([], 0), false);
 });
 
-test('scrollFling: more than 2.5 screens inside half a second', () => {
-  const { scrollFling } = require('../script.js');
-  assert.equal(scrollFling([{ at: 0, y: 0 }, { at: 400, y: 2600 }], 400, 1000), true);
-  assert.equal(scrollFling([{ at: 0, y: 0 }, { at: 400, y: 2400 }], 400, 1000), false, 'not far enough');
-  assert.equal(scrollFling([{ at: 0, y: 0 }, { at: 600, y: 3000 }], 600, 1000), false, 'too slow: the first sample is forgotten');
-  assert.equal(scrollFling([{ at: 0, y: 3000 }, { at: 300, y: 0 }], 300, 1000), true, 'flinging up counts too');
-  assert.equal(scrollFling([{ at: 0, y: 0 }], 0, 1000), false);
-  assert.equal(scrollFling([], 0, 1000), false);
-});

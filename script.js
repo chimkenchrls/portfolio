@@ -665,18 +665,6 @@
     return labels;
   };
 
-  /* Where he looks for a finger on a touch screen, as a cell of the directions atlas
-     (rows up / level / down, columns left / centre / right). `dx`, `dy` are the
-     finger's offset from his face. He sits in a corner, so the true angle to a
-     scrolling finger hardly changes; coarse bands of the screen make his eyes
-     visibly follow it instead. */
-  const touchGaze = (dx, dy, width, height) => {
-    if (![dx, dy, width, height].every(Number.isFinite) || width <= 0 || height <= 0) return 4;
-    const column = dx < -0.2 * width ? 0 : dx > 0.2 * width ? 2 : 1;
-    const row = dy < -0.3 * height ? 0 : dy > 0.06 * height ? 2 : 1;
-    return row * 3 + column;
-  };
-
   /* Pixel Kenneth: eight look directions with a quiet centre and stable sector edges. */
   const MASCOT_CLOCKWISE = [5, 8, 7, 6, 3, 0, 1, 2];
   const mascotDirection = (dx, dy, previous = 4) => {
@@ -907,11 +895,6 @@
   const pokeEmote = (count) => POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length];
   // Five pokes inside two seconds make him dizzy.
   const pokeDizzy = (stamps, now) => stamps.filter((at) => now - at >= 0 && now - at <= 2000).length >= 5;
-  // A hard fling also makes him dizzy: the page travelled over 2.5 screens in half a second.
-  const scrollFling = (samples, now, viewportHeight) => {
-    const ys = samples.filter(({ at }) => now - at >= 0 && now - at <= 500).map(({ y }) => y);
-    return ys.length > 1 && Math.max(...ys) - Math.min(...ys) > 2.5 * viewportHeight;
-  };
   // The saved poke count, however storage hands it back.
   const pokeCount = (stored) => {
     const n = Math.floor(Number(stored));
@@ -1272,8 +1255,8 @@
       TERMINAL_COMMANDS, runCommand, completeCommand, historyStep, mailtoLink,
       spriteToBlocks, CHIMKEN_SPRITE, TERMINAL_PROMPT, manilaClock,
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
-      mascotDirection, mascotIdle, touchGaze, assistantEndpoint, assistantHistory,
-      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, scrollFling, contactProblems, emailSuggestion, projectSlug, stackUses,
+      mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
+      MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
       skyStars, skyPosition, skyAlpha, introTimeline, coverProgress, glitchSlices, notchCurrent, posterTimeline, panelLabel, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
@@ -2326,28 +2309,6 @@
       actions.append(link);
     };
 
-    const applyNavCounts = (data) => {
-      const list = (value) => Array.isArray(value) ? value : [];
-      const counts = {
-        links: list(data.linksPage && data.linksPage.groups).reduce((total, group) => total + list(group.items).filter((item) => {
-          const link = profileLink(data.profile || {}, item.key);
-          return link.href || link.copy;
-        }).length, 0),
-        projects: list(data.projects).length,
-        stack: list(data.stack).reduce((total, group) => total + list(group.items).length, 0),
-        resources: list(data.resources).reduce((total, group) => total + list(group.items).length, 0),
-      };
-      const units = { links: 'link', projects: 'project', stack: 'tool', resources: 'resource' };
-      Object.entries(counts).forEach(([view, count]) => {
-        const link = $(`.nav-link[data-view="${view}"]`);
-        if (!link) return;
-        const label = $('.nav-text', link).textContent;
-        const badge = el('span', 'nav-count', String(count));
-        badge.setAttribute('aria-hidden', 'true');
-        link.append(badge);
-        link.setAttribute('aria-label', `${label}, ${count} ${units[view]}${count === 1 ? '' : 's'}`);
-      });
-    };
 
     const modeFor = (name) => {
       const slug = new URLSearchParams(window.location.search).get('p');
@@ -2392,16 +2353,8 @@
       if (errors.length) console.warn('[portfolio] data.js problems:', errors);
       if (!data) { containers.forEach(showLoadError); return; }
       siteName = data.profile && (data.profile.siteName || data.profile.name);
-      const brandName = $('.brand-name');
-      if (brandName && siteName) brandName.textContent = siteName;
-      const notesLink = $('.nav-link[data-view="guestbook"]');
-      if (notesLink && data.guestbook) {
-        $('.nav-text', notesLink).textContent = data.guestbook.title;
-        notesLink.title = data.guestbook.title;
-      }
       applyEmail(data);
       applyResume(data);
-      applyNavCounts(data);
       containers.forEach((container) => {
         const build = renderers[container.dataset.render];
         if (!build) return;
@@ -2475,86 +2428,61 @@
   })();
 
   /* ==========================================================================
-     5. Layout — tablet rail, desktop collapse, mobile drawer
+     5. CK's panel — the menu CK drops from the notch (what the sidebar held)
      ========================================================================== */
 
-  const layout = (() => {
-    const body = document.body;
-    const sidebar = $('#sidebar');
-    const menuToggle = $('.menu-toggle');
-    const backdrop = $('.backdrop');
-    const collapseToggle = $('.collapse-toggle');
-    const mobileQuery = window.matchMedia('(max-width: 639.98px)');
-    const tabletQuery = window.matchMedia('(min-width: 640px) and (max-width: 1024px)');
-    let collapsed = storage.get('localStorage', 'sidebar-collapsed') === 'true';
+  const ckPanel = (() => {
+    const panel = $('.ck-panel');
+    const ck = $('.notch-ck');
+    const hint = ck && $('.ck-hint', ck);
+    let hintTimer = 0;
 
-    const updateRail = () => {
-      body.classList.toggle('is-rail', tabletQuery.matches || (!mobileQuery.matches && collapsed));
-      if (!collapseToggle) return;
-      collapseToggle.setAttribute('aria-expanded', String(!collapsed));
-      collapseToggle.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    const hideHint = () => {
+      clearTimeout(hintTimer);
+      if (!hint || hint.hidden) return;
+      hint.hidden = true;
+      storage.set('localStorage', 'ck-hint-seen', '1');
     };
-
-    const isDrawerOpen = () => sidebar.classList.contains('is-open');
-
-    const openDrawer = () => {
-      sidebar.classList.add('is-open');
-      backdrop.hidden = false;
-      body.classList.add('drawer-open');
-      menuToggle.setAttribute('aria-expanded', 'true');
-      menuToggle.setAttribute('aria-label', 'Close navigation');
-      const first = $('.nav-link', sidebar);
-      if (first) first.focus();
+    // Once, on a first visit: a small "tap me" under CK, gone on the first open or after 6s.
+    const offerHint = () => {
+      if (!hint || storage.get('localStorage', 'ck-hint-seen') !== null) return;
+      hint.hidden = false;
+      hintTimer = window.setTimeout(hideHint, 6000);
     };
-
-    const closeDrawer = ({ restoreFocus = true } = {}) => {
-      if (!isDrawerOpen()) return;
-      sidebar.classList.remove('is-open');
-      backdrop.hidden = true;
-      body.classList.remove('drawer-open');
-      menuToggle.setAttribute('aria-expanded', 'false');
-      menuToggle.setAttribute('aria-label', 'Open navigation');
-      if (restoreFocus) menuToggle.focus();
+    const open = () => {
+      if (!panel || panel.open) return;
+      hideHint();
+      panel.showModal();
+      ck.setAttribute('aria-expanded', 'true');
+      const first = $('.poke-button', panel);
+      if (first && first.getClientRects().length) first.focus({ preventScroll: true });
     };
-
-    const trapFocus = (event) => {
-      if (event.key !== 'Tab' || !isDrawerOpen() || !mobileQuery.matches) return;
-      const focusables = [menuToggle, ...$$('a[href], button:not([disabled])', sidebar)]
-        .filter((node) => node.getClientRects().length > 0);
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
+    const close = ({ restoreFocus = true } = {}) => {
+      if (!panel || !panel.open) return;
+      panel.close();
+      if (restoreFocus) ck.focus({ preventScroll: true });
     };
 
     const init = () => {
-      updateRail();
-      tabletQuery.addEventListener('change', updateRail);
-      mobileQuery.addEventListener('change', () => {
-        updateRail();
-        if (!mobileQuery.matches) closeDrawer({ restoreFocus: false });
+      if (!panel || !ck || typeof panel.showModal !== 'function') return;
+      ck.addEventListener('click', () => (panel.open ? close() : open()));
+      panel.addEventListener('close', () => ck.setAttribute('aria-expanded', 'false'));
+      // A click on the dim backdrop (the dialog element itself, outside its box) closes it.
+      panel.addEventListener('click', (event) => {
+        if (event.target === panel) {
+          const box = panel.getBoundingClientRect();
+          if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close();
+          return;
+        }
+        if (event.target.closest('a[href]')) close({ restoreFocus: false });
       });
-      if (collapseToggle) {
-        collapseToggle.addEventListener('click', () => {
-          collapsed = !collapsed;
-          storage.set('localStorage', 'sidebar-collapsed', String(collapsed));
-          updateRail();
-        });
-      }
-      menuToggle.addEventListener('click', () => (isDrawerOpen() ? closeDrawer() : openDrawer()));
-      backdrop.addEventListener('click', () => closeDrawer());
-      sidebar.addEventListener('click', (event) => {
-        if (mobileQuery.matches && event.target.closest('a[href*="#"]')) closeDrawer({ restoreFocus: false });
-      });
-      document.addEventListener('keydown', trapFocus);
+      // Page shortcuts stay off while the menu is open; Escape is the dialog's own.
+      panel.addEventListener('keydown', (event) => event.stopPropagation());
+      if (root.classList.contains('intro-play')) window.setTimeout(offerHint, 2200);
+      else offerHint();
     };
 
-    return { init, closeDrawer };
+    return { init, open, close };
   })();
 
   /* ==========================================================================
@@ -2562,7 +2490,7 @@
      ========================================================================== */
 
   const nav = (() => {
-    const links = $$('.nav-link');
+    const links = $$('.nav-link[data-notch]');
 
     const setActive = (id) => {
       links.forEach((link) => {
@@ -2591,21 +2519,20 @@
     const sync = () => {
       links.forEach((link) => link.classList.remove('is-active'));
       if (/\bview-/.test(root.className)) {
+        const view = (/\bview-([a-z]+)/.exec(root.className) || [])[1];
+        const lit = notchCurrent(view);
         links.forEach((link) => {
-          const view = link.dataset.view;
-          const active = view && (root.classList.contains(`view-${view}`)
-            || (view === 'projects' && root.classList.contains('view-case')));
-          if (active) link.setAttribute('aria-current', 'page');
+          if (link.dataset.notch === lit) link.setAttribute('aria-current', 'page');
           else link.removeAttribute('aria-current');
         });
       } else setActive(SECTIONS[0].id);
     };
     // The link lit right now, so a page change can slide the highlight from it.
-    const lit = () => links.find((link) => link.matches('[aria-current], .is-active'));
+    const lit = () => links.find((link) => link.closest('.notch') && link.matches('[aria-current], .is-active'));
     const slideFrom = (old) => {
       const now = lit();
       if (!old || !now || old === now || prefersReducedMotion()) return;
-      now.style.setProperty('--nav-from', `${old.getBoundingClientRect().top - now.getBoundingClientRect().top}px`);
+      now.style.setProperty('--nav-from', `${old.getBoundingClientRect().left - now.getBoundingClientRect().left}px`);
       now.classList.remove('nav-slide');
       void now.offsetWidth; // restart the animation if it is still running
       now.classList.add('nav-slide');
@@ -2936,7 +2863,7 @@
     const open = () => {
       if (!dialog || !ctx || typeof dialog.showModal !== 'function' || isOpen()) return;
       returnFocus = document.activeElement;
-      layout.closeDrawer({ restoreFocus: false });
+      ckPanel.close({ restoreFocus: false });
       const saved = Math.floor(Number(storage.get('localStorage', HI_KEY)));
       state = createChimkenState(Number.isFinite(saved) && saved > 0 ? saved : 0);
       shownScore = '';
@@ -3009,7 +2936,7 @@
         switch (action.type) {
           case 'close':
             game.close();
-            layout.closeDrawer();
+            ckPanel.close();
             break;
           case 'game':
             event.preventDefault();
@@ -3936,7 +3863,8 @@
   const portfolioAssistant = (() => {
     const init = (data) => {
       const config = data && data.assistant;
-      const launcher = $('.assistant-launcher');
+      // CK in the notch: he blinks, idles and looks around; a click on him opens his menu (ckPanel).
+      const launcher = $('.notch-ck');
       const dialog = $('.assistant-dialog');
       if (!config || !launcher || !dialog || typeof dialog.showModal !== 'function') return;
       const form = $('.assistant-form', dialog);
@@ -3959,7 +3887,6 @@
       const pokeValue = $('.poke-value');
       const pokeSprite = pokeButton && $('.assistant-sprite', pokeButton);
       let opener = launcher;
-      let openedOnce = false;
       let pokes = pokeCount(storage.get('localStorage', 'ck-pokes'));
       let pokeFace = null;
       let pokeUntil = 0;
@@ -3985,12 +3912,10 @@
       let typing = null;
       let greeted = false;
 
-      $('.assistant-bubble', launcher).textContent = config.launcher;
       $('#assistant-title', dialog).textContent = config.title;
       $('.assistant-speaker', dialog).textContent = config.name;
       $('.assistant-email', dialog).href = `mailto:${data.profile.email}`;
       say.textContent = spoken;
-      launcher.hidden = false;
       document.body.classList.add('has-assistant');
 
       const still = () => prefersReducedMotion();
@@ -4178,13 +4103,7 @@
       };
       const open = (from) => {
         opener = from;
-        layout.closeDrawer({ restoreFocus: false });
-        launcher.classList.add('has-opened');
-        // From now on the floating CK is for poking; the sidebar's "Chat with me" reopens the chat.
-        openedOnce = true;
-        launcher.setAttribute('aria-label', 'Poke CK');
-        launcher.removeAttribute('aria-haspopup');
-        launcher.removeAttribute('aria-controls');
+        ckPanel.close({ restoreFocus: false });
         document.body.classList.add('assistant-open');
         dialog.showModal();
         fitViewport();
@@ -4316,18 +4235,6 @@
         sprite.animate(sway, { duration: DIZZY_MS - 300, easing: 'ease-in-out' });
         showEmote(host, 'dizzy', DIZZY_MS);
       };
-      launcher.addEventListener('click', () => {
-        if (!openedOnce) { open(launcher); return; }
-        if (!pokeOnce(sprites[0], launcher)) return;
-        $$('.assistant-pop', launcher).forEach((old) => old.remove());
-        const pop = document.createElement('span');
-        pop.className = 'assistant-pop';
-        pop.setAttribute('aria-hidden', 'true');
-        pop.textContent = shownPokes();
-        launcher.append(pop);
-        if (still() || typeof pop.animate !== 'function') { window.setTimeout(() => pop.remove(), 900); return; }
-        pop.animate([{ opacity: 0, translate: '0 6px' }, { opacity: 1, translate: '0 -6px', offset: 0.25 }, { opacity: 1, translate: '0 -10px', offset: 0.75 }, { opacity: 0, translate: '0 -16px' }], { duration: 900, easing: 'ease-out' }).onfinish = () => pop.remove();
-      });
       if (chatButton) {
         chatButton.hidden = false;
         chatButton.addEventListener('click', () => open(chatButton));
@@ -4371,12 +4278,12 @@
         cancelAnimationFrame(pointerFrame);
         pointerFrame = requestAnimationFrame(() => {
           pointerFrame = 0;
-          // On desktop the launcher is hidden and the sidebar CK does the looking.
-          const watcher = dialog.open ? character : launcher.getClientRects().length || !pokeButton ? launcher.lastElementChild : pokeButton;
+          // The chat's CK while it is open, the menu's CK while that is open, else the notch CK.
+          const watcher = dialog.open ? character : pokeButton && pokeButton.getClientRects().length ? pokeButton : launcher;
           const box = watcher.getBoundingClientRect();
           const dx = x - box.left - box.width / 2;
           const dy = y - box.top - box.height * 0.4;
-          direction = finger ? touchGaze(dx, dy, window.innerWidth, window.innerHeight) : mascotDirection(dx, dy, direction);
+          direction = mascotDirection(dx, dy, direction);
           pointerAt = performance.now();
           activeAt = pointerAt;
           paint();
@@ -4400,15 +4307,8 @@
       };
       window.addEventListener('touchstart', lookAtTouch, { passive: true });
       window.addEventListener('touchmove', lookAtTouch, { passive: true });
-      // He looks the way the page scrolls (once the cursor or finger has been still for a
-      // moment, so a swipe keeps his eyes on the finger), and a hard fling makes him dizzy.
-      // Only a wheel or finger counts as a fling, not a jump to a section.
+      // On phones he looks the way the page scrolls, once the finger has been still for a moment.
       let lastY = window.scrollY;
-      let travel = [];
-      let handAt = -Infinity;
-      const byHand = () => { handAt = performance.now(); };
-      window.addEventListener('wheel', byHand, { passive: true });
-      window.addEventListener('touchmove', byHand, { passive: true });
       window.addEventListener('scroll', () => {
         const y = window.scrollY;
         const now = performance.now();
@@ -4416,15 +4316,9 @@
         const way = y > lastY ? 7 : 1;
         const fresh = now - scrollAt > 700 || way !== scrollDirection;
         scrollDirection = way;
-        // Where it started counts too, so one long jump is measured in full.
-        travel = [...travel.filter(({ at }) => now - at <= 500), { at: now, y: lastY }, { at: now, y }];
         lastY = y;
         scrollAt = now;
-        if (now - handAt < 300 && now >= dizzyUntil && scrollFling(travel, now, window.innerHeight)) {
-          travel = [];
-          const [sprite, host] = launcher.getClientRects().length || !pokeSprite ? [sprites[0], launcher] : [pokeSprite, poke];
-          reel(sprite, host, now);
-        } else if (fresh) paint();
+        if (fresh) paint();
       }, { passive: true });
       document.addEventListener('visibilitychange', syncMotion);
       motionQuery.addEventListener('change', () => { finishTyping(); syncMotion(); });
@@ -4804,7 +4698,7 @@
         event.preventDefault();
         if (dialog.open) return;
         returnFocus = window.matchMedia('(max-width: 639.98px)').matches ? $('.menu-toggle') : trigger;
-        layout.closeDrawer({ restoreFocus: false });
+        ckPanel.close({ restoreFocus: false });
         fallback.hidden = Boolean(form && enabled);
         if (form && enabled) {
           // Keep Home visually complete while the one live form is in the dialog.
@@ -5147,7 +5041,7 @@
         document.dispatchEvent(new Event('portfolio:navigate'));
         $$('dialog[open]').forEach((dialog) => dialog.close());
         $$('video', main).forEach((video) => video.pause());
-        layout.closeDrawer({ restoreFocus: false });
+        ckPanel.close({ restoreFocus: false });
         [...root.classList].filter((name) => name.startsWith('view-')).forEach((name) => root.classList.remove(name));
         root.classList.remove('at-cover', 'intro-play');
         root.classList.toggle('has-cover', route.view === 'home');
@@ -5264,7 +5158,7 @@
     const data = typeof PORTFOLIO_DATA !== 'undefined' ? PORTFOLIO_DATA : null;
     render.init(data);
     theme.init();
-    layout.init();
+    ckPanel.init();
     nav.init();
     game.init(data);
     keyboard.init();
