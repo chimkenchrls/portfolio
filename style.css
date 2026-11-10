@@ -535,21 +535,7 @@ body {
 .notch-ck:active > .assistant-sprite {
   scale: 0.92;
 }
-.ck-hint {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  translate: -50% 0;
-  padding: 4px 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  color: var(--bg);
-  background: var(--fg);
-  pointer-events: none;
-}
+
 @media (prefers-reduced-motion: reduce) {
   .notch-side {
     transition: none;
@@ -562,8 +548,7 @@ body {
 }
 
 /* Small square icon buttons: theme, profile links. */
-.theme-toggle,
-.sidebar-icon {
+.theme-toggle {
   display: grid;
   flex: none;
   place-items: center;
@@ -576,18 +561,15 @@ body {
     background-color var(--t-fast) ease,
     scale 160ms ease-out;
 }
-.theme-toggle,
-.sidebar-icon {
+.theme-toggle {
   border: 1px solid var(--border);
 }
 
-.theme-toggle:active,
-.sidebar-icon:active {
+.theme-toggle:active {
   scale: 0.94;
 }
 /* Pills: contact at the top, chat at the bottom. */
-.sidebar-contact,
-.sidebar-chat {
+.sidebar-contact {
   display: flex;
   flex: none;
   align-items: center;
@@ -606,8 +588,7 @@ body {
     opacity var(--t-fast) ease,
     scale 160ms ease-out;
 }
-.sidebar-contact:active,
-.sidebar-chat:active {
+.sidebar-contact:active {
   scale: 0.98;
 }
 .sidebar-contact {
@@ -618,14 +599,7 @@ body {
   border-color: var(--panel-edge);
   box-shadow: inset 0 1px 0 var(--panel-shine), 0 2px 3px rgb(0 0 0 / 6%), 0 5px 10px rgb(0 0 0 / 4%);
 }
-.sidebar-chat {
-  color: var(--bg);
-  background: var(--fg);
-  border-color: var(--fg);
-}
-.sidebar-chat[hidden] {
-  display: none;
-}
+
 .nav-link,
 .game-trigger {
   display: flex;
@@ -696,16 +670,7 @@ body {
     translate: var(--nav-from, 0) 0;
   }
 }
-/* ...and the page column fades up into place. */
-.main.page-in {
-  animation: page-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both;
-}
-@keyframes page-in {
-  from {
-    opacity: 0;
-    translate: 0 8px;
-  }
-}
+
 /* On every other page the new page shows through page-coloured tiles that drop
    away in a shuffled order (script.js: navigation). Under the sidebar and top bar. */
 .page-tiles {
@@ -727,7 +692,6 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .main.page-in,
   .nav-link.nav-slide::before {
     animation: none;
   }
@@ -767,12 +731,7 @@ body {
 .score-value {
   font-variant-numeric: tabular-nums;
 }
-.sidebar-bottom {
-  display: flex;
-  flex: none;
-  flex-direction: column;
-  gap: 14px;
-}
+
 /* Poke: a private counter beside pixel CK, who reacts to every poke. */
 .poke {
   position: relative;
@@ -837,19 +796,7 @@ body {
   height: 52px;
   margin: 0 auto;
 }
-.sidebar-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0 -12px;
-  padding: 14px 16px 14px 22px;
-  border-top: 1px solid var(--border);
-}
-.sidebar-zone {
-  margin-right: auto;
-  font-size: 12px;
-  color: var(--fg-muted);
-}
+
 @media (hover: hover) and (pointer: fine) {
   .nav-link:hover,
   .game-trigger:hover {
@@ -862,8 +809,7 @@ body {
     box-shadow: inset 0 1px 0 var(--panel-shine), 0 1px 2px rgb(0 0 0 / 4%);
   }
 
-  .theme-toggle:hover,
-  .sidebar-icon:hover {
+  .theme-toggle:hover {
     color: var(--fg);
     background: var(--bg-alt);
   }
@@ -872,9 +818,7 @@ body {
     background: var(--bg-alt);
     border-color: color-mix(in srgb, var(--fg) 18%, var(--border));
   }
-  .sidebar-chat:hover {
-    opacity: 0.86;
-  }
+
   .score-row:hover .score-value {
     text-decoration: underline;
     text-underline-offset: 3px;
@@ -883,9 +827,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
 
   .theme-toggle:active,
-  .sidebar-icon:active,
   .sidebar-contact:active,
-  .sidebar-chat:active,
   .poke-button:active {
     scale: none;
   }
@@ -1028,101 +970,7 @@ body {
   }
 }
 
-/* 8b. CK panel (old) ====================================================== */
-/* Tapping CK in the notch drops this menu: everything the old sidebar held. */
-.ck-panel {
-  position: fixed;
-  inset: 64px auto auto 50%;
-  translate: -50% 0;
-  width: min(360px, calc(100vw - 32px));
-  max-height: calc(100dvh - 80px);
-  margin: 0;
-  padding: 16px;
-  overflow-y: auto;
-  color: var(--fg);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 22px;
-}
-.ck-panel[open] {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.ck-panel::backdrop {
-  background: rgb(0 0 0 / 50%);
-}
-.ck-panel-head .poke {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-.ck-panel-hi {
-  order: 1;
-  font-weight: 600;
-}
-.ck-panel-head .poke-button {
-  order: 0;
-}
-/* In the menu he sits on the left, so his emote hops beside the top-left of his head. */
-.ck-panel-head .poke-emote {
-  top: 0;
-  right: auto;
-  left: 10px;
-}
-.ck-panel-head .poke-count {
-  order: 2;
-  margin-left: auto;
-}
-.ck-panel-pages {
-  display: none;
-}
-@media (hover: none) {
-  .ck-panel-pages {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .ck-panel-pages .nav-link {
-    justify-content: center;
-    height: auto;
-    padding: 10px;
-    text-align: center;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-  }
-}
-.ck-panel-links {
-  display: grid;
-  gap: 2px;
-}
-.ck-panel-links a {
-  display: block;
-  padding: 8px 10px;
-  border-radius: 10px;
-}
-.ck-panel .sidebar-controls {
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
-}
-@media (hover: hover) and (pointer: fine) {
-  .ck-panel-links a:hover {
-    background: var(--bg-alt);
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .ck-panel {
-    transition: opacity 180ms ease-out, translate 180ms ease-out, overlay 180ms allow-discrete, display 180ms allow-discrete;
-  }
-  @starting-style {
-    .ck-panel[open] {
-      opacity: 0;
-      translate: -50% -8px;
-    }
-  }
-}
+/* Phones: a shorter notch with CK alone, a thinner frame. */
 @media (max-width: 639.98px) {
   :root {
     --notch-h: 44px;
@@ -1140,22 +988,6 @@ body {
   .notch-side {
     display: none;
   }
-  .ck-panel {
-    inset-block-start: 56px;
-  }
-  .ck-panel-pages {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .ck-panel-pages .nav-link {
-    justify-content: center;
-    height: auto;
-    padding: 10px;
-    text-align: center;
-    border: 1px solid var(--border);
-    border-radius: 12px;
-  }
 }
 
 /* 9. Hero ================================================================= */
@@ -1163,14 +995,6 @@ body {
   padding-bottom: 88px;
   scroll-margin-top: 24px;
 }
-
-
-
-
-
-
-
-
 
 .btn {
   display: inline-flex;
@@ -1240,7 +1064,6 @@ body {
 .social-pending {
   cursor: var(--cursor);
 }
-
 
 /* 10. Poster ============================================================== */
 /* Home's opening screen: the portrait lit from behind, the name across it on one
@@ -1930,20 +1753,7 @@ html.is-home #projects :is(.project-main, .project-kind) {
 
 /* 13. About =============================================================== */
 /* The bio spans the full column; balanced wrapping keeps the long lines even. */
-.about-bio {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-bottom: 40px;
-  font-size: 16px;
-  text-wrap: pretty;
-}
 
-.about-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px 56px;
-}
 .timeline-block {
   min-width: 0;
 }
@@ -4708,7 +4518,6 @@ body.assistant-open { overflow: hidden; }
   }
 }
 
-
 ::view-transition-old(root) {
   animation: none;
 }
@@ -4749,7 +4558,6 @@ html.intro-play .notch {
 
 /* 20. Responsive ========================================================== */
 
-
 @media (max-width: 1024px) {
   :root {
     --main-top: 40px;
@@ -4758,9 +4566,7 @@ html.intro-play .notch {
     --main-x: 32px;
     padding: var(--main-top) var(--main-x) 28px;
   }
-  .about-grid {
-    grid-template-columns: 1fr;
-  }
+
   .outside {
     grid-template-columns: 1fr;
     gap: 28px;
@@ -4803,8 +4609,6 @@ html.intro-play .notch {
   .certification {
     padding: 24px 20px 14px;
   }
-
-
 
   /* chimken on phones: a centered card with a taller playfield for more sky. */
   .game {
