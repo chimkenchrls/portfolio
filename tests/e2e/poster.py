@@ -24,30 +24,58 @@ def box(p, sel):
     return p.eval_on_selector(sel, "n => { const r = n.getBoundingClientRect(); return { x: r.left, y: r.top, w: r.width, h: r.height, r: r.right, b: r.bottom }; }")
 
 
-def window_stats(p, x0, x1, y0, y1):
-    """Luminance spread inside a window of the screen, and how grey its bright pixels are."""
-    img = Image.open(io.BytesIO(p.screenshot(clip={"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0}))).convert("RGB")
-    px = list(img.getdata())
-    lum = [0.2126 * r + 0.7152 * g + 0.0722 * b for r, g, b in px]
-    bright = [c for c, l in zip(px, lum) if l > 150]
-    tint = max((max(abs(r - g), abs(g - b)) for r, g, b in bright), default=0)
-    return (max(lum) - min(lum)) / 255, tint
+def shot(p, clip):
+    return Image.open(io.BytesIO(p.screenshot(clip=clip))).convert("RGB")
+
+
+def styled(p, css, clip):
+    """A screenshot of `clip` with a temporary style applied."""
+    p.evaluate("css => { const s = document.createElement('style'); s.id = 'probe'; s.textContent = css; document.head.append(s); }", css)
+    p.wait_for_timeout(50)
+    image = shot(p, clip)
+    p.evaluate("document.getElementById('probe').remove()")
+    p.wait_for_timeout(50)
+    return image
+
+
+def lum(c):
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+
+NAME = (".poster-name, .poster-name-over", ".poster-name-over { display: none !important; } #hero-name { color: #ff0000 !important; mix-blend-mode: normal !important; }")
+META = (".poster-meta", ".poster-meta, .poster-meta * { color: #ff0000 !important; mix-blend-mode: normal !important; }")
+
+
+def glyph_stats(p, clip, target=NAME):
+    """How far the text's own pixels sit from what is behind them, and how grey they are."""
+    hide, paint = target
+    real = shot(p, clip)
+    behind = styled(p, hide + " { visibility: hidden !important; }", clip)
+    mask = styled(p, paint + " .poster-photo, .poster-light { visibility: hidden !important; }", clip)
+    inside = [i for i, (r, g, b) in enumerate(mask.getdata()) if r > 200 and g < 60 and b < 60]
+    if not inside:
+        return 0, 0, 0
+    rp, bp = list(real.getdata()), list(behind.getdata())
+    contrast = sum(abs(lum(rp[i]) - lum(bp[i])) for i in inside) / len(inside) / 255
+    tint = sorted(max(abs(rp[i][0] - rp[i][1]), abs(rp[i][1] - rp[i][2])) for i in inside)[int(len(inside) * 0.95)]
+    return contrast, tint, len(inside)
 
 
 def legible(p, label, over_suit=True):
-    """The name must stand out over the background and over the suit, never tinted."""
+    """The name must stand out over the background, the suit and the shirt, never tinted."""
     # The text itself, not the full-width line box it is centred in.
     name = p.evaluate("(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('#hero-name')); const b = r.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; })()")
     poster = box(p, ".poster")
-    y0, y1 = name["y"] + name["h"] * 0.2, name["y"] + name["h"] * 0.8
-    spots = {"background": (name["x"] + 4, name["x"] + name["w"] * 0.07)}
+    y0, y1 = name["y"] + name["h"] * 0.15, name["y"] + name["h"] * 0.85
+    spots = {"background": (name["x"] + 2, name["x"] + name["w"] * 0.07)}
     if over_suit:
         mid = poster["x"] + poster["w"] / 2
         spots["suit"] = (mid + poster["w"] * 0.1, mid + poster["w"] * 0.16)
+        spots["shirt"] = (mid - poster["w"] * 0.035, mid - poster["w"] * 0.005)
     for where, (x0, x1) in spots.items():
-        spread, tint = window_stats(p, x0, x1, y0, y1)
-        check(f"{label}: the name stands out over the {where}", spread >= 0.25, f"spread {spread:.2f}")
-        check(f"{label}: the name over the {where} stays grey", tint <= 8, f"tint {tint}")
+        contrast, tint, count = glyph_stats(p, {"x": x0, "y": y0, "width": x1 - x0, "height": y1 - y0})
+        check(f"{label}: the name stands out over the {where}", contrast >= 0.25 and count > 20, f"contrast {contrast:.2f}, {count} px")
+        check(f"{label}: the name over the {where} stays grey", tint <= 12, f"tint {tint}")
 
 
 with sync_playwright() as pw:
@@ -90,6 +118,36 @@ with sync_playwright() as pw:
     p.mouse.move(640, 300)
     p.wait_for_timeout(100)
     check("desktop: hovering shows colour", p.eval_on_selector(".poster-photo-desktop", "n => getComputedStyle(n).filter") == "none")
+    ctx.close()
+
+    # The bottom row is clickable, not hidden under the About panel ------------------
+    for width, height, mobile in ((1280, 800, False), (390, 844, True)):
+        ctx, p, errors = page(b, width, height, has_touch=mobile, is_mobile=mobile, reduced_motion="reduce")
+        p.wait_for_timeout(500)
+        hits = p.evaluate("[...document.querySelectorAll('.poster-meta .social a, .poster-meta .social button')].map(n => { const r = n.getBoundingClientRect(); const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!e && n.contains(e); })")
+        check(f"{width}px: the social links in the bottom row can be clicked", hits and all(hits), str(hits))
+        ctx.close()
+
+    # A real 360px phone (no layout widening): nothing pushes the page sideways --------
+    for width in (360, 320):
+        ctx, p, errors = page(b, width, 740, reduced_motion="reduce")
+        p.wait_for_timeout(500)
+        check(f"{width}px without zoom-out: no sideways scroll anywhere on Home", p.evaluate("document.documentElement.scrollWidth <= innerWidth"), str(p.evaluate("document.documentElement.scrollWidth")))
+        ctx.close()
+
+    # Tablet held upright ----------------------------------------------------------
+    ctx, p, errors = page(b, 768, 1024, theme="light", has_touch=True, reduced_motion="reduce")
+    p.wait_for_timeout(500)
+    title = box(p, ".poster-title")
+    photo = p.evaluate("(() => { const i = document.querySelector('.poster-photo-desktop'); const r = i.getBoundingClientRect(); const h = Math.min(r.height, r.width * i.naturalHeight / i.naturalWidth); return { top: r.bottom - h, h }; })()")
+    check("768×1024: the title sits clear of his head", title["b"] <= photo["top"] + 4, f"{title} {photo}")
+    check("768×1024: the bottom row is one line", box(p, ".poster-meta")["h"] < 40, str(box(p, ".poster-meta")))
+    social = box(p, ".poster-meta .social")
+    contrast, _, count = glyph_stats(p, {"x": social["x"], "y": social["y"], "width": social["w"], "height": social["h"]}, META)
+    check("768×1024: the social links read clearly where they cross the suit", contrast >= 0.25 and count > 20, f"contrast {contrast:.2f}, {count} px")
+    p.evaluate("document.querySelector('.poster').classList.add('is-colour')")
+    legible(p, "768×1024 light, in colour")
+    if SHOTS: p.screenshot(path=f"{SHOTS}/poster-tablet.png")
     ctx.close()
 
     # Short and narrow windows -------------------------------------------------

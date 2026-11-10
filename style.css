@@ -1126,7 +1126,7 @@ body {
   position: absolute;
   inset: auto 0 0;
   width: 100%;
-  height: 86%;
+  height: var(--photo-h);
   max-width: none;
   object-fit: contain;
   object-position: 50% 100%;
@@ -1142,7 +1142,7 @@ body {
 }
 .poster-name {
   position: absolute;
-  inset: auto 0 calc(var(--meta-h) + 18px);
+  inset: auto 0 var(--name-bottom);
   margin: 0;
   font-family: "Instrument Serif", Georgia, serif;
   font-size: 9.6cqi;
@@ -1155,13 +1155,27 @@ body {
   color: #ffffff;
   mix-blend-mode: difference;
 }
+/* While the photo shows colour, the letters over him are filled with his own picture,
+   in black and white and inverted: dark over the shirt, light over the suit, never
+   tinted. The copy covers the whole stage so its fill lines up with the photo. */
 .poster-name-over {
   position: absolute;
   inset: 0;
   display: none;
-  -webkit-mask: url("./assets/hero-cutout.webp") 50% 100% / auto 86% no-repeat;
-  mask: url("./assets/hero-cutout.webp") 50% 100% / auto 86% no-repeat;
   pointer-events: none;
+}
+.poster-name-over .poster-name {
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: var(--name-bottom);
+  color: transparent;
+  background: url("./assets/hero-cutout.webp") 50% 100% / auto var(--photo-h) no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: grayscale(1) contrast(1.1) invert(1);
+  mix-blend-mode: normal;
 }
 .poster.is-colour .poster-name {
   color: var(--poster-ink);
@@ -1171,11 +1185,7 @@ body {
   display: block;
 }
 .poster.is-colour .poster-name-over .poster-name {
-  color: #ffffff;
-}
-[data-theme="dark"] .poster.is-colour .poster-name-over,
-:root:not([data-theme]) .poster.is-colour .poster-name-over {
-  display: none;
+  color: transparent;
 }
 @media (hover: hover) and (pointer: fine) {
   .poster:hover .poster-photo {
@@ -1185,11 +1195,11 @@ body {
     color: var(--poster-ink);
     mix-blend-mode: normal;
   }
-  :root[data-theme="light"] .poster:hover .poster-name-over {
+  .poster:hover .poster-name-over {
     display: block;
   }
   .poster:hover .poster-name-over .poster-name {
-    color: #ffffff;
+    color: transparent;
   }
 }
 .poster-title,
@@ -1237,7 +1247,7 @@ body {
 .poster-meta {
   --gap: clamp(24px, 4cqi, 48px);
   position: absolute;
-  inset: auto var(--gap) 22px;
+  inset: auto var(--gap) calc(22px + var(--overlap));
   display: flex;
   align-items: center;
   gap: 24px;
@@ -1249,6 +1259,10 @@ body {
 }
 .poster {
   --meta-h: 44px;
+  /* About's rounded top overlaps the poster by this much; the bottom row sits above it. */
+  --overlap: 34px;
+  --photo-h: 86%;
+  --name-bottom: calc(var(--meta-h) + 18px + var(--overlap));
 }
 .poster-meta .social {
   margin: 0;
@@ -1264,7 +1278,8 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    padding: 0 16px calc(84px + 11cqi + 22px);
+    --overlap: 28px;
+    padding: 0 16px calc(84px + var(--overlap) + 11cqi + 22px);
     border-radius: 32px 32px 0 0;
     text-align: center;
   }
@@ -1282,12 +1297,12 @@ body {
     -webkit-mask-image: linear-gradient(#000 72%, transparent 98%);
     mask-image: linear-gradient(#000 72%, transparent 98%);
   }
-  .poster-name-over {
-    -webkit-mask: url("./assets/hero-mobile.webp") 44% 56px / auto 64% no-repeat;
-    mask: url("./assets/hero-mobile.webp") 44% 56px / auto 64% no-repeat;
+  /* On phones the name sits below him, so it never crosses the photo. */
+  .poster .poster-name-over {
+    display: none;
   }
   .poster-name {
-    inset: auto 0 84px;
+    inset: auto 0 calc(84px + var(--overlap));
     font-size: 11cqi;
   }
   .poster-title {
@@ -1312,7 +1327,7 @@ body {
     margin: 0;
   }
   .poster-meta {
-    inset: auto 16px 18px;
+    inset: auto 16px calc(18px + var(--overlap));
     justify-content: center;
     flex-wrap: wrap;
     gap: 6px 16px;
@@ -1320,6 +1335,20 @@ body {
   }
   .poster-scroll {
     display: none;
+  }
+}
+/* Tablets held upright: a shorter photo, so the title and the bio sit clear of his head. */
+@media (min-width: 640px) and (max-width: 1024px) and (orientation: portrait) {
+  .poster {
+    --photo-h: 60%;
+  }
+  /* Here the bottom row crosses his suit, so it flips its colour like the name. */
+  .poster-meta,
+  .poster-meta :is(a, button, span) {
+    color: #ffffff;
+  }
+  .poster-meta {
+    mix-blend-mode: difference;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -1395,9 +1424,10 @@ html.is-home .main > .panel:last-of-type {
 }
 .panel-title {
   margin: 0;
-  font-size: clamp(48px, 7.5vw, 88px);
+  font-size: clamp(30px, 9vw, 88px);
   font-weight: 500;
   line-height: 0.88;
+  overflow-wrap: anywhere;
   letter-spacing: -0.045em;
   text-transform: uppercase;
 }
