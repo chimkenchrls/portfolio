@@ -451,3 +451,12 @@ test('the old cover glide and typing intro are retired', () => {
   assert.equal(api.coverProgress, undefined);
   assert.equal(api.introTimeline, undefined);
 });
+
+test('stickTop pins a section once its bottom reaches the bottom of the screen', () => {
+  const { stickTop } = require('../script.js');
+  assert.equal(stickTop(900, 600), 0, 'shorter than the screen: pinned at the top');
+  assert.equal(stickTop(900, 900), 0);
+  assert.equal(stickTop(900, 1500), -600, 'taller: it scrolls until its bottom shows, then stays');
+  assert.equal(stickTop(NaN, 1500), 0);
+  assert.equal(stickTop(900, -5), 0);
+});

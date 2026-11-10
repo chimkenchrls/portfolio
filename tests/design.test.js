@@ -228,9 +228,15 @@ test('panel tokens exist in both themes and read well', () => {
   assert.ok(contrast(token(light, '--ink-fg'), token(light, '--ink')) >= 7);
 });
 
-test('panel motion is progressive and off for reduced motion', () => {
-  assert.match(css, /@media \(prefers-reduced-motion: no-preference\) \{\s*@supports \(animation-timeline: view\(\)\) \{[^@]*animation-timeline: view\(\)/);
-  assert.equal(css.split('animation-timeline: view();').length, 2, 'used in that one place only');
+test('Home stacks like cards: the poster and panels stick so the next one slides over', () => {
+  assert.match(css, /html\.is-home :is\(\.poster, \.main > \.panel:not\(:last-of-type\)\) \{[^}]*position:\s*sticky/);
+  assert.doesNotMatch(css, /margin:\s*-34px/, 'no panel peeks into the screen above it');
+  assert.doesNotMatch(css, /animation-timeline/, 'the old shrink-and-dim is gone');
+});
+
+test('the notch shows only CK until it is hovered or focused', () => {
+  assert.match(css, /\.notch \.nav-link \{[^}]*max-width:\s*0/);
+  assert.match(css, /\.notch:is\(:hover, :focus-within\) \.nav-link \{[^}]*max-width:/);
 });
 
 // Poster redesign: the other pages wear the poster headings.

@@ -8,8 +8,8 @@ from common import URL, check, finish, offline_api
 API = "**/github-contributions-api.jogruber.de/**"
 days = [{"date": (date(2026, 10, 4) - timedelta(days=367 - i)).isoformat(), "count": (i * 7) % 5, "level": (i * 7) % 5} for i in range(368)]
 PAYLOAD = json.dumps({"total": {"lastYear": 335}, "contributions": days})
-MEASURE = """() => { const p = document.querySelector('.github-panel'), pr = document.getElementById('projects');
-  return { hidden: p.hidden, height: Math.round(p.getBoundingClientRect().height), projectsTop: Math.round(pr.getBoundingClientRect().top + scrollY),
+MEASURE = """() => { const p = document.querySelector('.github-panel'), pr = document.getElementById('certifications');
+  return { hidden: p.hidden, height: Math.round(p.getBoundingClientRect().height), projectsTop: pr.offsetTop,
            dots: p.querySelectorAll('svg circle').length, titles: p.querySelectorAll('svg title').length, months: p.querySelectorAll('.github-month').length,
            total: p.querySelector('.github-total').textContent, label: (p.querySelector('svg') || { getAttribute: () => null }).getAttribute('aria-label') }; }"""
 

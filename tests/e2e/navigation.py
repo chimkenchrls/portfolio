@@ -34,7 +34,7 @@ NOTCH = ('projects', 'stack', 'more')
 def click_view(page, view, phone=False):
     # Projects, Stack and More sit in the notch on wider screens; everything is in CK's menu.
     if view in NOTCH and not phone:
-        page.click(f'.notch .nav-link[data-notch="{view}"]')
+        page.hover('.notch-ck'); page.click(f'.notch .nav-link[data-notch="{view}"]')
     else:
         page.click('.notch-ck')
         page.click(f'.ck-panel [data-view="{view}"]')
@@ -85,7 +85,7 @@ with sync_playwright() as pw:
     check('Back restores the previous scroll position', abs(page.evaluate('scrollY') - 500) < 2)
     click_view(page, 'resources')
     check('Resources lists its four groups, links opening in a new tab', page.locator('#resources .links-group:visible').count() == 4 and page.locator('#resources a.profile-link[target="_blank"]').count() == 12)
-    page.click('.notch .nav-link[data-notch="home"]')
+    page.hover('.notch-ck'); page.click('.notch .nav-link[data-notch="home"]')
     page.wait_for_function('document.documentElement.classList.contains("is-home")')
     check('Home restores every project card under the same notch', page.locator('.project-row:visible').count() == 5 and page.evaluate('shellProof.notch === document.querySelector(".notch")') and page.get_attribute('.notch [aria-current]', 'data-notch') == 'home')
     if SHOTS:
@@ -97,7 +97,7 @@ with sync_playwright() as pw:
     ctx, page, errors, _ = session(browser, reduced='no-preference')
     page.goto(BASE + '?view=case&p=ambiancy')
     page.evaluate('window.firstNotch = document.querySelector(".notch")')
-    page.click('.notch .nav-link[data-notch="home"]')
+    page.hover('.notch-ck'); page.click('.notch .nav-link[data-notch="home"]')
     check('Home from a direct case-study URL replays the poster intro', page.locator('html.intro-play').count() == 1)
     page.keyboard.press('Escape')
     check('a key press skips it and the same notch is in place', not page.locator('html.intro-play').count() and page.evaluate('firstNotch === document.querySelector(".notch") && firstNotch.getBoundingClientRect().top >= 0'))

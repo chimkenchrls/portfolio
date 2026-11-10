@@ -150,6 +150,11 @@ with sync_playwright() as pw:
     if SHOTS: p.screenshot(path=f"{SHOTS}/poster-tablet.png")
     ctx.close()
 
+    ctx, p, errors = page(b, 1280, 800, reduced_motion="reduce")
+    p.wait_for_timeout(500)
+    check("1280×800: the poster fills the first screen (About starts below it)", box(p, "#about")["y"] >= 799, str(box(p, "#about")))
+    ctx.close()
+
     # Short and narrow windows -------------------------------------------------
     ctx, p, errors = page(b, 1366, 650, reduced_motion="reduce")
     p.wait_for_timeout(500)
@@ -160,6 +165,8 @@ with sync_playwright() as pw:
     for width, height in ((390, 844), (320, 640)):
         ctx, p, errors = page(b, width, height, has_touch=True, is_mobile=True, reduced_motion="reduce")
         p.wait_for_timeout(500)
+        about = box(p, "#about")
+        check(f"{width}px: the poster fills the first screen (About starts below it)", about["y"] >= height - 1, str(about))
         name = box(p, "#hero-name")
         check(f"{width}px: the name is one line inside the screen", name["x"] >= 0 and name["r"] <= width and name["h"] < 80, str(name))
         check(f"{width}px: no sideways scroll", p.evaluate("document.documentElement.scrollWidth <= innerWidth"))

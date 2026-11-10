@@ -470,21 +470,30 @@ body {
   z-index: 40;
   display: flex;
   align-items: center;
-  gap: 28px;
   width: max-content;
   height: var(--notch-h);
   margin: 0 auto;
-  padding: 0 28px;
+  padding: 0 22px;
   font-size: 15px;
   font-weight: 500;
   color: var(--notch-fg);
   background: var(--frame);
   border-radius: 0 0 22px 22px;
 }
+/* Only CK shows until the notch is hovered or focused; then the page links slide out. */
 .notch .nav-link {
   position: relative;
   width: auto;
+  max-width: 0;
   height: auto;
+  margin: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transition:
+    max-width 320ms cubic-bezier(0.23, 1, 0.32, 1),
+    margin 320ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 200ms ease-out;
   padding: 6px 0;
   font-size: 15px;
   font-weight: 500;
@@ -545,6 +554,16 @@ body {
   color: var(--bg);
   background: var(--fg);
   pointer-events: none;
+}
+.notch:is(:hover, :focus-within) .nav-link {
+  max-width: 120px;
+  margin-inline: 14px;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .notch .nav-link {
+    transition: none;
+  }
 }
 @media (hover: hover) and (pointer: fine) {
   .notch .nav-link:hover {
@@ -933,6 +952,21 @@ body {
 .ck-panel-pages {
   display: none;
 }
+@media (hover: none) {
+  .ck-panel-pages {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .ck-panel-pages .nav-link {
+    justify-content: center;
+    height: auto;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+}
 .ck-panel-links {
   display: grid;
   gap: 2px;
@@ -1095,7 +1129,7 @@ body {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-content: start;
   max-width: none;
-  min-height: calc(100svh - 24px);
+  min-height: calc(100svh - 12px); /* the frame starts 12px down; About begins at the fold */
   margin: calc(-1 * (var(--main-top) + var(--notch-h))) calc(-1 * var(--main-x)) 0;
   padding: 0;
   color: var(--poster-ink);
@@ -1259,8 +1293,8 @@ body {
 }
 .poster {
   --meta-h: 44px;
-  /* About's rounded top overlaps the poster by this much; the bottom row sits above it. */
-  --overlap: 34px;
+  /* Room kept clear at the bottom of the poster (none now that panels no longer overlap it). */
+  --overlap: 0px;
   --photo-h: 86%;
   --name-bottom: calc(var(--meta-h) + 18px + var(--overlap));
 }
@@ -1274,11 +1308,11 @@ body {
 }
 @media (max-width: 639.98px) {
   .section.poster {
+    min-height: calc(100svh - 8px); /* the phone frame starts 8px down */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    --overlap: 28px;
     padding: 0 16px calc(84px + var(--overlap) + 11cqi + 22px);
     border-radius: 32px 32px 0 0;
     text-align: center;
@@ -1396,7 +1430,7 @@ html.is-home .panel-ink {
 html.is-home .main > .panel {
   position: relative;
   max-width: none;
-  margin: -34px calc(-1 * var(--main-x)) 0;
+  margin: 0 calc(-1 * var(--main-x));
   padding: 84px max(var(--main-x), calc((100% - 880px) / 2 + var(--main-x))) 110px;
   color: var(--fg);
   background: var(--bg);
@@ -1460,26 +1494,18 @@ html.is-home #about .about-bio p:first-child {
   letter-spacing: -0.012em;
   color: var(--fg);
 }
-@media (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    html.is-home .main > .panel,
-    html.is-home .poster {
-      transform-origin: 50% 100%;
-      animation: panel-cover linear both;
-      animation-timeline: view();
-      animation-range: exit 0% exit 60%;
-    }
-  }
+/* Cards stacking: the poster and each panel stay put once their bottom reaches the
+   bottom of the screen (script.js sets each one's top with stickTop), and the next
+   one slides up over them. */
+html.is-home :is(.poster, .main > .panel:not(:last-of-type)) {
+  position: sticky;
+  top: 0;
 }
-@keyframes panel-cover {
-  to {
-    scale: 0.97;
-    filter: brightness(0.75);
-  }
+html.is-home .main > .footer {
+  position: relative;
 }
 @media (max-width: 639.98px) {
   html.is-home .main > .panel {
-    margin-top: -28px;
     padding: 56px 20px 72px;
     border-radius: 28px 28px 0 0;
   }

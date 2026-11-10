@@ -177,7 +177,9 @@ with sync_playwright() as pw:
 
     # Tablet -------------------------------------------------------------------
     ctx, p, errors = open_page(b, 820, 1000)
-    check("tablet: the notch shows the page links and CK", p.is_visible(".notch .nav-link[data-notch='projects']") and p.is_visible(".notch-ck"))
+    check("tablet: the notch shows only CK until hovered", not p.is_visible(".notch .nav-link[data-notch='projects']"))
+    p.hover(".notch-ck"); p.wait_for_timeout(400)
+    check("tablet: hovering CK slides the page links out", p.is_visible(".notch .nav-link[data-notch='projects']") and p.is_visible(".notch-ck"))
     p.click(".notch-ck"); p.wait_for_selector(".ck-panel[open]")
     check("tablet: CK's menu has the chat button and pokes", p.is_visible(".sidebar-chat") and p.is_visible(".poke-button"))
     if SHOTS: p.screenshot(path=f"{SHOTS}/ck-menu-tablet.png")

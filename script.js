@@ -693,6 +693,12 @@
   const notchCurrent = (view) => ({ home: 'home', projects: 'projects', case: 'projects', stack: 'stack', more: 'more' })[view] || null;
   // The poster intro's windows in ms: lights on, photo steps in, name sweeps, the rest settles, notch drops.
   const posterTimeline = () => ({ light: [0, 600], photo: [400, 1100], name: [900, 1600], rest: [1400, 2000], notch: [1600, 2000], end: 2000 });
+  // Where a stacked Home section sticks: at the top if it fits the screen, otherwise
+  // as soon as its bottom reaches the bottom of the screen, so all of it is seen first.
+  const stickTop = (viewportHeight, height) => {
+    const gap = Number(viewportHeight) - Number(height);
+    return Number.isFinite(gap) && gap < 0 ? gap : 0;
+  };
   // "01 · About" for the Home panels after the poster; null for Home itself or an unknown id.
   const panelLabel = (id) => {
     const index = SECTIONS.findIndex((section) => section.id === id);
@@ -1195,7 +1201,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
+      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, stickTop, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
@@ -4349,6 +4355,27 @@
   })();
 
   /* ==========================================================================
+     19c. Panel stack — each Home section sticks once fully seen; the next covers it
+     ========================================================================== */
+  const panelStack = (() => {
+    const place = () => {
+      $$('.poster, .main > .panel').forEach((node) => {
+        node.style.top = root.classList.contains('is-home') ? `${stickTop(window.innerHeight, node.offsetHeight)}px` : '';
+      });
+    };
+    const init = () => {
+      place();
+      window.addEventListener('resize', place);
+      document.addEventListener('portfolio:navigate', () => requestAnimationFrame(place));
+      if (typeof ResizeObserver === 'function') {
+        const observer = new ResizeObserver(place);
+        $$('.poster, .main > .panel').forEach((node) => observer.observe(node));
+      }
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      19d. Poster intro — lights on, he steps in, the name sweeps, the rest settles
      ========================================================================== */
   const posterIntro = (() => {
@@ -4932,6 +4959,7 @@
     chimkenArt.init();
     nightSky.init();
     posterIntro.init();
+    panelStack.init();
     clickBurst.init();
     contactForm.init(data);
     guestbook.init(data);
