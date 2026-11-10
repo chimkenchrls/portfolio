@@ -217,12 +217,12 @@ test('the frame is fixed to the window: a rounded hole the page scrolls under', 
   assert.match(css, /\.frame::after \{[^}]*box-shadow:\s*0 0 0 100vmax var\(--frame\)/);
 });
 
-test('each Home panel is labelled by panelLabel and titled with its real name', () => {
+test('each Home panel is numbered and titled, with no small label repeating the title', () => {
   const { panelLabel } = require('../script.js');
   const titles = { about: 'About', projects: 'Projects', stack: 'Stack', certifications: 'Certifications', contact: 'Get in touch' };
   for (const [id, title] of Object.entries(titles)) {
     const section = between(html, `id="${id}"`, '</section>');
-    assert.match(section, new RegExp(`class="panel-label divider-label"[^>]*>${panelLabel(id).replace('·', '&middot;')}<`), `${id} label`);
+    assert.match(section, new RegExp(`class="panel-label divider-label" aria-hidden="true">${panelLabel(id)}</p>`), `${id} number`);
     assert.match(section, new RegExp(`class="panel-title(?: visually-hidden)?" id="${id}-heading">${title}<`), `${id} title`);
   }
 });

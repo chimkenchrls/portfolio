@@ -430,14 +430,6 @@ test('posterTimeline follows the spec windows and ends at 2s', () => {
   assert.equal(t.end, 2000);
 });
 
-test('panelLabel numbers the Home panels after the hero', () => {
-  const { panelLabel } = require('../script.js');
-  assert.equal(panelLabel('about'), '01 · About');
-  assert.equal(panelLabel('contact'), '05 · Contact');
-  assert.equal(panelLabel('home'), null);
-  assert.equal(panelLabel('nope'), null);
-});
-
 test('the old cover glide and typing intro are retired', () => {
   const api = require('../script.js');
   assert.equal(api.coverProgress, undefined);
@@ -473,9 +465,9 @@ test('aboutFacts derives the two facts from data', () => {
   const data = { education: [{ short: 'BSCS', year: 4, school: 'STI College Lucena', current: true }], projects: [{}, {}, {}, {}, {}] };
   assert.deepEqual(aboutFacts(data), [
     { value: 'BSCS', caption: '4th year · STI College Lucena' },
-    { value: '5 PROJECTS', caption: 'shipped and in progress' },
+    { value: '5+', caption: 'Projects' },
   ]);
-  assert.equal(aboutFacts({ ...data, projects: [{}] })[1].value, '1 PROJECT');
+  assert.deepEqual(aboutFacts({ ...data, projects: [{}] })[1], { value: '1+', caption: 'Project' });
   assert.deepEqual(aboutFacts({ education: [{ short: null, year: null, school: 'X' }], projects: [] }), []);
   assert.equal(aboutFacts({ education: [{ short: 'BSCS', year: null, school: 'STI' }], projects: [] })[0].caption, 'STI');
   for (const [n, s] of [[1, '1st'], [2, '2nd'], [3, '3rd'], [11, '11th'], [22, '22nd']]) assert.equal(aboutFacts({ education: [{ short: 'B', year: n, school: 'S' }], projects: [] })[0].caption, `${s} year · S`);
@@ -509,4 +501,12 @@ test('footerFits only when the footer is no taller than the window', () => {
   const { footerFits } = require('../script.js');
   assert.equal(footerFits(500, 800), true); assert.equal(footerFits(800, 800), true);
   assert.equal(footerFits(801, 800), false); assert.equal(footerFits(NaN, 800), false); assert.equal(footerFits(0, 800), false);
+});
+
+test('panelLabel numbers the Home panels after the hero, number only', () => {
+  const { panelLabel } = require('../script.js');
+  assert.equal(panelLabel('about'), '01');
+  assert.equal(panelLabel('contact'), '05');
+  assert.equal(panelLabel('home'), null);
+  assert.equal(panelLabel('nope'), null);
 });

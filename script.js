@@ -684,6 +684,11 @@
   const posterTimeline = () => ({ light: [0, 600], photo: [400, 1100], name: [900, 1600], rest: [1400, 2000], notch: [1600, 2000], end: 2000 });
   // Where a stacked Home section sticks: at the top if it fits the screen, otherwise
   // as soon as its bottom reaches the bottom of the screen, so all of it is seen first.
+  // The number shown above a Home panel's title ("01" for About); null for Home itself or an unknown id.
+  const panelLabel = (id) => {
+    const index = SECTIONS.findIndex((section) => section.id === id);
+    return index > 0 ? String(index).padStart(2, '0') : null;
+  };
   const stickTop = (viewportHeight, height) => {
     const gap = Number(viewportHeight) - Number(height);
     return Number.isFinite(gap) && gap < 0 ? gap : 0;
@@ -712,7 +717,7 @@
       facts.push({ value: school.short.trim().toUpperCase(), caption: [year, school.school].filter(Boolean).join(' · ') });
     }
     const count = Array.isArray(data.projects) ? data.projects.length : 0;
-    if (count) facts.push({ value: `${count} PROJECT${count === 1 ? '' : 'S'}`, caption: 'shipped and in progress' });
+    if (count) facts.push({ value: `${count}+`, caption: count === 1 ? 'Project' : 'Projects' });
     return facts;
   };
   // The projects named in data.featured, in that order; unknown names are skipped.
@@ -737,11 +742,7 @@
   };
   // The page lifts off the footer only when the whole footer fits on the screen.
   const footerFits = (footerHeight, viewportHeight) => footerHeight > 0 && footerHeight <= viewportHeight;
-  // "01 · About" for the Home panels after the poster; null for Home itself or an unknown id.
-  const panelLabel = (id) => {
-    const index = SECTIONS.findIndex((section) => section.id === id);
-    return index > 0 ? `${String(index).padStart(2, '0')} · ${SECTIONS[index].label}` : null;
-  };
+
   // A small seeded generator, so the night sky is the same on every visit.
   const skyRandom = (seed) => {
     let state = seed >>> 0;
@@ -2331,10 +2332,10 @@
           heading.lastChild.textContent = ` ${label} `;
           return;
         }
-        // A Home panel head: the title, and the small numbered label above it.
+        // A Home panel head: the title, and its number above it (no words repeating the title).
         heading.textContent = label;
         const small = $('.panel-label', heading.parentElement);
-        if (small) small.textContent = `${index.replace(' //', '')} · ${label === 'Get in touch' ? 'Contact' : label}`;
+        if (small) small.textContent = index.replace(' //', '');
       };
       head('projects', '02 //', 'Projects');
       head('stack', '03 //', 'Stack');

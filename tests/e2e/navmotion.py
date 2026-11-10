@@ -30,18 +30,18 @@ with sync_playwright() as p:
     check("no errors", not errors, str(errors))
     ctx.close()
 
-    # Home: panel labels decode into place.
+    # Home: About's facts decode into place.
     ctx, page, errors = new_page(browser)
     page.wait_for_timeout(2500)
-    page.evaluate("""() => { window.seen = []; const l = document.querySelector('#projects .divider-label');
+    page.evaluate("""() => { window.seen = []; const l = document.querySelector('#about .fact-value');
       new MutationObserver(() => seen.push([l.textContent.trim(), l.getAttribute('aria-label')])).observe(l, { subtree: true, characterData: true, attributes: true });
       l.scrollIntoView(); }""")
-    page.wait_for_function("document.querySelector('#projects .divider-label').textContent.trim() === '02 · Projects' && seen.length > 1", timeout=2000)
+    page.wait_for_function("document.querySelector('#about .fact-value').textContent.trim() === 'BSCS' && seen.length > 1", timeout=2000)
     seen = page.evaluate("seen")
-    check("a label flickers through other characters while it decodes", any(text != "02 · Projects" for text, _ in seen), str(seen))
-    check("screen readers get the real label meanwhile", all(label == "02 · Projects" for text, label in seen if text != "02 · Projects"), str(seen))
-    settled = page.evaluate("document.querySelector('#projects .divider-label').textContent.trim()")
-    check("and it settles on the real text", settled == "02 · Projects", settled)
+    check("a fact flickers through other characters while it decodes", any(text != "BSCS" for text, _ in seen), str(seen))
+    check("screen readers get the real fact meanwhile", all(label == "BSCS" for text, label in seen if text != "BSCS"), str(seen))
+    settled = page.evaluate("document.querySelector('#about .fact-value').textContent.trim()")
+    check("and it settles on the real text", settled == "BSCS", settled)
     check("decode: no errors", not errors, str(errors))
     ctx.close()
 

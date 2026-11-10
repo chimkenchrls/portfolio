@@ -1510,8 +1510,8 @@ html.is-home .main > .panel:last-of-type {
   font-family: var(--font-mono);
   font-size: 12px;
   letter-spacing: 0.16em;
-  text-transform: uppercase;
   color: var(--fg-muted);
+  font-variant-numeric: tabular-nums;
 }
 .panel-title {
   margin: 0;

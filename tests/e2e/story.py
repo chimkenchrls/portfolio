@@ -27,7 +27,7 @@ with sync_playwright() as pw:
     check("three buttons: chat, résumé, all projects", actions == ["Chat with CK", "View résumé", "Explore all projects"], str(actions))
     check("Explore all projects goes to the Projects page", p.get_attribute("#about .about-actions a[href*='view=projects']", "href") == "./?view=projects")
     facts = p.evaluate("[...document.querySelectorAll('#about .fact')].map(n => [n.querySelector('.fact-value').getAttribute('aria-label') || n.querySelector('.fact-value').textContent.trim(), n.querySelector('.fact-caption').textContent.trim()])")
-    check("two facts from data", facts == [["BSCS", "4th year · STI College Lucena"], ["5 PROJECTS", "shipped and in progress"]], str(facts))
+    check("two facts from data", facts == [["BSCS", "4th year · STI College Lucena"], ["5+", "Projects"]], str(facts))
     check("no Experience or Education on Home", p.locator("#about .timeline-block, #about [data-render='experience']").count() == 0)
 
     at(p, "#about .statement", 0.9)
