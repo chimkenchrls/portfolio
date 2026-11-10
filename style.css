@@ -1518,9 +1518,14 @@ html.is-home .main > .panel:last-of-type {
   font-size: clamp(30px, 9vw, 88px);
   font-weight: 500;
   line-height: 0.88;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   letter-spacing: -0.045em;
   text-transform: uppercase;
+}
+/* With no intro line beside it, the title gets the whole width (long words like
+   CERTIFICATIONS stay whole). */
+.panel-head:not(:has(.panel-intro:not(:empty))) {
+  grid-template-columns: minmax(0, 1fr);
 }
 .panel-intro {
   margin: 0;
@@ -2935,20 +2940,8 @@ html.view-case #projects :is(.divider, .panel-head) {
   padding: 24px 18px 14px;
   text-align: center;
   background: var(--surface);
-  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-}
-.certification::before {
-  content: "";
-  position: absolute;
-  inset: 5px;
-  border: 1px solid var(--border);
-  border-radius: calc(var(--radius-lg) - 4px);
-  pointer-events: none;
-}
-.certification.is-in-progress::before {
-  border-style: dashed;
 }
 .certification-logo {
   display: grid;

@@ -126,6 +126,9 @@ with sync_playwright() as pw:
     at(p, "#certifications .certification-grid", 0.95)
     stacked = p.evaluate(centres)
     check("arriving, the three cards sit stacked on the middle one", len(stacked) == 3 and abs(stacked[0][0] - stacked[1][0]) <= 40 and abs(stacked[2][0] - stacked[1][0]) <= 40, str(stacked))
+    at(p, "#certifications .certification-grid", 0.6)
+    apart = p.evaluate("(() => { const r = [...document.querySelectorAll('#certifications .certification')].map(n => n.getBoundingClientRect()); return r.every((b, i) => i === 0 || r[i - 1].right <= b.left + 1); })()")
+    check("by the time they are well on screen, no card covers another", apart)
     at(p, "#certifications .certification-grid", 0.2)
     dealt = p.evaluate(centres)
     check("scrolled up, they are dealt into a row, straight", len(dealt) == 3 and dealt[0][0] < dealt[1][0] - 100 and dealt[2][0] > dealt[1][0] + 100 and all(t in ("none", "matrix(1, 0, 0, 1, 0, 0)") for _, t in dealt), str(dealt))
@@ -140,6 +143,18 @@ with sync_playwright() as pw:
     ctx, p, errors = new_page(b, 390, 844, is_mobile=True, has_touch=True)
     at(p, "#certifications .certification-grid", 0.9)
     check("phone (cards stacked in a column): no dealing", all(t in ("none", "matrix(1, 0, 0, 1, 0, 0)") for _, t in p.evaluate(centres)))
+    ctx.close()
+
+    # Panel titles stay whole; certification cards have no border lines ------------------
+    for width in (1280, 975, 768, 390):
+        ctx, p, errors = new_page(b, width, 900, reduced_motion="reduce")
+        whole = p.evaluate("[...document.querySelectorAll('.panel-title:not(.visually-hidden)')].filter(n => n.offsetParent).map(n => { const r = document.createRange(); r.selectNodeContents(n); return [n.textContent.trim(), r.getClientRects().length]; })")
+        check(f"{width}px: no single-word panel title breaks mid-word", whole and all(lines == 1 for text, lines in whole if " " not in text), str(whole))
+        ctx.close()
+    ctx, p, errors = new_page(b, 1280, 900, reduced_motion="reduce")
+    lines = p.evaluate("[...document.querySelectorAll('#certifications .certification')].map(n => [getComputedStyle(n).borderTopWidth, getComputedStyle(n, '::before').content, getComputedStyle(n, '::before').borderTopStyle])")
+    check("certification cards have no border and no inner frame line", lines and all(w == "0px" and (c == "none" or st == "none") for w, c, st in lines), str(lines))
+    check("they still lift off the page with a shadow", p.evaluate("getComputedStyle(document.querySelector('#certifications .certification')).boxShadow") != "none")
     ctx.close()
     b.close()
 finish()

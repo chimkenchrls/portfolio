@@ -4320,7 +4320,7 @@
       }) : [];
       const dealing = moving && Boolean(grid) && cards.length > 1
         && getComputedStyle(grid).gridTemplateColumns.split(' ').length >= cards.length;
-      const progress = dealing ? (0.9 * vh - grid.getBoundingClientRect().top) / (0.6 * vh) : 1;
+      const progress = dealing ? (0.95 * vh - grid.getBoundingClientRect().top) / (0.3 * vh) : 1;
       // The closing panel fades and zooms in as it rises into view: from the bottom of
       // the screen until its top reaches 40% of the screen.
       const closing = $('.closing');
