@@ -58,6 +58,27 @@ with sync_playwright() as pw:
     check("phone: no errors", not errors, str(errors))
     ctx.close()
 
+    # Phone: CK on stage — big, pokeable, sharing the footer's count; everything fits.
+    for width, height in ((390, 844), (320, 568)):
+        ctx, p, errors = new_page(b, width, height, url=BASE + "?view=links", is_mobile=True, has_touch=True)
+        p.tap(".notch-ck"); p.wait_for_timeout(500)
+        ck = p.evaluate("(() => { const r = document.querySelector('.phone-menu-poke .assistant-sprite').getBoundingClientRect(); return [r.width, r.height]; })()")
+        check(f"{width}×{height}: CK stands on the stage at his real shape", ck[0] >= 72 and abs(ck[0] - ck[1]) < 1, str(ck))
+        lines = p.evaluate("[...document.querySelectorAll('.phone-menu-actions .btn')].map(n => { const r = document.createRange(); r.selectNodeContents(n); return r.getClientRects().length; })")
+        check(f"{width}×{height}: Get in touch and Chat with CK each fit on one line", lines and all(n == 1 for n in lines), str(lines))
+        fits = p.evaluate("[...document.querySelectorAll('.phone-menu button, .phone-menu a')].every(n => { const r = n.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth; })")
+        check(f"{width}×{height}: everything in the menu is on screen", fits)
+        if width == 390:
+            saved = lambda: p.evaluate("Number(localStorage.getItem('ck-pokes') || 0)")
+            before = saved()
+            p.tap(".phone-menu-poke"); p.wait_for_timeout(250)
+            shown = p.evaluate("[document.querySelector('.phone-menu .poke-value').textContent, document.querySelector('footer .poke-value').textContent]")
+            check("phone: poking CK in the menu counts, shown the same as in the footer", saved() == before + 1 and shown[0] == shown[1], f"{before} -> {saved()}, {shown}")
+            check("phone: and he reacts", p.locator(".phone-menu-poke .poke-emote").count() == 1)
+            check("phone: poking him keeps the menu open", p.locator(".phone-menu[open]").count() == 1)
+        check(f"{width}×{height}: no errors", not errors, str(errors))
+        ctx.close()
+
     # Reduced motion: it simply appears.
     ctx, p, errors = new_page(b, 390, 844, url=BASE + "?view=links", is_mobile=True, has_touch=True, reduced_motion="reduce")
     p.tap(".notch-ck")

@@ -873,29 +873,102 @@ body {
   background: transparent;
 }
 .phone-menu-top {
-  position: relative;
-  display: grid;
-  place-items: center;
-  height: var(--notch-h);
-}
-.phone-menu-ck {
-  width: 40px;
-  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  height: 44px;
+  margin: 4px -10px 0 0;
 }
 .phone-menu-close {
-  position: absolute;
-  top: 50%;
-  left: calc(50% + 34px);
-  translate: 0 -50%;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
-  font-size: 26px;
-  line-height: 1;
+  width: 44px;
+  height: 44px;
   color: var(--fg);
   background: none;
   border: 0;
+  border-radius: 50%;
+  transition: scale 140ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.phone-menu-close svg {
+  width: 16px;
+  height: 16px;
+}
+.phone-menu-close:active {
+  scale: 0.92;
+}
+/* CK on his stage: big, standing on a line, the poke count in a pixel speech bubble. */
+.phone-menu-stage {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding-top: clamp(0px, 2svh, 16px);
+}
+.phone-menu-poke {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  padding: 0;
+  background: none;
+  border: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.phone-menu-poke .assistant-sprite {
+  width: clamp(72px, 15svh, 112px);
+  height: clamp(72px, 15svh, 112px);
+}
+.phone-menu-bubble {
+  position: absolute;
+  top: -2px;
+  left: calc(100% - 12px);
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: var(--frame);
+  background: var(--fg);
+}
+/* The stepped pixel tail, pointing down to his head. */
+.phone-menu-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 8px;
+  height: 4px;
+  background: var(--fg);
+}
+.phone-menu-bubble::before {
+  content: "";
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 4px;
+  height: 4px;
+  background: var(--fg);
+}
+.phone-menu-poke .poke-emote {
+  top: 6px;
+  right: auto;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+}
+.phone-menu-floor {
+  width: 150px;
+  height: 1px;
+  background: color-mix(in srgb, var(--fg) 16%, transparent);
+}
+.phone-menu-hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
 }
 .phone-menu-pages {
   display: flex;
@@ -910,9 +983,10 @@ body {
   width: auto;
   height: auto;
   padding: 2px 8px;
-  font-size: clamp(30px, 9vw, 40px);
-  font-weight: 400;
-  line-height: 1.15;
+  font-size: clamp(26px, min(8.4vw, 5svh), 34px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
   text-transform: uppercase;
   color: var(--fg-muted);
   background: none;
@@ -945,6 +1019,9 @@ body {
 }
 .phone-menu-actions .btn {
   justify-content: center;
+  padding-inline: 10px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 .phone-menu-email {
   display: flex;

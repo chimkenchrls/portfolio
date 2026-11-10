@@ -624,10 +624,17 @@
 
     <dialog class="phone-menu" id="phone-menu" aria-label="Menu">
       <div class="phone-menu-top">
-        <span class="phone-menu-ck assistant-sprite" aria-hidden="true"></span>
         <button class="phone-menu-close" type="button" aria-label="Close menu">
-          <span aria-hidden="true">&times;</span>
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 3l10 10M13 3 3 13"/></svg>
         </button>
+      </div>
+      <div class="phone-menu-stage">
+        <button class="phone-menu-poke" type="button" aria-label="Poke CK">
+          <span class="assistant-sprite" aria-hidden="true"></span>
+          <span class="phone-menu-bubble poke-value" aria-live="polite">0</span>
+        </button>
+        <span class="phone-menu-floor" aria-hidden="true"></span>
+        <p class="phone-menu-hint">Tap to poke</p>
       </div>
       <nav class="phone-menu-pages" aria-label="Pages in the menu">
         <a class="nav-link" href="./" data-notch="home" data-section="home">Home</a>

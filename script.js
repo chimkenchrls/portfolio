@@ -3717,6 +3717,9 @@
       const pokeButton = $('.poke-button');
       const pokeValue = $('.poke-value');
       const pokeSprite = pokeButton && $('.assistant-sprite', pokeButton);
+      // The phone menu's CK, on his stage: the same pokes, the same count.
+      const menuPoke = $('.phone-menu-poke');
+      const menuSprite = menuPoke && $('.assistant-sprite', menuPoke);
       let opener = launcher;
       let pokes = pokeCount(storage.get('localStorage', 'ck-pokes'));
       let pokeFace = null;
@@ -3770,6 +3773,7 @@
         // The sidebar CK idles like the launcher, rests while the chat is open,
         // and pulls a face for a moment after each poke.
         if (pokeSprite) show(pokeSprite, poked || (dialog.open ? { direction: 4, reaction: null } : pose));
+        if (menuSprite) show(menuSprite, poked || pose);
       };
       greet = () => {
         if (still()) return;
@@ -4003,7 +4007,7 @@
       let flushTimer = 0;
       const shownPokes = () => pokeEndpoint && total === null ? '—' : (total === null ? pokes : total).toLocaleString('en-US');
       const showPokes = () => {
-        if (pokeValue) pokeValue.textContent = shownPokes();
+        $$('.poke-value').forEach((value) => { value.textContent = shownPokes(); });
         if (pokeLabel) pokeLabel.textContent = pokeEndpoint ? 'Total pokes' : 'Your pokes';
       };
       const pokeRequest = (options) => fetch(pokeEndpoint, { credentials: 'omit', ...options })
@@ -4081,6 +4085,10 @@
           if (!pokeOnce(pokeSprite, poke)) return;
           if (!still() && typeof pokeValue.animate === 'function') pokeValue.animate([{ opacity: 0.4, translate: '0 4px' }, { opacity: 1, translate: '0 0' }], { duration: 220, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
         });
+      }
+      if (menuSprite) {
+        showPokes();
+        menuPoke.addEventListener('click', () => { pokeOnce(menuSprite, menuPoke); });
       }
       $('.assistant-close', dialog).addEventListener('click', () => dialog.close());
       dialog.addEventListener('click', (event) => {
