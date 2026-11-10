@@ -119,7 +119,7 @@ with sync_playwright() as pw:
     to_chat(p)
     check("phone: replay runs", until(p, "document.querySelectorAll('.chat-log > *').length >= 3"), str(rows(p)))
     g = p.evaluate("(() => { const li = document.querySelector('.project.has-chat'); const r = s => li.querySelector(s).getBoundingClientRect(); return { below: r('.project-info').bottom <= r('.chat').top + 1, w: r('.chat').width, iw: r('.project-info').width, dw: r('.diagram').width, overflow: document.documentElement.scrollWidth > innerWidth }; })()")
-    check("phone: chat sits under the text and fills the card, diagram fits, no sideways scroll", g["below"] and g["w"] >= 300 and abs(g["w"] - g["iw"]) <= 1 and g["dw"] <= g["iw"] + 1 and not g["overflow"], str(g))
+    check("phone: chat sits under the text and fills the card, diagram fits, no sideways scroll", g["below"] and g["w"] >= 285 and abs(g["w"] - g["iw"]) <= 1 and g["dw"] <= g["iw"] + 1 and not g["overflow"], str(g))
     if SHOTS:
         until(p, f"{LOG}.includes('Worked Example')")
         p.locator(".project.has-chat").screenshot(path=f"{SHOTS}/chat-phone.png")

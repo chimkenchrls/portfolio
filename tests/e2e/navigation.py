@@ -14,7 +14,7 @@ script = source.read_text()
 
 def session(browser, width=1280, height=900, reduced='reduce', **options):
     ctx = browser.new_context(viewport={'width': width, 'height': height}, reduced_motion=reduced, **options)
-    offline_api(ctx, cover=True)
+    offline_api(ctx)
     ctx.route('**/assets/data.js*', lambda route: route.fulfill(content_type='text/javascript', body=script))
     reads = []
     def notes(route):
@@ -28,10 +28,16 @@ def session(browser, width=1280, height=900, reduced='reduce', **options):
     return ctx, page, errors, reads
 
 
+NOTCH = ('projects', 'stack', 'more')
+
+
 def click_view(page, view, phone=False):
-    if phone:
-        page.click('.menu-toggle')
-    page.click(f'.nav-link[data-view="{view}"]')
+    # Projects, Stack and More sit in the notch on wider screens; everything is in CK's menu.
+    if view in NOTCH and not phone:
+        page.click(f'.notch .nav-link[data-notch="{view}"]')
+    else:
+        page.click('.notch-ck')
+        page.click(f'.ck-panel [data-view="{view}"]')
     page.wait_for_function('view => document.documentElement.classList.contains("view-" + view)', arg=view)
 
 
@@ -40,14 +46,15 @@ with sync_playwright() as pw:
     ctx, page, errors, reads = session(browser)
     page.goto(BASE + '#contact')
     page.fill('#contact-message', 'A draft kept through page changes.')
-    page.wait_for_function('getComputedStyle(document.querySelector(".sidebar")).visibility === "visible"')
-    page.evaluate('window.shellProof = { sidebar: document.querySelector(".sidebar"), main: document.querySelector("main"), form: document.querySelector(".contact-form"), sky: document.querySelector(".sky"), origin: performance.timeOrigin }; document.querySelector("#assistant-input").value = "A chat draft";')
+    page.evaluate('window.shellProof = { notch: document.querySelector(".notch"), main: document.querySelector("main"), form: document.querySelector(".contact-form"), sky: document.querySelector(".sky"), origin: performance.timeOrigin }; document.querySelector("#assistant-input").value = "A chat draft";')
     documents = []
     page.on('request', lambda request: documents.append(request.url) if request.resource_type == 'document' else None)
     for view in ('links', 'more', 'projects', 'stack', 'resources', 'guestbook'):
         click_view(page, view)
-        check(f'{view}: the shell and document survive', page.evaluate('shellProof.sidebar === document.querySelector(".sidebar") && shellProof.main === document.querySelector("main") && shellProof.sky === document.querySelector(".sky") && shellProof.origin === performance.timeOrigin'))
-        check(f'{view}: the current page is marked', page.get_attribute(f'.nav-link[data-view="{view}"]', 'aria-current') == 'page')
+        check(f'{view}: the shell and document survive', page.evaluate('shellProof.notch === document.querySelector(".notch") && shellProof.main === document.querySelector("main") && shellProof.sky === document.querySelector(".sky") && shellProof.origin === performance.timeOrigin'))
+        lit = page.evaluate('[...document.querySelectorAll(".notch [aria-current]")].map(n => n.dataset.notch)')
+        check(f'{view}: the notch lights its own link, or none', lit == ([view] if view in NOTCH else []), str(lit))
+        check(f'{view}: CK\'s menu is closed after the visit', not page.locator('.ck-panel[open]').count())
     page.locator('.guestbook-form').wait_for(state='visible')
     page.fill('#guestbook-name', 'Browser fixture')
     click_view(page, 'links')
@@ -78,14 +85,9 @@ with sync_playwright() as pw:
     check('Back restores the previous scroll position', abs(page.evaluate('scrollY') - 500) < 2)
     click_view(page, 'resources')
     check('Resources lists its four groups, links opening in a new tab', page.locator('#resources .links-group:visible').count() == 4 and page.locator('#resources a.profile-link[target="_blank"]').count() == 12)
-    page.click('.collapse-toggle')
-    check('the rail is enabled', page.locator('body.is-rail').count() == 1)
-    click_view(page, 'stack')
-    click_view(page, 'links')
-    check('collapse state and nav counts remain stable', page.locator('body.is-rail').count() == 1 and page.locator('.nav-count').count() == 4)
-    page.click('.collapse-toggle')
-    page.click('.nav-link[data-section="home"]')
-    check('Home restores every project row with the sidebar hidden on the cover', page.locator('.project-row:visible').count() == 5 and page.locator('.sidebar').evaluate('n => getComputedStyle(n).visibility === "hidden" && n.getBoundingClientRect().right <= 0'))
+    page.click('.notch .nav-link[data-notch="home"]')
+    page.wait_for_function('document.documentElement.classList.contains("is-home")')
+    check('Home restores every project card under the same notch', page.locator('.project-row:visible').count() == 5 and page.evaluate('shellProof.notch === document.querySelector(".notch")') and page.get_attribute('.notch [aria-current]', 'data-notch') == 'home')
     if SHOTS:
         page.screenshot(path=f'{SHOTS}/navigation-home.png')
     check('internal visits made no document requests', documents == [], str(documents))
@@ -94,32 +96,63 @@ with sync_playwright() as pw:
 
     ctx, page, errors, _ = session(browser, reduced='no-preference')
     page.goto(BASE + '?view=case&p=ambiancy')
-    page.evaluate('window.firstSidebar = document.querySelector(".sidebar")')
-    page.click('.nav-link[data-section="home"]')
-    check('Home from a direct case-study URL replays the intro', page.locator('.intro-tiles').count() == 1 and page.locator('html.intro-play').count() == 1)
-    page.wait_for_timeout(600)  # the sidebar slides out over 480ms before it hides
-    check('the same sidebar is hidden during that intro', page.evaluate('firstSidebar === document.querySelector(".sidebar") && getComputedStyle(firstSidebar).visibility === "hidden" && firstSidebar.getBoundingClientRect().right <= 0'))
+    page.evaluate('window.firstNotch = document.querySelector(".notch")')
+    page.click('.notch .nav-link[data-notch="home"]')
+    check('Home from a direct case-study URL replays the poster intro', page.locator('html.intro-play').count() == 1)
     page.keyboard.press('Escape')
+    check('a key press skips it and the same notch is in place', not page.locator('html.intro-play').count() and page.evaluate('firstNotch === document.querySelector(".notch") && firstNotch.getBoundingClientRect().top >= 0'))
     check('the Home preview hooks initialize when entering from another page', page.locator('.project-hover').count() == 1 and page.locator('.project-row').count() == 5)
     page.evaluate('document.querySelector("#about").scrollIntoView({behavior:"instant"})')
     page.wait_for_timeout(250)
-    check('scrolling brings the same sidebar back', page.evaluate('firstSidebar === document.querySelector(".sidebar") && getComputedStyle(firstSidebar).visibility === "visible" && firstSidebar.getBoundingClientRect().left >= 0'))
+    check('the notch stays pinned at the top while scrolling', page.evaluate('Math.abs(firstNotch.getBoundingClientRect().top) <= 1'))
     page.evaluate('scrollTo({top:0,behavior:"instant"})')
     page.wait_for_timeout(250)
-    check('scrolling back to the hero hides the sidebar again without replaying the intro', page.locator('.sidebar').evaluate('n => getComputedStyle(n).visibility === "hidden" && n.getBoundingClientRect().right <= 0') and not page.locator('html.intro-play').count())
+    check('scrolling back to the poster does not replay the intro', not page.locator('html.intro-play').count())
+    ctx.close()
+
+    # Keyboard: CK's menu is reachable, traps focus like a dialog and gives it back.
+    ctx, page, errors, _ = session(browser)
+    page.goto(BASE + '#about')
+    page.focus('.notch-ck')
+    page.keyboard.press('Enter')
+    check('Enter on CK opens his menu with focus inside', page.locator('.ck-panel[open]').count() == 1 and page.evaluate('!!document.activeElement.closest(".ck-panel")'))
+    page.keyboard.press('Escape')
+    check('Escape closes it and focus returns to CK', not page.locator('.ck-panel[open]').count() and page.evaluate('document.activeElement.matches(".notch-ck")'))
+    page.click('.notch-ck'); page.mouse.click(5, 600)
+    check('a click outside closes it', not page.locator('.ck-panel[open]').count())
+    page.keyboard.press('t')
+    check('T still toggles the theme with the menu closed', page.evaluate('document.documentElement.dataset.theme') == 'light')
+    page.keyboard.press('Alt+k'); page.wait_for_timeout(200)
+    check('Alt+K still opens chimken', page.locator('.game[open]').count() == 1)
+    page.keyboard.press('Escape')
+    page.keyboard.press('3'); page.wait_for_timeout(300)
+    check('number keys still jump to Home sections', page.evaluate('Math.abs(document.querySelector("#projects").getBoundingClientRect().top) < 120'))
+    ctx.close()
+
+    # Deep links and no JavaScript: nothing is left hidden.
+    ctx, page, errors, _ = session(browser, reduced='no-preference')
+    page.goto(BASE + '#projects')
+    page.wait_for_load_state('networkidle')
+    where = page.evaluate('[document.documentElement.className, Math.round(document.querySelector("#projects").getBoundingClientRect().top)]')
+    check('a #section link opens there without the intro', 'intro-play' not in where[0] and -40 <= where[1] <= 120, str(where))
+    page.goto(BASE + '?view=case&p=ambiancy')
+    check('a case study link opens with no intro and its title visible', not page.locator('html.intro-play').count() and page.is_visible('.case-name'))
+    ctx.close()
+    ctx = browser.new_context(viewport={'width': 1280, 'height': 900}, java_script_enabled=False)
+    page = ctx.new_page(); page.goto(BASE)
+    check('without JavaScript the poster and the panels are visible', page.evaluate('getComputedStyle(document.querySelector(".poster-name")).clipPath === "none" && getComputedStyle(document.querySelector(".poster-title")).opacity === "1" && getComputedStyle(document.querySelector("#about")).display !== "none"'))
     ctx.close()
 
     ctx, page, errors, _ = session(browser, width=390, height=844, is_mobile=True, has_touch=True)
     page.goto(BASE + '?view=links')
-    page.evaluate('window.phoneSidebar = document.querySelector(".sidebar")')
+    page.evaluate('window.phoneNotch = document.querySelector(".notch")')
     for view in ('more', 'projects', 'stack', 'guestbook', 'resources'):
         click_view(page, view, phone=True)
-        check(f'phone {view}: the drawer closes and its DOM stays mounted', not page.locator('body.drawer-open').count() and page.evaluate('phoneSidebar === document.querySelector(".sidebar")'))
-    page.click('.menu-toggle')
-    page.click('.nav-link[data-section="home"]')
-    check('phone Home hides the top bar on the cover and has no overflow', page.locator('.topbar').evaluate('n => n.getBoundingClientRect().bottom <= 0') and page.evaluate('document.documentElement.scrollWidth <= innerWidth'))
-    page.wait_for_timeout(250)
-    check('phone Home keeps the closed drawer offscreen', page.locator('.sidebar').evaluate('n => n.getBoundingClientRect().right <= 0'))
+        check(f'phone {view}: CK\'s menu closes and the notch stays mounted', not page.locator('.ck-panel[open]').count() and page.evaluate('phoneNotch === document.querySelector(".notch")'))
+    page.click('.notch-ck')
+    page.click('.ck-panel .nav-link[data-notch="home"]')
+    page.wait_for_function('document.documentElement.classList.contains("is-home")')
+    check('phone Home has no overflow and the notch shows CK alone', page.evaluate('document.documentElement.scrollWidth <= innerWidth') and page.is_visible('.notch-ck') and not page.is_visible('.notch .nav-link'))
     if SHOTS:
         page.screenshot(path=f'{SHOTS}/navigation-phone.png')
     check('phone has no JavaScript errors', not errors, str(errors))

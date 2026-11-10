@@ -20,8 +20,8 @@ with sync_playwright() as pw:
     ctx, p, errors = new_page(b, permissions=["clipboard-read", "clipboard-write"], url=MORE)
     order = p.evaluate("[...document.querySelectorAll('main > section')].filter(s => s.offsetParent).map(s => s.id)")
     check("More about me orders photos, intro, background, then terminal", order[-4:] == ["outside", "personal", "background", "contact"], str(order))
-    more_link = p.locator('.nav-link[data-view="more"]')
-    check("the terminal is on the More about me page, linked from the sidebar, no shortcut badges", more_link.inner_text().split() == ["More", "about", "me"] and p.is_visible(".terminal") and p.locator("#sidebar kbd").count() == 0)
+    more_link = p.locator('.notch .nav-link[data-notch="more"]')
+    check("the terminal is on the More about me page, linked from the notch, no shortcut badges", more_link.inner_text().strip() == "More" and p.is_visible(".terminal") and p.locator(".notch kbd, .ck-panel kbd").count() == 0)
     check("intro: nothing is printed before the terminal is on screen", EMAIL not in screen(p), screen(p))
     p.keyboard.press("6"); p.wait_for_timeout(450)
     mid = screen(p)
@@ -44,7 +44,7 @@ with sync_playwright() as pw:
     check("github link opens in a new tab safely", gh.get_attribute("target") == "_blank" and "noopener" in gh.get_attribute("rel"))
     check("hint invites typing or tapping", "try `help`" in out)
 
-    colors = p.evaluate("(() => { const t = getComputedStyle(document.querySelector('.terminal')); const b = getComputedStyle(document.body); return [t.backgroundColor, b.color, t.color, b.backgroundColor]; })()")
+    colors = p.evaluate("(() => { const t = getComputedStyle(document.querySelector('.terminal')); const b = getComputedStyle(document.querySelector('.frame')); return [t.backgroundColor, b.color, t.color, b.backgroundColor]; })()")
     check("terminal is inverted against the page", colors[0] == colors[1] and colors[2] == colors[3], str(colors))
 
     p.click(".terminal-screen", position={"x": 300, "y": 250})
@@ -166,8 +166,8 @@ with sync_playwright() as pw:
     check("phone: tapping the screen does not focus the prompt", p.evaluate("document.activeElement.id") != "terminal-input")
     check("phone: no page overflow", p.evaluate("document.documentElement.scrollWidth <= 375"), str(p.evaluate("document.documentElement.scrollWidth")))
     check("phone: prompt text is 16px (no iOS zoom)", p.eval_on_selector(".terminal-input", "i => getComputedStyle(i).fontSize") == "16px")
-    p.click(".menu-toggle"); p.wait_for_timeout(300)
-    check("phone: drawer has the More about me link", p.is_visible('#sidebar .nav-link[data-view="more"]'))
+    p.click(".notch-ck"); p.wait_for_timeout(300)
+    check("phone: CK's menu has the More about me link", p.is_visible('.ck-panel .nav-link[data-notch="more"]'))
     check("no console errors (phone)", not errors, "; ".join(errors))
     ctx.close()
 

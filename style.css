@@ -920,6 +920,12 @@ body {
 .ck-panel-head .poke-button {
   order: 0;
 }
+/* In the menu he sits on the left, so his emote hops beside the top-left of his head. */
+.ck-panel-head .poke-emote {
+  top: 0;
+  right: auto;
+  left: 10px;
+}
 .ck-panel-head .poke-count {
   order: 2;
   margin-left: auto;
@@ -3593,10 +3599,6 @@ body.contact-open {
   border-radius: 26px;
   isolation: isolate;
   box-shadow: inset 0 1px 0 var(--panel-shine), var(--shadow-lift);
-}
-.contact-dialog[data-anchored] {
-  inset: var(--contact-top) auto auto var(--contact-left);
-  margin: 0;
 }
 .contact-dialog::backdrop {
   background: rgb(0 0 0 / 8%);

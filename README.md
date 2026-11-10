@@ -14,11 +14,11 @@ A static site written in plain HTML, CSS, and vanilla JavaScript. It has no fram
 
 ## Features
 
-- Responsive layout: sidebar on desktop, icon rail on tablet, drawer on mobile
+- A "poster in a frame" layout: the page sits in a rounded frame whose notch holds the page links and pixel CK, who opens a menu with everything else; Home opens on a studio poster and its sections slide up as ink and paper panels
 - Dark theme by default, with a saved light/dark toggle
 - Project showcase with desktop and mobile screenshots
 - Live GitHub contribution calendar
-- Floating pixel character with a Gemini portfolio chat (optional private Node server)
+- Pixel CK in the notch, with a Gemini portfolio chat (optional private Node server)
 - Interactive terminal for contact details
 - A small endless-runner game, chimken (press Alt + K)
 - Motion that respects the reduced-motion setting, and full keyboard navigation
@@ -43,10 +43,20 @@ wrangler.toml     Worker configuration (no secrets)
 ## Running locally
 
 Internal page links update the main content through the History API while keeping
-the sidebar and its state mounted. Back/Forward restore the visited page and its
-scroll position. Direct URLs and page refreshes still work as ordinary static
-pages. Clicking Home replays the hero intro with navigation hidden until scrolling,
-while the sidebar stays mounted and retains its state.
+the notch, CK's menu and their state mounted. Back/Forward restore the visited page
+and its scroll position. Direct URLs and page refreshes still work as ordinary static
+pages. Clicking Home replays the poster intro (about two seconds; a click or key skips it).
+
+## The poster
+
+Home opens on a poster: the portrait lit from behind, "Kenneth Charles Valdez" on one
+line in Instrument Serif italic. In black and white the name flips its own colour where
+it crosses the portrait (`mix-blend-mode: difference`); while the photo shows colour
+(hover on desktop, a tap on touch screens) a copy masked to his silhouette keeps it grey.
+The cutouts are `assets/hero-cutout.webp` (desktop) and `assets/hero-mobile.webp`
+(phones), made from the transparent PNGs with
+`magick in.png -channel A -fx "a<0.12?0:a" +channel -trim +repage -resize x900 -quality 82 -define webp:alpha-quality=90 -define webp:method=6 out.webp`
+(`x780` for the desktop one).
 
 ```bash
 node server.js
@@ -80,11 +90,11 @@ Home's **Selected projects** list uses each project's optional `summary` and `ki
 
 On devices with a fine pointer, hovering a Home project shows a small preview below the cursor, flipped inward near viewport edges. A project's `demo` plays silently while hovered; projects with `chat` show the first two nonsystem messages from `chat.previewScene` (matching a scene label, or the first scene by default). Other projects use the desktop screenshot or bot image. Leaving, scrolling, pressing Escape, or hiding the tab stops playback. Reduced motion shows the poster without playback or cursor-following motion; touch screens keep the ordinary project links.
 
-**Links** (`./?view=links`) sits above Resources in the sidebar. `linksPage` defines the heading and the Social/Work groups; each row reads its destination from `profile`. Set `profile.discordUrl`, `profile.tiktok` and `profile.facebook` to HTTPS profile URLs (or `null`). Discord copies `profile.discord` while its URL is missing. LinkedIn, GitHub, email and resume reuse the existing profile fields; missing destinations show a non-clickable "Coming soon" row.
+**Links** (`./?view=links`) sits above Resources in CK's menu. `linksPage` defines the heading and the Social/Work groups; each row reads its destination from `profile`. Set `profile.discordUrl`, `profile.tiktok` and `profile.facebook` to HTTPS profile URLs (or `null`). Discord copies `profile.discord` while its URL is missing. LinkedIn, GitHub, email and resume reuse the existing profile fields; missing destinations show a non-clickable "Coming soon" row.
 
 The **More about me** page (`./?view=more`) opens with `more.title`, the centered Outside the IDE photo deck, the profile name and role, and `more.intro`. Full-width Experience and Education rows reuse the same content as Home, followed by the terminal.
 
-**Resources** (`./?view=resources`) sits below Links in the sidebar, with its title and introduction in `resourcesPage`. `resources` lists the groups (Tools, Skills, Plugins, and Behind the portfolio), laid out like the Links page. Each item has a `name`, a short `note`, an `href` (opens in a new tab; `null` shows it without a link), and an `icon` from `assets/icons/stack/` with an optional brand `color`. Items without an icon show just the name and note.
+**Resources** (`./?view=resources`) sits beside Links in CK's menu, with its title and introduction in `resourcesPage`. `resources` lists the groups (Tools, Skills, Plugins, and Behind the portfolio), laid out like the Links page. Each item has a `name`, a short `note`, an `href` (opens in a new tab; `null` shows it without a link), and an `icon` from `assets/icons/stack/` with an optional brand `color`. Items without an icon show just the name and note.
 
 The photo deck fans out around the active photo, with up to three neighbors on either side and a clickable position dot per photo. Tap/click, swipe, or use Enter/arrow keys to shuffle; holding reveals color. `outsideHint` controls the hint text, and `outside` supplies the photos. The Live Photo plays only when active, on screen and motion is allowed.
 

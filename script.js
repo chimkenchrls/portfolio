@@ -2423,7 +2423,8 @@
           if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) close();
           return;
         }
-        if (event.target.closest('a[href]')) close({ restoreFocus: false });
+        // Links and the buttons that open another dialog (chimken, its score) take over from the menu.
+        if (event.target.closest('a[href], .game-trigger, .score-row')) close({ restoreFocus: false });
       });
       // Page shortcuts stay off while the menu is open; Escape is the dialog's own.
       panel.addEventListener('keydown', (event) => event.stopPropagation());
@@ -4375,13 +4376,14 @@
         done = true;
         if (event) skippedAt = performance.now();
         clearTimeout(timer);
-        document.removeEventListener('pointerdown', finish, true);
+        document.removeEventListener('click', finish, true);
         window.removeEventListener('keydown', finish, true);
         root.classList.remove('intro-play');
         running.forEach((animation) => animation.cancel());
       };
       stop = finish;
-      document.addEventListener('pointerdown', finish, true);
+      // A click skips (not pointerdown: the snap would move what is under the pointer before the click lands).
+      document.addEventListener('click', finish, true);
       window.addEventListener('keydown', finish, true);
 
       run([$('.poster-light', poster)], [{ opacity: 0 }, { opacity: 1 }], time.light, { easing: 'ease-out' });
@@ -4450,35 +4452,9 @@
       if (!trigger || !dialog || typeof dialog.showModal !== 'function') return;
       const stage = $('.contact-dialog-body', dialog);
       const fallback = $('.contact-dialog-fallback', dialog);
-      const sidebar = $('#sidebar');
-      const wide = window.matchMedia('(min-width: 640px)');
       let placeholder = null;
       let returnFocus = null;
       let pressedOutside = false;
-      const place = () => {
-        if (!dialog.open) return;
-        if (!wide.matches || !sidebar) {
-          dialog.removeAttribute('data-anchored');
-          return;
-        }
-        const edge = 16;
-        const panel = dialog.getBoundingClientRect();
-        const left = sidebar.getBoundingClientRect().right + 12;
-        if (left + panel.width > window.innerWidth - edge) {
-          dialog.removeAttribute('data-anchored');
-          return;
-        }
-        const top = Math.max(edge, Math.min(trigger.getBoundingClientRect().top, window.innerHeight - panel.height - edge));
-        dialog.style.setProperty('--contact-left', `${left}px`);
-        dialog.style.setProperty('--contact-top', `${top}px`);
-        dialog.setAttribute('data-anchored', '');
-      };
-      window.addEventListener('resize', place);
-      if (typeof ResizeObserver === 'function') {
-        const observer = new ResizeObserver(place);
-        observer.observe(dialog);
-        if (sidebar) observer.observe(sidebar);
-      }
       const outside = (event) => {
         const rect = dialog.getBoundingClientRect();
         return event.clientX < rect.left || event.clientX > rect.right
@@ -4488,7 +4464,8 @@
         if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
         if (dialog.open) return;
-        returnFocus = window.matchMedia('(max-width: 639.98px)').matches ? $('.menu-toggle') : trigger;
+        // The trigger lives in CK's menu, which closes as the form opens; focus goes back to CK.
+        returnFocus = trigger.closest('.ck-panel') ? $('.notch-ck') : trigger;
         ckPanel.close({ restoreFocus: false });
         fallback.hidden = Boolean(form && enabled);
         if (form && enabled) {
@@ -4517,7 +4494,6 @@
         document.body.classList.add('contact-open');
         // The close button receives focus; fields wait for the visitor's choice.
         dialog.showModal();
-        place();
       });
       $('.contact-dialog-close', dialog).addEventListener('click', () => dialog.close());
       dialog.addEventListener('keydown', (event) => {

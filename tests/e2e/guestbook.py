@@ -68,7 +68,7 @@ with sync_playwright() as pw:
     page.goto(BASE + '?view=guestbook', wait_until='domcontentloaded')
     page.locator('.guestbook-retry').wait_for(state='visible')
     check('an unavailable API shows a retry and keeps the form hidden', not page.is_visible('.guestbook-form') and page.is_visible('.guestbook-retry'))
-    check('Guestbook is the current sidebar page and has no cover', page.get_attribute('[data-view="guestbook"]', 'aria-current') == 'page' and not page.locator('html.has-cover').count())
+    check('Guestbook is its own page: no poster, no notch link lit', page.locator('.notch [aria-current]').count() == 0 and not page.locator('html.is-home').count() and page.locator('.ck-panel a[href="./?view=guestbook"]').count() == 1)
     state['down'] = False
     page.click('.guestbook-retry')
     page.locator('.guestbook-form').wait_for(state='visible')
@@ -111,8 +111,7 @@ with sync_playwright() as pw:
     page.wait_for_function("document.querySelector('.demo-video').currentTime > 0.3")
     video.evaluate('v => v.pause()')
     check('the actual MP4 decodes and plays in the browser', video.evaluate('v => !v.error && v.controls && v.videoWidth === 1280 && v.videoHeight === 800') and not page.is_visible('.demo-play'))
-    page.wait_for_function("Math.abs(document.querySelector('.sidebar').getBoundingClientRect().width - 248) < 1")
-    check('the desktop sidebar retains its full width on the case study', page.locator('.sidebar').evaluate('n=>Math.abs(n.getBoundingClientRect().width-248)<1'))
+    check('the notch stays on the case study with Projects lit', page.is_visible('.notch') and page.get_attribute('.notch [aria-current]', 'data-notch') == 'projects')
     shot(page, 'demo-desktop')
     page.goto(BASE + '?view=case&p=thready', wait_until='domcontentloaded')
     check('projects without a recording do not show an empty player', page.locator('.demo-video').count() == 0)

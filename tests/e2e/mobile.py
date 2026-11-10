@@ -3,8 +3,8 @@ from playwright.sync_api import sync_playwright
 from common import check, finish, new_page
 
 TAPPABLE = [
-    ".topbar-brand", ".menu-toggle", ".nav-link", ".game-trigger", ".sidebar-contact",
-    ".theme-toggle", ".hero-photo", ".btn-primary", ".social a", ".social-copy", ".github-user",
+    ".notch-ck", ".nav-link", ".game-trigger", ".sidebar-contact",
+    ".theme-toggle", ".poster-photo-phone", ".btn-primary", ".social a", ".social-copy", ".github-user",
     ".deck", ".terminal-link", ".terminal-input", ".terminal-run", ".terminal-chip", ".game-close", ".game-canvas",
 ]
 CLEAR = ("rgba(0, 0, 0, 0)", "transparent")
