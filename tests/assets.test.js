@@ -222,3 +222,25 @@ test('"Play chimken" sits at the bottom of the sidebar, right above the footer r
   assert.ok(trigger > html.indexOf('</nav>') && trigger < html.indexOf('class="sidebar-bottom"'));
   assert.match(read('style.css'), /\.game-trigger\s*\{\s*margin-top:\s*auto;/);
 });
+
+const webpInfo = (name) => {
+  const file = path.join(ROOT, 'assets', name);
+  assert.ok(fs.existsSync(file), `assets/${name} exists`);
+  const buf = fs.readFileSync(file);
+  assert.ok(buf.length < 120 * 1024, `${name} is ${Math.round(buf.length / 1024)} KB`);
+  assert.equal(buf.toString('ascii', 0, 4), 'RIFF');
+  assert.equal(buf.toString('ascii', 8, 16), 'WEBPVP8X', 'extended WebP, which carries alpha');
+  assert.ok(buf[20] & 0x10, 'alpha flag set');
+  return { width: 1 + buf.readUIntLE(24, 3), height: 1 + buf.readUIntLE(27, 3) };
+};
+
+test('poster cutouts are small alpha WebPs', () => {
+  assert.deepEqual(webpInfo('hero-cutout.webp'), { width: 676, height: 780 });
+  const phone = webpInfo('hero-mobile.webp');
+  assert.equal(phone.height, 900);
+  assert.ok(phone.width >= 400 && phone.width <= 720, `phone cutout width ${phone.width}`);
+});
+
+test('the poster serif loads with the page fonts', () => {
+  assert.match(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), /fonts\.googleapis\.com\/css2\?[^"]*family=Instrument\+Serif:ital@1/);
+});
