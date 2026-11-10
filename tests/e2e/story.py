@@ -156,5 +156,13 @@ with sync_playwright() as pw:
     check("certification cards have no border and no inner frame line", lines and all(w == "0px" and (c == "none" or st == "none") for w, c, st in lines), str(lines))
     check("they still lift off the page with a shadow", p.evaluate("getComputedStyle(document.querySelector('#certifications .certification')).boxShadow") != "none")
     ctx.close()
+    # The featured cards on phones: the screenshot spans the card; the status has no outline.
+    for width in (360, 390):
+        ctx, p, errors = new_page(b, width, 740, is_mobile=True, has_touch=True, reduced_motion="reduce")
+        shots = p.evaluate("[...document.querySelectorAll('#projects .project-feature')].map(c => [c.querySelector('.project-thumb').getBoundingClientRect().width, c.getBoundingClientRect().width])")
+        check(f"{width}px: each featured card shows its screenshot across the card", len(shots) == 3 and all(t >= c - 2 for t, c in shots), str(shots))
+        outlines = p.evaluate("[...document.querySelectorAll('#projects .project-feature .badge')].map(n => getComputedStyle(n).borderTopStyle)")
+        check(f"{width}px: the status pills have no outline", outlines and all(o == "none" for o in outlines), str(outlines))
+        ctx.close()
     b.close()
 finish()

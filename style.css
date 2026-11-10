@@ -1722,8 +1722,15 @@ html.is-home #projects .project-thumb {
   border-bottom: 1px solid var(--border);
   border-radius: 0;
 }
+html.is-home #projects :is(.project-thumb, .project-main, .project-kind) {
+  grid-column: 1 / -1; /* the phone rows put the kind in a second column; the cards have one */
+}
 html.is-home #projects :is(.project-main, .project-kind) {
   padding-inline: 18px;
+}
+html.is-home #projects .project-feature .badge {
+  background: var(--bg-alt);
+  border: 0;
 }
 @media (hover: hover) and (pointer: fine) {
   html.is-home #projects .project-feature:hover {
