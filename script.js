@@ -699,6 +699,13 @@
     const gap = Number(viewportHeight) - Number(height);
     return Number.isFinite(gap) && gap < 0 ? gap : 0;
   };
+  // How small About gets while Projects slides over it: full size until Projects
+  // enters the screen, 90% once Projects reaches the top.
+  const coverZoom = (projectsTop, viewportHeight) => {
+    const covered = 1 - Number(projectsTop) / Number(viewportHeight);
+    if (!Number.isFinite(covered)) return 1;
+    return Math.round((1 - 0.1 * Math.min(1, Math.max(0, covered))) * 1000) / 1000;
+  };
   // "01 · About" for the Home panels after the poster; null for Home itself or an unknown id.
   const panelLabel = (id) => {
     const index = SECTIONS.findIndex((section) => section.id === id);
@@ -1201,7 +1208,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, stickTop, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
+      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, stickTop, coverZoom, guestbookProblems, guestbookPage, safeDemo, projectPreviewPosition, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
@@ -4355,22 +4362,31 @@
   })();
 
   /* ==========================================================================
-     19c. Panel stack — each Home section sticks once fully seen; the next covers it
+     19c. Panel stack — About stays put and zooms out while Projects covers it
      ========================================================================== */
   const panelStack = (() => {
-    const place = () => {
-      $$('.poster, .main > .panel').forEach((node) => {
-        node.style.top = root.classList.contains('is-home') ? `${stickTop(window.innerHeight, node.offsetHeight)}px` : '';
-      });
+    let queued = false;
+    const update = () => {
+      queued = false;
+      const about = $('#about');
+      const projects = $('#projects');
+      if (!about || !projects) return;
+      const home = root.classList.contains('is-home');
+      about.style.top = home ? `${stickTop(window.innerHeight, about.offsetHeight)}px` : '';
+      about.style.scale = home && !prefersReducedMotion() ? String(coverZoom(projects.getBoundingClientRect().top, window.innerHeight)) : '';
+    };
+    const schedule = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(update);
     };
     const init = () => {
-      place();
-      window.addEventListener('resize', place);
-      document.addEventListener('portfolio:navigate', () => requestAnimationFrame(place));
-      if (typeof ResizeObserver === 'function') {
-        const observer = new ResizeObserver(place);
-        $$('.poster, .main > .panel').forEach((node) => observer.observe(node));
-      }
+      update();
+      window.addEventListener('scroll', schedule, { passive: true });
+      window.addEventListener('resize', schedule);
+      motionQuery.addEventListener('change', schedule);
+      document.addEventListener('portfolio:navigate', schedule);
+      if (typeof ResizeObserver === 'function' && $('#about')) new ResizeObserver(schedule).observe($('#about'));
     };
     return { init };
   })();

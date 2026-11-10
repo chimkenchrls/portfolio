@@ -177,8 +177,12 @@ with sync_playwright() as pw:
 
     # Tablet -------------------------------------------------------------------
     ctx, p, errors = open_page(b, 820, 1000)
-    check("tablet: the notch shows only CK until hovered", not p.is_visible(".notch .nav-link[data-notch='projects']"))
-    p.hover(".notch-ck"); p.wait_for_timeout(400)
+    sides = lambda: p.evaluate("[...document.querySelectorAll('.notch-side')].map(n => Math.round(n.getBoundingClientRect().width))")
+    ck_x = lambda: round(box(p, ".notch-ck")["x"], 1)
+    closed_x = ck_x()
+    check("tablet: the notch shows only CK until hovered", sides() == [0, 0], str(sides()))
+    p.hover(".notch-ck"); p.wait_for_timeout(500)
+    check("tablet: both sides open to the same width and CK does not move", len(set(sides())) == 1 and sides()[0] > 100 and ck_x() == closed_x, f"{sides()} {closed_x} -> {ck_x()}")
     check("tablet: hovering CK slides the page links out", p.is_visible(".notch .nav-link[data-notch='projects']") and p.is_visible(".notch-ck"))
     p.click(".notch-ck"); p.wait_for_selector(".ck-panel[open]")
     check("tablet: CK's menu has the chat button and pokes", p.is_visible(".sidebar-chat") and p.is_visible(".poke-button"))

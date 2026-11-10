@@ -228,15 +228,18 @@ test('panel tokens exist in both themes and read well', () => {
   assert.ok(contrast(token(light, '--ink-fg'), token(light, '--ink')) >= 7);
 });
 
-test('Home stacks like cards: the poster and panels stick so the next one slides over', () => {
-  assert.match(css, /html\.is-home :is\(\.poster, \.main > \.panel:not\(:last-of-type\)\) \{[^}]*position:\s*sticky/);
-  assert.doesNotMatch(css, /margin:\s*-34px/, 'no panel peeks into the screen above it');
-  assert.doesNotMatch(css, /animation-timeline/, 'the old shrink-and-dim is gone');
+test('only About stays pinned, so Projects slides over it; the rest scrolls normally', () => {
+  assert.match(css, /html\.is-home #about \{[^}]*position:\s*sticky/);
+  assert.doesNotMatch(css, /position:\s*sticky;[^}]*\}[^{]*html\.is-home :is\(\.poster/, 'the poster is not pinned');
+  assert.doesNotMatch(css, /\.main > \.panel:not\(:last-of-type\)\) \{[^}]*position:\s*sticky/);
+  assert.doesNotMatch(css, /margin:\s*-34px/);
 });
 
-test('the notch shows only CK until it is hovered or focused', () => {
-  assert.match(css, /\.notch \.nav-link \{[^}]*max-width:\s*0/);
-  assert.match(css, /\.notch:is\(:hover, :focus-within\) \.nav-link \{[^}]*max-width:/);
+test('CK holds still: the notch sides open to the same width around him', () => {
+  const notch = between(html, '<nav class="notch"', '</nav>');
+  assert.match(notch, /<span class="notch-side">[\s\S]*data-notch="home"[\s\S]*data-notch="projects"[\s\S]*<\/span>\s*<button\s+class="notch-ck"[\s\S]*<span class="notch-side">[\s\S]*data-notch="stack"[\s\S]*data-notch="more"/);
+  assert.match(css, /\.notch-side \{[^}]*width:\s*0/);
+  assert.match(css, /\.notch:is\(:hover, :has\(:focus-visible\)\) \.notch-side \{[^}]*width:\s*var\(--side-w\)/);
 });
 
 // Poster redesign: the other pages wear the poster headings.

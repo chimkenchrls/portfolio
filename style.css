@@ -480,20 +480,33 @@ body {
   background: var(--frame);
   border-radius: 0 0 22px 22px;
 }
-/* Only CK shows until the notch is hovered or focused; then the page links slide out. */
+/* Only CK shows until the notch is hovered or focused; then the page links slide out.
+   Both sides open to the same width, so CK stays exactly where he is. */
+.notch {
+  --side-w: 168px;
+}
+.notch-side {
+  display: flex;
+  align-items: center;
+  justify-content: space-evenly;
+  width: 0;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    width 320ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 200ms ease-out;
+}
+/* Keyboard focus opens it too, but not the focus a mouse click leaves on CK. */
+.notch:is(:hover, :has(:focus-visible)) .notch-side {
+  width: var(--side-w);
+  opacity: 1;
+}
 .notch .nav-link {
   position: relative;
   width: auto;
-  max-width: 0;
   height: auto;
-  margin: 0;
-  overflow: hidden;
-  opacity: 0;
   white-space: nowrap;
-  transition:
-    max-width 320ms cubic-bezier(0.23, 1, 0.32, 1),
-    margin 320ms cubic-bezier(0.23, 1, 0.32, 1),
-    opacity 200ms ease-out;
   padding: 6px 0;
   font-size: 15px;
   font-weight: 500;
@@ -555,13 +568,8 @@ body {
   background: var(--fg);
   pointer-events: none;
 }
-.notch:is(:hover, :focus-within) .nav-link {
-  max-width: 120px;
-  margin-inline: 14px;
-  opacity: 1;
-}
 @media (prefers-reduced-motion: reduce) {
-  .notch .nav-link {
+  .notch-side {
     transition: none;
   }
 }
@@ -1008,7 +1016,7 @@ body {
     height: var(--notch-h);
     padding: 0 18px;
   }
-  .notch .nav-link {
+  .notch-side {
     display: none;
   }
   .ck-panel {
@@ -1494,12 +1502,13 @@ html.is-home #about .about-bio p:first-child {
   letter-spacing: -0.012em;
   color: var(--fg);
 }
-/* Cards stacking: the poster and each panel stay put once their bottom reaches the
-   bottom of the screen (script.js sets each one's top with stickTop), and the next
-   one slides up over them. */
-html.is-home :is(.poster, .main > .panel:not(:last-of-type)) {
+/* The poster and About scroll normally; then About stays put once its bottom reaches
+   the bottom of the screen (script.js sets its top with stickTop) and zooms out a
+   little while Projects slides up over it (coverZoom). The rest scrolls normally. */
+html.is-home #about {
   position: sticky;
   top: 0;
+  transform-origin: 50% 100%;
 }
 html.is-home .main > .footer {
   position: relative;

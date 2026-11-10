@@ -460,3 +460,13 @@ test('stickTop pins a section once its bottom reaches the bottom of the screen',
   assert.equal(stickTop(NaN, 1500), 0);
   assert.equal(stickTop(900, -5), 0);
 });
+
+test('coverZoom shrinks About as Projects slides over it', () => {
+  const { coverZoom } = require('../script.js');
+  assert.equal(coverZoom(900, 900), 1, 'Projects not on screen yet: full size');
+  assert.equal(coverZoom(1200, 900), 1);
+  assert.equal(coverZoom(0, 900), 0.9, 'Projects at the top: zoomed out');
+  assert.equal(coverZoom(-300, 900), 0.9);
+  assert.equal(coverZoom(450, 900), 0.95, 'halfway');
+  assert.equal(coverZoom(NaN, 900), 1);
+});
