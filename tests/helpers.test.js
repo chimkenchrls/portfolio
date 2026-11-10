@@ -315,7 +315,7 @@ test('pages: Projects and More about me are views of the same file, without the 
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
   const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
   assert.match(html, /view=\(projects\|more\|stack\|case\|resources\|links\|guestbook\|resume\)\(&\|\$\)\/\.exec\(window\.location\.search\);\s*if \(view\) \{\s*root\.classList\.add\("view-" \+ view\[1\]\);\s*return;/);
-  assert.match(css, /html\.view-more \.main > \.section:not\(#personal\):not\(#now\):not\(#background\):not\(#outside\):not\(#contact\),/, 'More about me includes Now alongside photos, bio, background and terminal');
+  assert.match(css, /html\.view-more \.main \.section:not\(#personal\):not\(#now\):not\(#background\):not\(#outside\):not\(#contact\),/, 'More about me includes Now alongside photos, bio, background and terminal');
   assert.match(css, /html\.is-home #outside,\s*html\.is-home #contact :is\(\.contact-intro, \.terminal, \.terminal-chips\) \{\s*display: none;/, 'Home leaves those two out, but only when the head script ran');
   assert.doesNotMatch(html, /class="project-more"/, 'all projects are shown without an expansion button');
   assert.match(html, /href="\.\/#projects" data-home>Back to home</);

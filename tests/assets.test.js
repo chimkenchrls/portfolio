@@ -42,7 +42,7 @@ test('hero photo is web-sized (it is the LCP element)', () => {
 test('stats row is removed and the main column is centered', () => {
   assert.doesNotMatch(read('index.html'), /data-render="stats"/);
   assert.doesNotMatch(read('style.css'), /\.stats?\b/);
-  assert.match(read('style.css'), /\.main\s*>\s*\*\s*\{\s*max-width:\s*880px;\s*margin-inline:\s*auto;\s*\}/);
+  assert.match(read('style.css'), /\.main\s*>\s*\*,\s*\.cover-panel\s*>\s*\*\s*\{\s*max-width:\s*880px;\s*margin-inline:\s*auto;\s*\}/);
 });
 
 test('sidebar labels are in title case, not forced lowercase', () => {
