@@ -1208,6 +1208,15 @@ body {
   letter-spacing: -0.01em;
   text-transform: uppercase;
 }
+/* Desktop: the title is a headline that weighs as much as the bio and buttons opposite. */
+@media (min-width: 1024.02px) {
+  .poster-title {
+    max-width: 9ch;
+    font-size: clamp(48px, 4.6cqi, 76px);
+    line-height: 0.92;
+    letter-spacing: -0.035em;
+  }
+}
 .poster-side {
   justify-self: end;
   width: min(300px, 26cqi);

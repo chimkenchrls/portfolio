@@ -164,6 +164,20 @@ with sync_playwright() as pw:
     check("1280×800: the poster fills the first screen (About starts below it)", box(p, "#about")["y"] >= 799, str(box(p, "#about")))
     ctx.close()
 
+    # Desktop: the title is a real headline, level with the bio, clear of him ----------
+    for width, height in ((1100, 768), (1280, 800), (1440, 900), (1920, 1080)):
+        ctx, p, errors = page(b, width, height, reduced_motion="reduce")
+        p.wait_for_timeout(400)
+        title, side, poster = box(p, ".poster-title"), box(p, ".poster-side"), box(p, ".poster")
+        size = float(p.eval_on_selector(".poster-title", "n => parseFloat(getComputedStyle(n).fontSize)"))
+        check(f"{width}px: the title is headline-sized", size >= 48, str(size))
+        check(f"{width}px: it starts level with the bio", abs(title["y"] - side["y"]) <= 4, f"{title} {side}")
+        shoulder = poster["x"] + poster["w"] / 2 - poster["w"] * 0.18
+        check(f"{width}px: it stays clear of his shoulder", title["r"] <= shoulder, f"{title['r']} > {shoulder}")
+        lines = p.evaluate("(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('.poster-title')); return r.getClientRects().length; })()")
+        check(f"{width}px: three lines, one word each", lines == 3, str(lines))
+        ctx.close()
+
     # Short and narrow windows -------------------------------------------------
     ctx, p, errors = page(b, 1366, 650, reduced_motion="reduce")
     p.wait_for_timeout(500)
