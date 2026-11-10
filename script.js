@@ -4321,11 +4321,11 @@
       const dealing = moving && Boolean(grid) && cards.length > 1
         && getComputedStyle(grid).gridTemplateColumns.split(' ').length >= cards.length;
       const progress = dealing ? (0.9 * vh - grid.getBoundingClientRect().top) / (0.6 * vh) : 1;
-      // The closing panel sinks back as the page lifts off the footer (only while the footer is pinned under it).
+      // The closing panel fades and zooms in as it rises into view: from the bottom of
+      // the screen until its top reaches 40% of the screen.
       const closing = $('.closing');
-      const footer = $('.footer');
-      const lifting = Boolean(closing && footer) && root.classList.contains('footer-reveal') && !prefersReducedMotion() && closing.getClientRects().length > 0;
-      const lifted = lifting ? clamp((vh - closing.getBoundingClientRect().bottom) / footer.offsetHeight, 0, 1) : 0;
+      const arriving = Boolean(closing) && !prefersReducedMotion() && closing.getClientRects().length > 0;
+      const arrived = arriving ? clamp((vh - closing.getBoundingClientRect().top) / (0.6 * vh), 0, 1) : 1;
       // Write.
       about.style.top = home ? `${stickTop(vh, aboutHeight)}px` : '';
       about.style.scale = moving ? String(coverZoom(top, vh)) : '';
@@ -4334,9 +4334,8 @@
       // The screenshot in each featured card drifts a little slower than its card.
       imgs.forEach((img, i) => { img.style.translate = moving ? `0 ${drift[i]}px` : ''; });
       if (closing) {
-        closing.style.scale = lifting ? String(Math.round((1 - 0.08 * lifted) * 1000) / 1000) : '';
-        const closingShade = $('.closing-shade', closing);
-        if (closingShade) closingShade.style.opacity = lifting ? String(Math.round(0.85 * lifted * 1000) / 1000) : '';
+        closing.style.scale = arriving && arrived < 1 ? String(Math.round((0.9 + 0.1 * arrived) * 1000) / 1000) : '';
+        closing.style.opacity = arriving && arrived < 1 ? String(Math.round((0.2 + 0.8 * arrived) * 1000) / 1000) : '';
       }
       // The certifications arrive stacked on the middle card and deal out into their row.
       cards.forEach((card, i) => {
