@@ -147,7 +147,7 @@ with sync_playwright() as pw:
     check("desktop: leaving the poster closes the lens", p.evaluate(lens) == 0, str(p.evaluate(lens)))
     # Away from the hero he burns to chrome; back on it he burns back to colour.
     full = lambda: p.eval_on_selector(".chrome-full", "n => n.getAttribute('visibility')")
-    check("desktop: over the chrome the letters crossing him stay white", p.evaluate("getComputedStyle(document.querySelector('.poster-name-over .poster-name')).color") == "rgb(255, 255, 255)")
+    check("desktop: the name looks the same in chrome as in colour", p.evaluate("getComputedStyle(document.querySelector('.poster-name-over')).display === 'block' && !getComputedStyle(document.querySelector('#hero-name')).textShadow.includes('rgb')"))
     check("desktop: with the cursor off the hero he burns to chrome", p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')") and full() == "visible")
     if SHOTS: p.screenshot(path=f"{SHOTS}/poster-away.png")
     p.wait_for_timeout(1200)
