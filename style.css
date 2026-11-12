@@ -775,12 +775,14 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Your chimken best against ck's score; opens the game. */
+/* Your chimken best and ck's, one labelled line each (label left, number right);
+   opens the game. */
 .score-row {
-  display: flex;
-  flex: none;
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: start;
   align-items: baseline;
-  gap: 10px;
+  gap: 4px 14px;
   width: 100%;
   margin-top: -6px;
   padding: 0 12px;
@@ -791,8 +793,17 @@ body {
 .score-row[hidden] {
   display: none;
 }
+.score-label {
+  white-space: nowrap;
+}
 .score-value {
   font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.score-value.is-winning {
+  color: var(--fg);
+  font-weight: 600;
 }
 
 /* Poke: a private counter beside pixel CK, who reacts to every poke. */
@@ -4653,6 +4664,19 @@ html.footer-reveal .main {
   scale: 0.97;
 }
 .footer-extras > button[hidden] {
+  display: none;
+}
+/* The scores stack, one labelled line each, so they never squeeze onto one line. */
+.footer-extras > button.score-row {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 6px 16px;
+  height: auto;
+  padding: 9px 14px;
+  border-radius: 14px;
+}
+.footer-extras > button.score-row[hidden] {
   display: none;
 }
 .footer-extras .nav-text,

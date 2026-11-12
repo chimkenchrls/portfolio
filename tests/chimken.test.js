@@ -355,14 +355,17 @@ test('corn floats near the top of a tap jump, so a normal jump can grab it', () 
   assert.ok(low > 0, 'still unreachable from the ground');
 });
 
-test('scoreRow: the sidebar line shows the score to beat, then your best against it', () => {
+test('scoreRow: one labelled line per score, plain numbers, the score to beat first', () => {
   const { scoreRow } = require('../script.js');
   const rival = { owner: 'ck', highScore: 3236 };
   assert.equal(scoreRow(120, null), null, 'nothing to show without a score to beat');
-  assert.deepEqual([scoreRow(0, rival).label, scoreRow(0, rival).value], ['beat ck', '03236']);
-  assert.deepEqual(scoreRow(NaN, rival).value, '03236', 'no saved score yet');
-  assert.deepEqual([scoreRow(120.7, rival).label, scoreRow(120.7, rival).value], ['you / ck', '00120 / 03236']);
-  assert.equal(scoreRow(3236, rival).label, 'you / ck', 'a tie is not a win');
-  assert.deepEqual([scoreRow(4000, rival).label, scoreRow(4000, rival).value], ['you beat ck', '04000 / 03236']);
+  assert.deepEqual(scoreRow(0, rival).lines, [{ label: "ck's best", value: '3,236', mine: false }], 'no score yet: only the score to beat');
+  assert.deepEqual(scoreRow(NaN, rival).lines.length, 1, 'no saved score yet');
+  assert.deepEqual(scoreRow(799.6, rival).lines, [{ label: 'your best', value: '799', mine: true }, { label: "ck's best", value: '3,236', mine: false }]);
+  assert.equal(scoreRow(799, rival).beat, false);
+  assert.equal(scoreRow(3236, rival).beat, false, 'a tie is not a win');
+  assert.equal(scoreRow(4000, rival).beat, true);
+  assert.equal(scoreRow(4000, rival).lines[0].value, '4,000');
   assert.match(scoreRow(120, rival).hint, /Play chimken/);
+  assert.match(scoreRow(4000, rival).hint, /beat/);
 });

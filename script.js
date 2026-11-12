@@ -470,13 +470,14 @@
   const scoreRow = (hi, rival) => {
     if (!rival) return null;
     const best = Number.isFinite(hi) && hi > 0 ? Math.floor(hi) : 0;
-    const theirs = padCount(rival.highScore, 5);
-    if (!best) return { label: `beat ${rival.owner}`, value: theirs, hint: `Play chimken. ${rival.owner}'s score to beat is ${rival.highScore}.` };
+    const number = (n) => Math.floor(n).toLocaleString('en-US');
+    const theirs = { label: `${rival.owner}'s best`, value: number(rival.highScore), mine: false };
+    if (!best) return { lines: [theirs], beat: false, hint: `Play chimken. ${rival.owner}'s score to beat is ${number(rival.highScore)}.` };
     const beat = best > rival.highScore;
     return {
-      label: beat ? `you beat ${rival.owner}` : `you / ${rival.owner}`,
-      value: `${padCount(best, 5)} / ${theirs}`,
-      hint: `Play chimken. Your best is ${best}; ${rival.owner}'s score is ${rival.highScore}.`,
+      lines: [{ label: 'your best', value: number(best), mine: true }, theirs],
+      beat,
+      hint: `Play chimken. Your best is ${number(best)}; ${rival.owner}'s is ${number(rival.highScore)}${beat ? ', and you beat it' : ''}.`,
     };
   };
 
@@ -2883,14 +2884,18 @@
 
     const isOpen = () => Boolean(dialog && dialog.open);
 
-    // Sidebar: "you / ck" scores, kept in step with the saved best.
+    // Footer: your best and ck's, one labelled line each, kept in step with the saved best.
     const paintScoreRow = () => {
       const row = $('.score-row');
-      const line = scoreRow(Number(storage.get('localStorage', HI_KEY)), rival);
-      if (!row || !line) return;
-      $('.score-label', row).textContent = line.label;
-      $('.score-value', row).textContent = line.value;
-      row.setAttribute('aria-label', line.hint);
+      const score = scoreRow(Number(storage.get('localStorage', HI_KEY)), rival);
+      if (!row || !score) return;
+      row.replaceChildren(...score.lines.flatMap((line) => {
+        const label = el('span', 'meta-label score-label', line.label);
+        const value = el('span', 'score-value', line.value);
+        if (line.mine && score.beat) value.classList.add('is-winning');
+        return [label, value];
+      }));
+      row.setAttribute('aria-label', score.hint);
       row.hidden = false;
     };
 
