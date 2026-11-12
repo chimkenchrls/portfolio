@@ -3143,21 +3143,110 @@
   })();
 
   /* ==========================================================================
-     11. Poster colour — on touch screens a tap on the photo turns colour on and off
+     11. Poster chrome — a blob trailing the cursor shows him in chrome; a tap or
+         click on the photo burns the whole photo over to chrome and back
      ========================================================================== */
 
-  const posterColour = (() => {
+  const posterChrome = (() => {
+    const DOTS = 9; // circles in the trail; the goo filter melts them into one blob
+    const RIM = 7; // width of the lit edge, in photo pixels
+    const BURN_MS = 1100;
+    const SLOPE = 40; // sharpness of the burn's cut through the noise
+    const HIDDEN = 0.95; // noise threshold that shows none of the chrome
+    const SHOWN = -0.05; // and all of it
     const init = () => {
       const poster = $('.poster');
-      if (!poster) return;
-      const touch = window.matchMedia('(hover: none)');
-      // Touch screens cannot hover to see him in colour, so they start in colour and a tap shows black and white.
-      if (touch.matches) poster.classList.add('is-colour');
+      const photo = poster && $('svg.poster-photo', poster);
+      if (!photo) return;
+      const dots = ['lens', 'outer', 'hole'].map((name) => {
+        const group = $(`.chrome-dots-${name}`, photo);
+        return Array.from({ length: DOTS }, () => group.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'circle')));
+      });
+      const full = $('.chrome-full', photo);
+      const lens = $('.chrome-lens', photo);
+      const edge = $('.chrome-burn-edge', photo);
+      const cuts = $$('.chrome-cut', photo);
+      const cutEdge = $('.chrome-cut-edge', photo);
+      const chromeHref = lens.getAttribute('href');
+      const colourHref = $('.chrome-base', photo).getAttribute('href');
+      const mouse = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+      // The lens: the head chases the cursor, each circle chases the one before it.
+      const trail = Array.from({ length: DOTS }, () => ({ x: 338, y: 300 }));
+      let target = { x: 338, y: 300 };
+      let size = 0;
+      let want = 0;
+      let frame = 0;
+      let last = 0;
+      const tick = (now) => {
+        const dt = Math.min(48, now - (last || now)) / 16.7;
+        last = now;
+        size += (want - size) * Math.min(1, 0.12 * dt);
+        trail.forEach((point, i) => {
+          const lead = i ? trail[i - 1] : target;
+          const pull = Math.min(1, (i ? 0.42 : 0.3) * dt);
+          point.x += (lead.x - point.x) * pull;
+          point.y += (lead.y - point.y) * pull;
+        });
+        const closed = !want && size < 0.01;
+        trail.forEach((point, i) => {
+          const r = closed ? 0 : (78 - i * 6.5) * (1 + 0.08 * Math.sin(now / 260 + i * 0.9)) * size;
+          [r, r && r + RIM, r].forEach((radius, layer) => {
+            const circle = dots[layer][i];
+            circle.setAttribute('cx', point.x.toFixed(1));
+            circle.setAttribute('cy', point.y.toFixed(1));
+            circle.setAttribute('r', radius.toFixed(1));
+          });
+        });
+        frame = closed ? 0 : requestAnimationFrame(tick);
+        if (closed) last = 0;
+      };
+      poster.addEventListener('pointermove', (event) => {
+        if (event.pointerType !== 'mouse' || !mouse.matches || prefersReducedMotion() || root.classList.contains('intro-play')) return;
+        const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(photo.getScreenCTM().inverse());
+        target = { x: point.x, y: point.y };
+        want = event.target.closest('a, button') ? 0 : 1;
+        if (!frame) frame = requestAnimationFrame(tick);
+      });
+      poster.addEventListener('pointerleave', () => {
+        want = 0;
+      });
+
+      // The burn: the chrome copy is revealed through cloudy noise as its threshold walks across.
+      const cut = (t) => {
+        cuts.forEach((node) => node.setAttribute('intercept', String(-SLOPE * t)));
+        cutEdge.setAttribute('intercept', String(-SLOPE * (t - 0.035)));
+      };
+      let busy = false;
+      const settle = (chrome) => {
+        cut(chrome ? SHOWN : HIDDEN);
+        full.setAttribute('visibility', chrome ? 'visible' : 'hidden');
+        edge.setAttribute('visibility', 'hidden');
+        lens.setAttribute('href', chrome ? colourHref : chromeHref); // the lens always shows the other him
+        busy = false;
+      };
+      const burn = () => {
+        const chrome = poster.classList.toggle('is-chrome');
+        if (prefersReducedMotion()) return settle(chrome);
+        busy = true;
+        full.setAttribute('visibility', 'visible');
+        edge.setAttribute('visibility', 'visible');
+        const [from, to] = chrome ? [HIDDEN, SHOWN] : [SHOWN, HIDDEN];
+        const start = performance.now();
+        const step = (now) => {
+          const p = Math.min(1, (now - start) / BURN_MS);
+          const eased = p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2;
+          cut(from + (to - from) * eased);
+          if (p < 1) requestAnimationFrame(step);
+          else settle(chrome);
+        };
+        requestAnimationFrame(step);
+      };
       poster.addEventListener('click', (event) => {
         // A tap during the intro only skips it (see posterIntro); links and buttons keep their own job.
-        if (!touch.matches || root.classList.contains('intro-play') || posterIntro.justSkipped()) return;
+        if (busy || root.classList.contains('intro-play') || posterIntro.justSkipped()) return;
         if (!event.target.closest('.poster-photo')) return;
-        poster.classList.toggle('is-colour');
+        burn();
       });
     };
     return { init };
@@ -5033,7 +5122,7 @@
     game.init(data);
     keyboard.init();
     clipboard.init();
-    posterColour.init();
+    posterChrome.init();
     reveal.init();
     labelDecode.init();
     githubGraph.init(data);

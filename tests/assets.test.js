@@ -226,6 +226,10 @@ test('the poster cutout is a small alpha WebP, used on every screen', () => {
   assert.ok(!fs.existsSync(path.join(ROOT, 'assets/hero-mobile.webp')), 'the old phone cutout is gone');
 });
 
+test('the chrome portrait is the same size and shape as the cutout', () => {
+  assert.deepEqual(webpInfo('hero-chrome.webp'), { width: 676, height: 780 });
+});
+
 test('the poster serif loads with the page fonts', () => {
   assert.match(fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8'), /fonts\.googleapis\.com\/css2\?[^"]*family=Instrument\+Serif:ital@1/);
 });

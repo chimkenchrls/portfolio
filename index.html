@@ -148,16 +148,64 @@
     </nav>
 
     <main class="main" id="main" tabindex="-1">
-      <section class="section poster" id="home" aria-labelledby="hero-name">
+      <section class="section poster is-colour" id="home" aria-labelledby="hero-name">
         <div class="poster-stage">
           <div class="poster-light" aria-hidden="true"></div>
-          <img
-            class="poster-photo poster-photo-desktop"
-            src="./assets/hero-cutout.webp"
-            alt=""
-            width="676"
-            height="780"
-          />
+          <!-- His photo in colour; script.js draws a blob trailing the cursor that shows him in chrome,
+               and a tap or click burns the whole photo over to chrome and back. -->
+          <svg class="poster-photo poster-photo-desktop" viewBox="0 0 676 780" width="676" height="780" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
+            <defs>
+              <!-- Melts the trail's circles into one liquid blob. -->
+              <filter id="chrome-goo" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="16" />
+                <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 36 -14" />
+              </filter>
+              <filter id="chrome-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+              </filter>
+              <!-- The burn: cloudy noise cut at a threshold that walks across it; the edge is a thin band just outside the cut. -->
+              <filter id="chrome-noise" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+                <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="3" seed="4" />
+                <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0" />
+                <feComponentTransfer><feFuncA class="chrome-cut" type="linear" slope="40" intercept="-38" /></feComponentTransfer>
+              </filter>
+              <filter id="chrome-noise-edge" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+                <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="3" seed="4" />
+                <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0" result="noise" />
+                <feComponentTransfer in="noise" result="outer"><feFuncA class="chrome-cut-edge" type="linear" slope="40" intercept="-38" /></feComponentTransfer>
+                <feComponentTransfer in="noise" result="inner"><feFuncA class="chrome-cut" type="linear" slope="40" intercept="-38" /></feComponentTransfer>
+                <feComposite in="outer" in2="inner" operator="out" />
+              </filter>
+              <filter id="chrome-white"><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0" /></filter>
+              <mask id="chrome-lens" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1076" height="1180">
+                <g class="chrome-dots-lens" filter="url(#chrome-goo)" fill="#fff"></g>
+              </mask>
+              <mask id="chrome-ring" maskUnits="userSpaceOnUse" x="-200" y="-200" width="1076" height="1180">
+                <g class="chrome-dots-outer" filter="url(#chrome-goo)" fill="#fff"></g>
+                <g class="chrome-dots-hole" filter="url(#chrome-goo)" fill="#000"></g>
+              </mask>
+              <mask id="chrome-burn" maskUnits="userSpaceOnUse" x="0" y="0" width="676" height="780">
+                <rect width="676" height="780" filter="url(#chrome-noise)" />
+              </mask>
+              <mask id="chrome-burn-edge" maskUnits="userSpaceOnUse" x="0" y="0" width="676" height="780">
+                <rect width="676" height="780" filter="url(#chrome-noise-edge)" />
+              </mask>
+              <!-- The lit edges are drawn only on him, never over the empty background. -->
+              <mask id="chrome-body" maskUnits="userSpaceOnUse" x="0" y="0" width="676" height="780">
+                <image href="./assets/hero-cutout.webp" width="676" height="780" filter="url(#chrome-white)" />
+              </mask>
+            </defs>
+            <image class="chrome-base" href="./assets/hero-cutout.webp" width="676" height="780" />
+            <image class="chrome-full" href="./assets/hero-chrome.webp" width="676" height="780" mask="url(#chrome-burn)" visibility="hidden" />
+            <image class="chrome-lens" href="./assets/hero-chrome.webp" width="676" height="780" mask="url(#chrome-lens)" />
+            <g mask="url(#chrome-body)" fill="#fff">
+              <g filter="url(#chrome-glow)">
+                <rect width="676" height="780" mask="url(#chrome-ring)" />
+                <rect class="chrome-burn-edge" width="676" height="780" mask="url(#chrome-burn-edge)" visibility="hidden" />
+              </g>
+            </g>
+          </svg>
           <h1 class="poster-name" id="hero-name"><span class="poster-word">Kenneth</span> <span class="poster-word">Charles</span> <span class="poster-word">Valdez</span></h1>
           <div class="poster-name-over" aria-hidden="true">
             <span class="poster-name">Kenneth Charles Valdez</span>
