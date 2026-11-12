@@ -127,7 +127,7 @@ with sync_playwright() as pw:
     ctx.close()
 
     # The chrome lens on desktop: a blob trailing the cursor -------------------
-    lens = "Math.max(0, ...[...document.querySelectorAll('.chrome-dots-lens circle')].map(c => Number(c.getAttribute('r'))))"
+    lens = "(() => { const c = document.querySelector('canvas.chrome-lens'); if (!c || !c.width) return 0; const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let n = 0; for (let i = 3; i < d.length; i += 16) if (d[i] > 128) n++; return n; })()"
     ctx, p, errors = page(b)
     p.wait_for_timeout(300)
     p.keyboard.press("Escape")
@@ -137,12 +137,12 @@ with sync_playwright() as pw:
         p.mouse.move(x, 260)
         p.wait_for_timeout(30)
     p.wait_for_timeout(500)
-    check("desktop: the cursor brings the chrome lens", p.evaluate(lens) > 40, str(p.evaluate(lens)))
+    check("desktop: the cursor brings the chrome lens", p.evaluate(lens) > 2000, str(p.evaluate(lens)))
     if SHOTS: p.screenshot(path=f"{SHOTS}/poster-lens.png")
     p.mouse.move(640, 790)
     p.mouse.move(5, 5)
     p.wait_for_timeout(900)
-    check("desktop: leaving the poster closes the lens", p.evaluate(lens) < 2, str(p.evaluate(lens)))
+    check("desktop: leaving the poster closes the lens", p.evaluate(lens) == 0, str(p.evaluate(lens)))
     check("no errors with the lens", not errors, "; ".join(errors))
     ctx.close()
 

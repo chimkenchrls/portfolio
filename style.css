@@ -1205,6 +1205,11 @@ body {
   max-width: none;
   cursor: crosshair;
 }
+/* The chrome lens that trails the cursor (posterChrome sizes and places it over the photo). */
+.chrome-lens {
+  position: absolute;
+  pointer-events: none;
+}
 .poster-name {
   position: absolute;
   inset: auto 0 var(--name-bottom);

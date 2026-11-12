@@ -3149,58 +3149,147 @@
 
   const posterChrome = (() => {
     let api = { intro: () => {}, reveal: () => {} };
-    const DOTS = 9; // circles in the trail; the goo filter melts them into one blob
+    const DOTS = 9; // circles in the trail, each joined to the next by a tapered bridge
     const RIM = 7; // width of the lit edge, in photo pixels
+    const GLOW = 10; // blur of the edge's glow, in canvas pixels
     const BURN_MS = 1100;
     const SLOPE = 40; // sharpness of the burn's cut through the noise
     const HIDDEN = 1; // noise threshold that shows none of the chrome
     const SHOWN = -0.04; // and all of it, edge included
+    const W = 676; // the photo's own size; the lens draws in these units
+    const H = 780;
     const init = () => {
       const poster = $('.poster');
       const photo = poster && $('svg.poster-photo', poster);
       if (!photo) return;
-      const dots = ['lens', 'outer', 'hole'].map((name) => {
-        const group = $(`.chrome-dots-${name}`, photo);
-        return Array.from({ length: DOTS }, () => group.appendChild(document.createElementNS('http://www.w3.org/2000/svg', 'circle')));
-      });
       const full = $('.chrome-full', photo);
-      const lens = $('.chrome-lens', photo);
       const edge = $('.chrome-burn-edge', photo);
       const cuts = $$('.chrome-cut', photo);
       const cutEdge = $('.chrome-cut-edge', photo);
-      const chromeHref = lens.getAttribute('href');
-      const colourHref = $('.chrome-base', photo).getAttribute('href');
+      const picture = (node) => Object.assign(new Image(), { src: node.getAttribute('href') });
+      const chromeImage = picture(full);
+      const colourImage = picture($('.chrome-base', photo));
+      let lensImage = chromeImage; // the lens always shows the other him
       const mouse = window.matchMedia('(hover: hover) and (pointer: fine)');
 
-      // The lens: the head chases the cursor, each circle chases the one before it.
-      const trail = Array.from({ length: DOTS }, () => ({ x: 338, y: 300 }));
-      let target = { x: 338, y: 300 };
+      // The lens is drawn on a canvas laid over the photo, not with SVG filters, which the
+      // browser would re-run over the whole photo on every frame. Only the patch around
+      // the blob is redrawn. Two scratch canvases build the blob and its lit edge.
+      const canvas = el('canvas', 'chrome-lens');
+      canvas.setAttribute('aria-hidden', 'true');
+      photo.after(canvas);
+      const [view, blob, ring] = [canvas, document.createElement('canvas'), document.createElement('canvas')].map((node) => node.getContext('2d'));
+      let place = null; // device pixels per photo pixel, and where the photo starts in the canvas
+      const measure = () => {
+        const box = photo.getBoundingClientRect();
+        const stage = canvas.offsetParent.getBoundingClientRect();
+        const ratio = Math.min(2, window.devicePixelRatio || 1);
+        const scale = Math.min(box.width / W, box.height / H);
+        const width = W * scale;
+        const height = H * scale;
+        const left = box.left - stage.left + (box.width - width) / 2;
+        const top = box.top - stage.top + box.height - height; // the photo sits on the bottom edge
+        Object.assign(canvas.style, { left: `${left}px`, top: `${top}px`, width: `${width}px`, height: `${height}px` });
+        [view, blob, ring].forEach(({ canvas: node }) => {
+          node.width = Math.round(width * ratio);
+          node.height = Math.round(height * ratio);
+        });
+        place = scale * ratio;
+      };
+      window.addEventListener('resize', () => { place = null; }, { passive: true });
+
+      // The trail: the head chases the cursor, each circle chases the one before it.
+      const trail = Array.from({ length: DOTS }, () => ({ x: W / 2, y: H * 0.4, r: 0 }));
+      let target = { x: W / 2, y: H * 0.4 };
       let size = 0;
       let want = 0;
       let frame = 0;
       let last = 0;
+      let dirty = null; // the patch drawn last frame, in device pixels
+      // Fills the trail grown by `grow`: each circle, plus the hull joining it to the one before.
+      const shape = (ctx, grow) => {
+        trail.forEach((b, i) => {
+          const rb = b.r + grow;
+          if (rb <= 0) return;
+          ctx.beginPath();
+          ctx.arc(b.x, b.y, rb, 0, Math.PI * 2);
+          ctx.fill();
+          const a = trail[i - 1];
+          if (!a) return;
+          const ra = a.r + grow;
+          const d = Math.hypot(b.x - a.x, b.y - a.y);
+          if (d <= Math.abs(ra - rb)) return; // one circle holds the other
+          const base = Math.atan2(b.y - a.y, b.x - a.x);
+          const spread = Math.acos((ra - rb) / d);
+          ctx.beginPath();
+          [[a, ra, spread], [b, rb, spread], [b, rb, -spread], [a, ra, -spread]].forEach(([c, r, turn]) => {
+            ctx.lineTo(c.x + r * Math.cos(base + turn), c.y + r * Math.sin(base + turn));
+          });
+          ctx.fill();
+        });
+      };
+      const draw = () => {
+        const reach = RIM + GLOW / place + 2;
+        const xs = trail.map((p) => [p.x - p.r - reach, p.x + p.r + reach]).flat();
+        const ys = trail.map((p) => [p.y - p.r - reach, p.y + p.r + reach]).flat();
+        const patch = [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)].map((v) => v * place);
+        const clear = dirty ? [Math.min(dirty[0], patch[0]), Math.min(dirty[1], patch[1]), Math.max(dirty[2], patch[2]), Math.max(dirty[3], patch[3])] : patch;
+        dirty = patch;
+        const box = [clear[0] - 1, clear[1] - 1, clear[2] - clear[0] + 2, clear[3] - clear[1] + 2];
+        [view, blob, ring].forEach((ctx) => {
+          ctx.restore(); // drops last frame's clip
+          ctx.save();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalCompositeOperation = 'source-over';
+          ctx.clearRect(...box);
+          ctx.beginPath();
+          ctx.rect(...box); // everything below touches only this patch
+          ctx.clip();
+          ctx.setTransform(place, 0, 0, place, 0, 0);
+          ctx.fillStyle = '#fff';
+        });
+        if (trail[0].r <= 0) return;
+        // The blob, filled with the other him.
+        shape(blob, 0);
+        blob.globalCompositeOperation = 'source-in';
+        blob.drawImage(lensImage, 0, 0, W, H);
+        // The lit edge: the grown blob minus the blob, kept only where he is.
+        shape(ring, RIM);
+        ring.globalCompositeOperation = 'destination-out';
+        shape(ring, 0);
+        ring.globalCompositeOperation = 'destination-in';
+        ring.drawImage(colourImage, 0, 0, W, H);
+        view.setTransform(1, 0, 0, 1, 0, 0);
+        view.shadowColor = '#fff';
+        view.shadowBlur = GLOW;
+        view.drawImage(ring.canvas, 0, 0);
+        view.shadowBlur = 0;
+        view.drawImage(blob.canvas, 0, 0);
+      };
       const tick = (now) => {
+        if (!place) {
+          measure();
+          dirty = null;
+        }
         const dt = Math.min(48, now - (last || now)) / 16.7;
         last = now;
         size += (want - size) * Math.min(1, 0.12 * dt);
+        const closed = !want && size < 0.01;
         trail.forEach((point, i) => {
           const lead = i ? trail[i - 1] : target;
           const pull = Math.min(1, (i ? 0.42 : 0.3) * dt);
           point.x += (lead.x - point.x) * pull;
           point.y += (lead.y - point.y) * pull;
+          point.r = closed ? 0 : (78 - i * 6.5) * (1 + 0.08 * Math.sin(now / 260 + i * 0.9)) * size;
         });
-        const closed = !want && size < 0.01;
-        trail.forEach((point, i) => {
-          const r = closed ? 0 : (78 - i * 6.5) * (1 + 0.08 * Math.sin(now / 260 + i * 0.9)) * size;
-          [r, r && r + RIM, r].forEach((radius, layer) => {
-            const circle = dots[layer][i];
-            circle.setAttribute('cx', point.x.toFixed(1));
-            circle.setAttribute('cy', point.y.toFixed(1));
-            circle.setAttribute('r', radius.toFixed(1));
-          });
+        draw();
+        // Once the blob has caught up with a resting cursor, stop drawing until it moves again.
+        const still = Math.abs(want - size) < 0.005 && trail.every((point, i) => {
+          const lead = i ? trail[i - 1] : target;
+          return Math.abs(lead.x - point.x) + Math.abs(lead.y - point.y) < 0.3;
         });
-        frame = closed ? 0 : requestAnimationFrame(tick);
-        if (closed) last = 0;
+        frame = closed || still ? 0 : requestAnimationFrame(tick);
+        if (!frame) last = 0;
       };
       poster.addEventListener('pointermove', (event) => {
         if (event.pointerType !== 'mouse' || !mouse.matches || prefersReducedMotion() || root.classList.contains('intro-play')) return;
@@ -3226,7 +3315,7 @@
         cut(chrome ? SHOWN : HIDDEN);
         full.setAttribute('visibility', chrome ? 'visible' : 'hidden');
         edge.setAttribute('visibility', 'hidden');
-        lens.setAttribute('href', chrome ? colourHref : chromeHref); // the lens always shows the other him
+        lensImage = chrome ? colourImage : chromeImage;
         busy = false;
       };
       const burn = (chrome, duration = BURN_MS, delay = 0) => {
