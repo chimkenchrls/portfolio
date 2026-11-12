@@ -19,6 +19,16 @@ with sync_playwright() as pw:
     p.hover(".notch-ck"); p.click('.notch .nav-link[data-notch="resources"]')
     p.wait_for_function("document.documentElement.classList.contains('view-resources')")
     check("desktop: Resources lights its own link", p.evaluate("[...document.querySelectorAll('.notch [aria-current]')].map(n => n.dataset.notch)") == ["resources"])
+    # Hovering a link rolls its letters up instead of lighting a white pill.
+    link = '.notch .nav-link[data-notch="projects"]'
+    p.hover(".notch-ck"); p.wait_for_timeout(400)
+    p.hover(link); p.wait_for_timeout(700)
+    check("desktop: a hovered notch link gets no pill", p.eval_on_selector(link, "n => { const s = getComputedStyle(n); return s.backgroundImage === 'none' && s.boxShadow === 'none' && s.backgroundColor === 'rgba(0, 0, 0, 0)'; }"))
+    letters = p.eval_on_selector_all(link + " .roll > span", "ns => ns.map(n => [n.textContent, getComputedStyle(n).translate])")
+    check("desktop: its letters roll up, every one of them", "".join(t for t, _ in letters) == "Projects" and all(tr not in ("none", "0px") for _, tr in letters), str(letters))
+    check("desktop: screen readers still hear the word", p.eval_on_selector(link, "n => n.getAttribute('aria-label')") == "Projects" and p.eval_on_selector(link + " .roll", "n => n.getAttribute('aria-hidden')") == "true")
+    p.mouse.move(640, 500); p.wait_for_timeout(700)
+    check("desktop: and roll back when the cursor leaves", all(tr in ("none", "0px") for tr in p.eval_on_selector_all(link + " .roll > span", "ns => ns.map(n => getComputedStyle(n).translate)")))
     check("desktop: no errors", not errors, str(errors))
     ctx.close()
 

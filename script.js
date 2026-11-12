@@ -4744,6 +4744,29 @@
   })();
 
   /* ==========================================================================
+     19d. Notch roll — a hovered notch link rolls its letters up, one after another
+     ========================================================================== */
+  const notchRoll = (() => {
+    const init = () => {
+      $$('.notch .nav-link').forEach((link) => {
+        const word = link.textContent.trim();
+        // Each letter carries its own copy one line below (a text shadow, see style.css);
+        // the link keeps the plain word for screen readers.
+        link.setAttribute('aria-label', word);
+        const roll = el('span', 'roll');
+        roll.setAttribute('aria-hidden', 'true');
+        [...word].forEach((letter, index) => {
+          const span = el('span', null, letter);
+          span.style.setProperty('--i', String(index));
+          roll.append(span);
+        });
+        link.replaceChildren(roll);
+      });
+    };
+    return { init };
+  })();
+
+  /* ==========================================================================
      19e. Click burst — short rays fan out from the cursor's tip on a mouse click
      ========================================================================== */
   const clickBurst = (() => {
@@ -5285,6 +5308,7 @@
     posterIntro.init();
     panelStack.init();
     peekCk.init();
+    notchRoll.init();
     clickBurst.init();
     contactForm.init(data);
     guestbook.init(data);
