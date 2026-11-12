@@ -3298,12 +3298,25 @@
         want = event.target.closest('a, button') ? 0 : 1;
         if (!frame) frame = requestAnimationFrame(tick);
       });
-      poster.addEventListener('pointerleave', () => {
+      // With a mouse, he is in colour while the cursor is on the hero and burns to chrome
+      // once it has been away for a moment (a quick flick past the edge does nothing).
+      let away = 0;
+      const steady = (event) => event.pointerType === 'mouse' && mouse.matches && !prefersReducedMotion() && !root.classList.contains('intro-play');
+      poster.addEventListener('pointerleave', (event) => {
         want = 0;
+        if (!steady(event)) return;
+        clearTimeout(away);
+        away = window.setTimeout(() => burn(true), 300);
+      });
+      poster.addEventListener('pointerenter', (event) => {
+        clearTimeout(away);
+        if (steady(event) && poster.classList.contains('is-chrome')) burn(false);
       });
 
       // The burn: the chrome copy is revealed through cloudy noise as its threshold walks across.
+      let level = HIDDEN; // where the burn's threshold sits now
       const cut = (t) => {
+        level = t;
         cuts.forEach((node) => node.setAttribute('intercept', String(-SLOPE * t)));
         cutEdge.setAttribute('intercept', String(-SLOPE * (t - 0.035)));
       };
@@ -3318,19 +3331,21 @@
         lensImage = chrome ? colourImage : chromeImage;
         busy = false;
       };
-      const burn = (chrome, duration = BURN_MS, delay = 0) => {
+      const burn = (chrome, duration = null, delay = 0) => {
         if (prefersReducedMotion()) return settle(chrome);
         const id = ++burning;
         busy = true;
         poster.classList.toggle('is-chrome', chrome);
         full.setAttribute('visibility', 'visible');
         edge.setAttribute('visibility', 'visible');
-        const [from, to] = chrome ? [HIDDEN, SHOWN] : [SHOWN, HIDDEN];
-        cut(from);
+        // From wherever the burn is now, so a reversal mid-burn turns back instead of jumping.
+        const from = level;
+        const to = chrome ? SHOWN : HIDDEN;
+        const span = Math.max(1, duration ?? BURN_MS * Math.abs(to - from) / (HIDDEN - SHOWN)); // a part-way burn takes its share of the time
         const start = performance.now() + delay;
         const step = (now) => {
           if (id !== burning) return;
-          const p = Math.min(1, Math.max(0, (now - start) / duration));
+          const p = Math.min(1, Math.max(0, (now - start) / span));
           const eased = 1 - (1 - p) ** 2; // starts at once, settles gently
           cut(from + (to - from) * eased);
           if (p < 1) requestAnimationFrame(step);

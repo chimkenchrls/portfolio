@@ -1260,6 +1260,17 @@ body {
 .poster.is-colour .poster-name-over .poster-name {
   color: transparent;
 }
+/* Chrome has every shade from black to white, so no blend reads everywhere: the name
+   stays solid ink with a soft halo in the page's own tone behind it. The copy filled
+   with his colour photo would not match the chrome, so it steps aside. */
+.poster.is-chrome .poster-name {
+  color: var(--poster-ink);
+  mix-blend-mode: normal;
+  text-shadow: 0 0 0.16em color-mix(in srgb, var(--bg) 85%, transparent), 0 0 0.05em color-mix(in srgb, var(--bg) 80%, transparent);
+}
+.poster.is-chrome .poster-name-over {
+  display: none;
+}
 .poster-title,
 .poster-side,
 .poster-meta {

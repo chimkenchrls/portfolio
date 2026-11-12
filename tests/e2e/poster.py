@@ -42,7 +42,9 @@ def lum(c):
     return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
 
 
-NAME = (".poster-name, .poster-name-over", ".poster-name-over { display: none !important; } #hero-name { color: #ff0000 !important; mix-blend-mode: normal !important; }")
+# What is behind the name is measured with its letters see-through, so a halo it carries
+# (over the chrome) counts as part of the backdrop a reader sees.
+NAME = (".poster-name-over { visibility: hidden !important; } #hero-name { color: transparent !important; }", ".poster-name-over { display: none !important; } #hero-name { color: #ff0000 !important; mix-blend-mode: normal !important; }")
 META = (".poster-meta", ".poster-meta, .poster-meta * { color: #ff0000 !important; mix-blend-mode: normal !important; }")
 
 
@@ -50,7 +52,7 @@ def glyph_stats(p, clip, target=NAME):
     """How far the text's own pixels sit from what is behind them, and how grey they are."""
     hide, paint = target
     real = shot(p, clip)
-    behind = styled(p, hide + " { visibility: hidden !important; }", clip)
+    behind = styled(p, hide if "{" in hide else hide + " { visibility: hidden !important; }", clip)
     mask = styled(p, paint + " .poster-photo, .poster-light { visibility: hidden !important; }", clip)
     inside = [i for i, (r, g, b) in enumerate(mask.getdata()) if r > 200 and g < 60 and b < 60]
     if not inside:
@@ -110,8 +112,8 @@ with sync_playwright() as pw:
     # The intro: he rises in as chrome and burns to his own colours ------------------
     chrome = lambda p: p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')")
     ctx, p, errors = page(b)
-    p.wait_for_timeout(350)
-    check("intro: he starts in chrome", p.eval_on_selector(".chrome-full", "n => n.getAttribute('visibility')") == "visible" and p.eval_on_selector(".chrome-cut", "n => Number(n.getAttribute('intercept'))") > -12)
+    # Read at once: the burn starts 700ms into the intro, so allow for one already under way.
+    check("intro: he starts in chrome", p.eval_on_selector(".chrome-full", "n => n.getAttribute('visibility')") == "visible" and p.eval_on_selector(".chrome-cut", "n => Number(n.getAttribute('intercept'))") > -20)
     if SHOTS: p.screenshot(path=f"{SHOTS}/poster-intro-chrome.png")
     frames = p.evaluate("""new Promise(done => { const out = []; let last = performance.now(); const f = (now) => { out.push(now - last); last = now; if (document.querySelector('.chrome-full').getAttribute('visibility') === 'visible' && out.length < 400) requestAnimationFrame(f); else done(out); }; requestAnimationFrame(f); })""")
     p.wait_for_timeout(1)
@@ -141,8 +143,27 @@ with sync_playwright() as pw:
     if SHOTS: p.screenshot(path=f"{SHOTS}/poster-lens.png")
     p.mouse.move(640, 790)
     p.mouse.move(5, 5)
-    p.wait_for_timeout(900)
+    p.wait_for_timeout(1600)  # the leave burn runs meanwhile, which slows the test browser's frames
     check("desktop: leaving the poster closes the lens", p.evaluate(lens) == 0, str(p.evaluate(lens)))
+    # Away from the hero he burns to chrome; back on it he burns back to colour.
+    full = lambda: p.eval_on_selector(".chrome-full", "n => n.getAttribute('visibility')")
+    check("desktop: with the cursor off the hero he burns to chrome", p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')") and full() == "visible")
+    if SHOTS: p.screenshot(path=f"{SHOTS}/poster-away.png")
+    p.wait_for_timeout(1200)
+    legible(p, "desktop dark, in chrome")
+    p.evaluate("document.documentElement.setAttribute('data-theme', 'light')")
+    p.wait_for_timeout(100)
+    legible(p, "desktop light, in chrome")
+    if SHOTS: p.screenshot(path=f"{SHOTS}/poster-away-light.png")
+    p.evaluate("document.documentElement.setAttribute('data-theme', 'dark')")
+    p.mouse.move(600, 300)
+    p.wait_for_timeout(1400)
+    check("desktop: and back on it he burns back to colour", not p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')") and full() == "hidden")
+    p.mouse.move(5, 5)
+    p.wait_for_timeout(120)
+    p.mouse.move(600, 300)
+    p.wait_for_timeout(500)
+    check("desktop: a quick trip off the hero does not set it burning", not p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')") and full() == "hidden")
     check("no errors with the lens", not errors, "; ".join(errors))
     ctx.close()
 
