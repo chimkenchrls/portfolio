@@ -2385,17 +2385,20 @@
      ========================================================================== */
 
   const theme = (() => {
-    const button = $('.theme-toggle');
+    // The footer's, the frame corner's (desktop) and the phone menu's.
+    const buttons = $$('.theme-toggle');
     const current = () => (root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
 
     const syncButton = () => {
-      if (!button) return;
       const t = current();
-      $('.theme-label', button).textContent = t === 'dark' ? 'Light mode' : 'Dark mode';
-      const icon = $('.theme-icon', button);
-      icon.classList.toggle('icon-sun', t === 'light');
-      icon.classList.toggle('icon-moon', t === 'dark');
-      button.setAttribute('aria-label', `Switch to ${t === 'dark' ? 'light' : 'dark'} mode`);
+      buttons.forEach((node) => {
+        const label = $('.theme-label', node);
+        if (label) label.textContent = t === 'dark' ? 'Light mode' : 'Dark mode';
+        const icon = $('.theme-icon', node);
+        icon.classList.toggle('icon-sun', t === 'light');
+        icon.classList.toggle('icon-moon', t === 'dark');
+        node.setAttribute('aria-label', `Switch to ${t === 'dark' ? 'light' : 'dark'} mode`);
+      });
     };
 
     const apply = (t) => {
@@ -2404,7 +2407,7 @@
       syncButton();
     };
 
-    const toggle = (origin = button) => {
+    const toggle = (origin = buttons.find((node) => node.getClientRects().length)) => {
       const next = current() === 'dark' ? 'light' : 'dark';
       if (typeof document.startViewTransition !== 'function' || prefersReducedMotion()) {
         apply(next);
@@ -2422,7 +2425,7 @@
 
     const init = () => {
       syncButton();
-      if (button) button.addEventListener('click', () => toggle(button));
+      buttons.forEach((node) => node.addEventListener('click', () => toggle(node)));
     };
 
     return { init, toggle };
@@ -4487,7 +4490,7 @@
         run($$('.poster-name', poster), sweep, time.name, { easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
       }
       run([$('.poster-title', poster), $('.poster-side', poster), $('.poster-meta', poster)], [{ opacity: 0, translate: '0 8px' }, { opacity: 1, translate: '0 0' }], [time.rest[0], time.rest[0] + 420], { step: 70 });
-      run([$('.notch')], [{ translate: '0 -100%' }, { translate: '0 0' }], time.notch);
+      run([$('.notch'), $('.theme-corner')], [{ translate: '0 -100%' }, { translate: '0 0' }], time.notch);
       // CK says hello once the notch has landed.
       window.setTimeout(() => { if (!done) portfolioAssistant.greet(); }, time.notch[1] - 150);
       timer = window.setTimeout(() => finish(), time.end + 60);

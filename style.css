@@ -568,6 +568,31 @@ body {
 .theme-toggle:active {
   scale: 0.94;
 }
+/* Desktop: a second, smaller notch hanging in the frame's top-right corner. */
+.theme-toggle.theme-corner {
+  position: fixed;
+  top: var(--frame-inset);
+  right: calc(var(--frame-inset) + 28px);
+  z-index: 40;
+  width: 52px;
+  height: var(--notch-h);
+  color: var(--notch-fg);
+  background: var(--frame);
+  border: 0;
+  border-radius: 0 0 16px 16px;
+}
+@media (hover: hover) {
+  .theme-toggle.theme-corner:hover {
+    color: var(--fg);
+    background: var(--frame);
+  }
+}
+/* Phones and touch screens switch the theme from CK's menu instead. */
+@media (hover: none), (max-width: 639.98px) {
+  .theme-corner {
+    display: none;
+  }
+}
 /* Pills: contact at the top, chat at the bottom. */
 .sidebar-contact {
   display: flex;
@@ -852,9 +877,17 @@ body {
 .phone-menu-top {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   height: 44px;
-  margin: 4px -10px 0 0;
+  margin: 4px -10px 0;
+}
+/* The theme toggle, across from the ×: same size, no outline. */
+.phone-menu .phone-menu-theme {
+  width: 44px;
+  height: 44px;
+  color: var(--fg);
+  border: 0;
+  border-radius: 50%;
 }
 .phone-menu-close {
   display: grid;
@@ -4835,7 +4868,8 @@ html.intro-play .poster-name {
     clip-path: inset(-20% 100% -20% -20%);
   }
 }
-html.intro-play .notch {
+html.intro-play .notch,
+html.intro-play .theme-corner {
   translate: 0 -100%;
 }
 
