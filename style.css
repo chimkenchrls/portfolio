@@ -775,12 +775,10 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-/* Your chimken best and ck's, one labelled line each (label left, number right);
-   opens the game. */
+/* Your chimken best and ck's, each number beside its own label; opens the game. */
 .score-row {
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-content: start;
+  display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 4px 14px;
   width: 100%;
@@ -793,13 +791,14 @@ body {
 .score-row[hidden] {
   display: none;
 }
-.score-label {
+.score-pair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
   white-space: nowrap;
 }
 .score-value {
   font-variant-numeric: tabular-nums;
-  text-align: right;
-  white-space: nowrap;
 }
 .score-value.is-winning {
   color: var(--fg);
@@ -4666,18 +4665,24 @@ html.footer-reveal .main {
 .footer-extras > button[hidden] {
   display: none;
 }
-/* The scores stack, one labelled line each, so they never squeeze onto one line. */
+/* A pill like its neighbours; if ever too narrow, it wraps between the two scores. */
 .footer-extras > button.score-row {
-  display: inline-grid;
-  grid-template-columns: auto auto;
-  align-items: baseline;
-  gap: 6px 16px;
+  flex-wrap: wrap;
+  row-gap: 2px;
   height: auto;
-  padding: 9px 14px;
-  border-radius: 14px;
+  min-height: 34px;
+  padding-block: 6px;
 }
-.footer-extras > button.score-row[hidden] {
-  display: none;
+.footer-extras > button.score-row {
+  column-gap: 12px;
+  padding-inline: 12px;
+}
+.footer-extras .score-pair {
+  gap: 5px;
+}
+/* The same letter spacing as the neighbouring pills, so the line fits a narrow column. */
+.footer-extras .score-label {
+  letter-spacing: 0.06em;
 }
 .footer-extras .nav-text,
 .footer-extras .theme-label {
