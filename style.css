@@ -3609,6 +3609,19 @@ html.view-more .outside-intro {
 .deck.is-color .deck-card video {
   filter: none;
 }
+/* With a mouse, the photo under the cursor shows its colour (touch screens hold instead). */
+@media (hover: hover) and (pointer: fine) {
+  .deck-card:hover :is(img, video) {
+    filter: none;
+  }
+}
+/* The pile follows a sideways drag and glides back when let go. */
+.deck-cards {
+  transition: translate 320ms var(--ease);
+}
+.deck-cards.is-dragging {
+  transition: none;
+}
 .deck-card.is-leaving {
   transform: translateX(115%) rotate(14deg) !important;
   opacity: 0 !important;
@@ -3671,6 +3684,7 @@ html.view-more .outside-intro {
   font-size: 13px;
 }
 @media (prefers-reduced-motion: reduce) {
+  .deck-cards,
   .deck-card,
   .deck-card img,
   .deck-card video {

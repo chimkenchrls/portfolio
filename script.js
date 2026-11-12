@@ -3592,14 +3592,12 @@
         syncVideos();
       };
 
+      // The fan's cards move by CSS transitions, which turn around mid-move, so a choice
+      // is taken at once: quick clicks, keys and dots all count.
       const select = (next) => {
-        if (busy || next === index) return;
+        if (next === index) return;
         index = next;
         layout();
-        if (!prefersReducedMotion()) {
-          busy = true;
-          window.setTimeout(() => { busy = false; }, LEAVE_MS);
-        }
       };
       const go = (direction) => {
         if (busy || cards.length < 2) return;
@@ -3621,21 +3619,41 @@
         window.clearTimeout(holdTimer);
         deck.classList.remove('is-color');
       };
+      // While a finger or mouse drags sideways, the fan follows it (a third of the way).
+      const pile = $('.deck-cards', deck);
+      const drag = (dx) => {
+        pile.classList.toggle('is-dragging', dx !== 0);
+        pile.style.translate = dx ? `${Math.round(dx * 0.35)}px 0` : '';
+      };
 
       deck.addEventListener('pointerdown', (event) => {
-        start = { x: event.clientX, y: event.clientY, t: Date.now() };
+        start = { x: event.clientX, y: event.clientY, card: event.target.closest('.deck-card') };
+        // Keeps the gesture when the pointer strays off the deck mid-drag.
+        try { deck.setPointerCapture(event.pointerId); } catch { /* not capturable */ }
         holdTimer = window.setTimeout(() => deck.classList.add('is-color'), HOLD_MS);
+      });
+      deck.addEventListener('pointermove', (event) => {
+        if (!start) return;
+        const dx = event.clientX - start.x;
+        if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(event.clientY - start.y)) return;
+        window.clearTimeout(holdTimer); // a drag is not a hold
+        drag(dx);
       });
       deck.addEventListener('pointerup', (event) => {
         const wasHold = deck.classList.contains('is-color');
         endHold();
+        drag(0);
         if (!start || wasHold) { start = null; return; }
         const action = gestureAction(event.clientX - start.x, event.clientY - start.y);
+        const card = start.card;
         start = null;
-        if (action === 'tap' || action === 'next') go(1);
+        // A tap on a photo behind the front one brings that photo forward.
+        const picked = card ? cards.indexOf(card) : -1;
+        if (action === 'tap' && picked >= 0 && picked !== index) select(picked);
+        else if (action === 'tap' || action === 'next') go(1);
         else if (action === 'prev') go(-1);
       });
-      ['pointercancel', 'pointerleave'].forEach((type) => deck.addEventListener(type, () => { endHold(); start = null; }));
+      deck.addEventListener('pointercancel', () => { endHold(); drag(0); start = null; });
       deck.addEventListener('contextmenu', (event) => event.preventDefault());
       deck.addEventListener('keydown', (event) => {
         if (event.key === 'ArrowRight' || event.key === 'Enter' || event.key === ' ') {
@@ -3644,8 +3662,24 @@
         } else if (event.key === 'ArrowLeft') {
           event.preventDefault();
           go(-1);
+        } else if (event.key === 'Home' || event.key === 'End') {
+          event.preventDefault();
+          select(event.key === 'Home' ? 0 : cards.length - 1);
         }
       });
+      // A sideways trackpad swipe flips the deck; scrolling up and down is left to the page.
+      let sideways = 0;
+      let wheelRest = 0;
+      deck.addEventListener('wheel', (event) => {
+        if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
+        event.preventDefault();
+        sideways += event.deltaX;
+        const now = performance.now();
+        if (Math.abs(sideways) < 40 || now < wheelRest) return;
+        go(sideways > 0 ? 1 : -1);
+        sideways = 0;
+        wheelRest = now + 280; // one flip per swipe, not one per wheel event
+      }, { passive: false });
 
       if ('IntersectionObserver' in window) {
         new IntersectionObserver(([entry]) => {

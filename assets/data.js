@@ -658,7 +658,7 @@ const PORTFOLIO_DATA = {
   outsideIntro:
     "Life away from the terminal. The places, things, and little moments that recharge me between builds.",
   outsideHint: {
-    action: "Tap or click the stack to shuffle",
+    action: "Tap or click a photo to bring it forward",
     controls: "Swipe · ← → keys · hold for color",
   },
   outside: [
