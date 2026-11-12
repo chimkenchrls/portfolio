@@ -418,6 +418,7 @@ test('posterTimeline follows the spec windows and ends at 2s', () => {
   const t = require('../script.js').posterTimeline();
   assert.deepEqual([t.light, t.photo, t.name, t.rest, t.notch], [[0, 600], [400, 1100], [900, 1600], [1400, 2000], [1600, 2000]]);
   assert.equal(t.end, 2000);
+  assert.deepEqual(t.burn, [900, 2000], 'he rises in as chrome, then burns to his own colours by the end');
 });
 
 test('the old cover glide and typing intro are retired', () => {

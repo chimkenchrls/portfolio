@@ -669,7 +669,7 @@
   // Which notch link is lit for a page (case studies belong to Projects).
   const notchCurrent = (view) => ({ home: 'home', projects: 'projects', case: 'projects', stack: 'stack', resources: 'resources', more: 'more' })[view] || null;
   // The poster intro's windows in ms: lights on, photo steps in, name sweeps, the rest settles, notch drops.
-  const posterTimeline = () => ({ light: [0, 600], photo: [400, 1100], name: [900, 1600], rest: [1400, 2000], notch: [1600, 2000], end: 2000 });
+  const posterTimeline = () => ({ light: [0, 600], photo: [400, 1100], burn: [900, 2000], name: [900, 1600], rest: [1400, 2000], notch: [1600, 2000], end: 2000 });
   // Where a stacked Home section sticks: at the top if it fits the screen, otherwise
   // as soon as its bottom reaches the bottom of the screen, so all of it is seen first.
   // The number shown above a Home panel's title ("01" for About); null for Home itself or an unknown id.
@@ -3148,6 +3148,7 @@
      ========================================================================== */
 
   const posterChrome = (() => {
+    let api = { intro: () => {}, reveal: () => {} };
     const DOTS = 9; // circles in the trail; the goo filter melts them into one blob
     const RIM = 7; // width of the lit edge, in photo pixels
     const BURN_MS = 1100;
@@ -3218,23 +3219,29 @@
         cutEdge.setAttribute('intercept', String(-SLOPE * (t - 0.035)));
       };
       let busy = false;
+      let burning = 0; // bumped to cancel a running burn
       const settle = (chrome) => {
+        burning += 1;
+        poster.classList.toggle('is-chrome', chrome);
         cut(chrome ? SHOWN : HIDDEN);
         full.setAttribute('visibility', chrome ? 'visible' : 'hidden');
         edge.setAttribute('visibility', 'hidden');
         lens.setAttribute('href', chrome ? colourHref : chromeHref); // the lens always shows the other him
         busy = false;
       };
-      const burn = () => {
-        const chrome = poster.classList.toggle('is-chrome');
+      const burn = (chrome, duration = BURN_MS, delay = 0) => {
         if (prefersReducedMotion()) return settle(chrome);
+        const id = ++burning;
         busy = true;
+        poster.classList.toggle('is-chrome', chrome);
         full.setAttribute('visibility', 'visible');
         edge.setAttribute('visibility', 'visible');
         const [from, to] = chrome ? [HIDDEN, SHOWN] : [SHOWN, HIDDEN];
-        const start = performance.now();
+        cut(from);
+        const start = performance.now() + delay;
         const step = (now) => {
-          const p = Math.min(1, (now - start) / BURN_MS);
+          if (id !== burning) return;
+          const p = Math.min(1, Math.max(0, (now - start) / duration));
           const eased = p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2;
           cut(from + (to - from) * eased);
           if (p < 1) requestAnimationFrame(step);
@@ -3242,14 +3249,22 @@
         };
         requestAnimationFrame(step);
       };
+      // The intro: he rises in as chrome and burns to his own colours over [from, to] ms.
+      api = {
+        intro: ([from, to]) => {
+          settle(true);
+          burn(false, to - from, from);
+        },
+        reveal: () => settle(false),
+      };
       poster.addEventListener('click', (event) => {
         // A tap during the intro only skips it (see posterIntro); links and buttons keep their own job.
         if (busy || root.classList.contains('intro-play') || posterIntro.justSkipped()) return;
         if (!event.target.closest('.poster-photo')) return;
-        burn();
+        burn(!poster.classList.contains('is-chrome'));
       });
     };
-    return { init };
+    return { init, intro: (window) => api.intro(window), reveal: () => api.reveal() };
   })();
 
   /* ==========================================================================
@@ -4562,6 +4577,7 @@
         window.removeEventListener('keydown', finish, true);
         root.classList.remove('intro-play');
         running.forEach((animation) => animation.cancel());
+        posterChrome.reveal();
       };
       stop = finish;
       // A click skips (not pointerdown: the snap would move what is under the pointer before the click lands).
@@ -4570,6 +4586,7 @@
 
       run([$('.poster-light', poster)], [{ opacity: 0 }, { opacity: 1 }], time.light, { easing: 'ease-out' });
       run($$('.poster-photo', poster), [{ opacity: 0, translate: '0 12px' }, { opacity: 1, translate: '0 0' }], time.photo);
+      posterChrome.intro(time.burn);
       const sweep = [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }];
       if (window.matchMedia('(max-width: 639.98px)').matches) {
         // Phones stack the name on three lines: Kenneth, then Charles, then Valdez.

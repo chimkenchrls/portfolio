@@ -107,6 +107,24 @@ with sync_playwright() as pw:
         if SHOTS: p.screenshot(path=f"{SHOTS}/poster-{theme}.png")
         ctx.close()
 
+    # The intro: he rises in as chrome and burns to his own colours ------------------
+    chrome = lambda p: p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')")
+    ctx, p, errors = page(b)
+    p.wait_for_timeout(350)
+    check("intro: he starts in chrome", p.eval_on_selector(".chrome-full", "n => n.getAttribute('visibility')") == "visible" and p.eval_on_selector(".chrome-cut", "n => Number(n.getAttribute('intercept'))") > 0)
+    if SHOTS: p.screenshot(path=f"{SHOTS}/poster-intro-chrome.png")
+    p.wait_for_function("Number(document.querySelector('.chrome-cut').getAttribute('intercept')) < -18")
+    if SHOTS: p.screenshot(path=f"{SHOTS}/poster-intro-burn.png")
+    p.wait_for_timeout(1500)
+    check("intro: and ends in his own colours", not chrome(p) and p.eval_on_selector(".chrome-full", "n => n.getAttribute('visibility')") == "hidden")
+    ctx.close()
+    ctx, p, errors = page(b)
+    p.wait_for_timeout(300)
+    p.keyboard.press("Escape")
+    p.wait_for_timeout(100)
+    check("intro: skipping it shows his own colours at once", not chrome(p) and p.eval_on_selector(".chrome-full", "n => n.getAttribute('visibility')") == "hidden")
+    ctx.close()
+
     # The chrome lens on desktop: a blob trailing the cursor -------------------
     lens = "Math.max(0, ...[...document.querySelectorAll('.chrome-dots-lens circle')].map(c => Number(c.getAttribute('r'))))"
     ctx, p, errors = page(b)
