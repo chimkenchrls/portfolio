@@ -85,23 +85,23 @@ with sync_playwright() as pw:
     check("reduced motion: the menu is fully shown at once", p.evaluate("getComputedStyle(document.querySelector('.phone-menu')).opacity") == "1")
     ctx.close()
 
-    # The theme toggle: also in the frame's top-right corner (desktop) and in the phone menu.
+    # The theme toggle: also in the poster's bottom row (desktop) and in the phone menu.
     THEME = "document.documentElement.dataset.theme"
     LABELS = "[...document.querySelectorAll('.theme-toggle')].map(n => n.getAttribute('aria-label'))"
-    ctx, p, errors = new_page(b, 1280, 800, url=BASE + "?view=stack", reduced_motion="reduce")
-    corner = p.eval_on_selector(".theme-corner", "n => { const r = n.getBoundingClientRect(); return { x: r.left, y: r.top, r: r.right, h: r.height, z: getComputedStyle(n).position }; }")
-    check("desktop: a theme toggle sits in the frame's top-right corner, level with the notch", p.is_visible(".theme-corner") and corner["z"] == "fixed" and abs(corner["y"] - 12) <= 1 and 1280 - 12 - 60 <= corner["r"] <= 1280 - 12 and corner["h"] == 40, str(corner))
+    ctx, p, errors = new_page(b, 1280, 800, url=BASE, reduced_motion="reduce")
+    check("desktop: no theme toggle hangs in the frame's corner", p.locator(".theme-corner").count() == 0)
+    hero = p.eval_on_selector(".poster-meta .theme-toggle", "n => { const r = n.getBoundingClientRect(), s = document.querySelector('.poster-meta .social').getBoundingClientRect(); return { x: r.left, gap: r.left - s.right, mid: r.top + r.height / 2, smid: s.top + s.height / 2 }; }")
+    check("desktop: the poster's bottom row ends with a theme toggle, just after the links", p.is_visible(".poster-meta .theme-toggle") and 0 <= hero["gap"] <= 32 and abs(hero["mid"] - hero["smid"]) <= 3, str(hero))
     before = p.evaluate(THEME)
-    p.click(".theme-corner")
+    p.click(".poster-meta .theme-toggle")
     labels = p.evaluate(LABELS)
     check("desktop: it switches the theme, and every toggle says what comes next", p.evaluate(THEME) != before and len(labels) == 3 and len(set(labels)) == 1, f"{before} {labels}")
-    p.evaluate("scrollTo(0, 2000)"); p.wait_for_timeout(100)
-    check("desktop: it stays in the corner while scrolling", abs(p.eval_on_selector(".theme-corner", "n => n.getBoundingClientRect().top") - 12) <= 1)
     check("desktop theme toggle: no errors", not errors, str(errors))
     ctx.close()
 
     ctx, p, errors = new_page(b, 390, 844, url=BASE + "?view=links", is_mobile=True, has_touch=True, reduced_motion="reduce")
-    check("phone: no corner toggle (the menu has one)", not p.is_visible(".theme-corner"))
+    p.goto(BASE); p.wait_for_timeout(300)
+    check("phone: the poster has no toggle of its own (the menu has one)", not p.is_visible(".poster-meta .theme-toggle"))
     p.tap(".notch-ck"); p.wait_for_timeout(300)
     box = p.eval_on_selector(".phone-menu .theme-toggle", "n => { const r = n.getBoundingClientRect(); return { x: r.left, w: r.width, h: r.height }; }")
     close = p.eval_on_selector(".phone-menu-close", "n => n.getBoundingClientRect().top")

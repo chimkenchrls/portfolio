@@ -2385,7 +2385,7 @@
      ========================================================================== */
 
   const theme = (() => {
-    // The footer's, the frame corner's (desktop) and the phone menu's.
+    // The footer's, the poster's bottom row (desktop) and the phone menu's.
     const buttons = $$('.theme-toggle');
     const current = () => (root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
 
@@ -4490,7 +4490,7 @@
         run($$('.poster-name', poster), sweep, time.name, { easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
       }
       run([$('.poster-title', poster), $('.poster-side', poster), $('.poster-meta', poster)], [{ opacity: 0, translate: '0 8px' }, { opacity: 1, translate: '0 0' }], [time.rest[0], time.rest[0] + 420], { step: 70 });
-      run([$('.notch'), $('.theme-corner')], [{ translate: '0 -100%' }, { translate: '0 0' }], time.notch);
+      run([$('.notch')], [{ translate: '0 -100%' }, { translate: '0 0' }], time.notch);
       // CK says hello once the notch has landed.
       window.setTimeout(() => { if (!done) portfolioAssistant.greet(); }, time.notch[1] - 150);
       timer = window.setTimeout(() => finish(), time.end + 60);
