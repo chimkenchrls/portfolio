@@ -2395,6 +2395,15 @@
     const init = () => {
       syncButton();
       buttons.forEach((node) => node.addEventListener('click', () => toggle(node)));
+      // Until the visitor picks a theme with the toggle, follow the system as it changes
+      // (a phone going dark at sunset); their own choice is never overridden.
+      const system = window.matchMedia('(prefers-color-scheme: light)');
+      system.addEventListener('change', () => {
+        const chosen = storage.get('localStorage', 'theme');
+        if (chosen === 'light' || chosen === 'dark') return;
+        root.setAttribute('data-theme', system.matches ? 'light' : 'dark');
+        syncButton();
+      });
     };
 
     return { init, toggle };

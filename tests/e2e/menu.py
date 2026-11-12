@@ -32,6 +32,23 @@ with sync_playwright() as pw:
     check("desktop: no errors", not errors, str(errors))
     ctx.close()
 
+    # The first visit follows the system theme; a choice made with the toggle wins after that.
+    theme = lambda p: p.evaluate("document.documentElement.getAttribute('data-theme')")
+    for scheme in ("light", "dark"):
+        ctx, p, errors = new_page(b, color_scheme=scheme)
+        check(f"a first visit on a {scheme} system opens {scheme}", theme(p) == scheme, theme(p))
+        ctx.close()
+    ctx, p, errors = new_page(b, color_scheme="light")
+    p.emulate_media(color_scheme="dark"); p.wait_for_timeout(100)
+    check("until the visitor chooses, the site follows the system as it changes", theme(p) == "dark", theme(p))
+    p.evaluate("document.querySelector('.footer .theme-toggle').click()"); p.wait_for_timeout(600)
+    p.emulate_media(color_scheme="dark"); p.emulate_media(color_scheme="light"); p.emulate_media(color_scheme="dark"); p.wait_for_timeout(100)
+    check("once they use the toggle, their choice stays", theme(p) == "light", theme(p))
+    p.reload(); p.wait_for_load_state("networkidle")
+    check("and is remembered over the system's", theme(p) == "light", theme(p))
+    check("theme: no errors", not errors, str(errors))
+    ctx.close()
+
     # Phone: CK opens the menu.
     ctx, p, errors = new_page(b, 390, 844, url=BASE + "?view=links", is_mobile=True, has_touch=True)
     is_open = lambda: p.locator(".phone-menu[open]").count() == 1

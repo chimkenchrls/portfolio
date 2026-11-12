@@ -262,3 +262,11 @@ test('404 keeps to itself and wears the frame', () => {
   assert.match(page, /<nav class="notch"[^>]*>\s*<a class="notch-ck" href="https:\/\/kenchrls\.vercel\.app\/" aria-label="Home">/);
   assert.match(page, /text-transform: uppercase/);
 });
+
+test('the first theme is the system\'s: the head script asks it, and the no-JS page follows it too', () => {
+  const head = html.slice(0, html.indexOf('</head>'));
+  assert.match(head, /matchMedia\("\(prefers-color-scheme: light\)"\)/, 'the head script reads the system theme');
+  assert.doesNotMatch(head, /<html[^>]*data-theme/, 'no theme is fixed in the markup');
+  const noJs = css.indexOf(':root:not([data-theme])');
+  assert.match(css.slice(Math.max(0, noJs - 80), noJs), /@media \(prefers-color-scheme: dark\)\s*\{\s*$/, 'without JavaScript the dark tokens apply only on a dark system');
+});
