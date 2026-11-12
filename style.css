@@ -1180,9 +1180,6 @@ body {
   filter: grayscale(1) contrast(1.1);
   transition: filter 600ms cubic-bezier(0.23, 1, 0.32, 1);
 }
-.poster-photo-phone {
-  display: none;
-}
 .poster.is-colour .poster-photo {
   filter: none;
 }
@@ -1328,42 +1325,47 @@ body {
   margin-left: auto;
 }
 @media (max-width: 639.98px) {
+  /* Phones: his name is the big type behind him, three lines under the notch; he stands
+     in front of it and ASPIRING DEVOPS ENGINEER crosses his chest above the buttons. */
   .section.poster {
     min-height: calc(100svh - 8px); /* the phone frame starts 8px down */
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    padding: 0 16px calc(84px + var(--overlap) + 11cqi + 22px);
+    padding: 0 16px calc(80px + var(--overlap));
     border-radius: 32px 32px 0 0;
     text-align: center;
   }
   .poster-light {
-    background: radial-gradient(80% 45% at 50% 30%, var(--light-a), var(--light-b) 60%, var(--light-c) 88%);
+    background: radial-gradient(80% 45% at 50% 34%, var(--light-a), var(--light-b) 60%, var(--light-c) 88%);
   }
-  .poster-photo-desktop {
-    display: none;
+  .poster-photo {
+    z-index: 1;
+    /* His hair meets the name's last line; on short phones he shrinks rather than slide under it. */
+    inset: calc(var(--notch-h) + 8px + 52cqi) -2% auto;
+    width: 104%;
+    height: auto;
+    max-height: calc(100% - var(--notch-h) - 8px - 52cqi - 96px - var(--overlap));
+    object-position: 50% 0;
+    -webkit-mask-image: linear-gradient(#000 62%, transparent 96%);
+    mask-image: linear-gradient(#000 62%, transparent 96%);
   }
-  .poster-photo-phone {
-    display: block;
-    inset: max(64px, 25%) 0 auto;
-    height: 44%;
-    object-position: 54% 0;
-    -webkit-mask-image: linear-gradient(#000 72%, transparent 98%);
-    mask-image: linear-gradient(#000 72%, transparent 98%);
-  }
-  /* On phones the name sits below him, so it never crosses the photo. */
   .poster .poster-name-over,
   .poster.is-colour .poster-name-over {
     display: none;
   }
+  .poster-name,
   .poster.is-colour .poster-name {
-    color: #ffffff;
-    mix-blend-mode: difference;
-  }
-  .poster-name {
-    inset: auto 0 calc(84px + var(--overlap));
-    font-size: 11cqi;
+    z-index: 0;
+    inset: calc(var(--notch-h) + 8px) 0 auto;
+    width: min-content;
+    margin: 0 auto;
+    font-size: 24cqi;
+    line-height: 0.76;
+    white-space: normal;
+    color: var(--poster-ink);
+    mix-blend-mode: normal;
   }
   .poster-title {
     order: 1;
@@ -1371,13 +1373,16 @@ body {
     margin: 0;
     text-align: center;
     max-width: none;
-    font-size: 6cqi;
+    font-size: 6.4cqi;
+    white-space: nowrap;
+    color: #ffffff;
+    mix-blend-mode: difference;
   }
   .poster-side {
     order: 2;
     justify-self: auto;
     width: auto;
-    margin: 18px 0 0;
+    margin: 28px 0 0;
   }
   .poster-bio {
     display: none;

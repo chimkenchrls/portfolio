@@ -4,7 +4,7 @@ from common import check, finish, new_page
 
 TAPPABLE = [
     ".notch-ck", ".nav-link", ".game-trigger", ".sidebar-contact",
-    ".theme-toggle", ".poster-photo-phone", ".btn-primary", ".social a", ".social-copy", ".github-user",
+    ".theme-toggle", ".poster-photo", ".btn-primary", ".social a", ".social-copy", ".github-user",
     ".deck", ".terminal-link", ".terminal-input", ".terminal-run", ".terminal-chip", ".game-close", ".game-canvas",
 ]
 CLEAR = ("rgba(0, 0, 0, 0)", "transparent")

@@ -221,11 +221,9 @@ const webpInfo = (name) => {
   return { width: 1 + buf.readUIntLE(24, 3), height: 1 + buf.readUIntLE(27, 3) };
 };
 
-test('poster cutouts are small alpha WebPs', () => {
+test('the poster cutout is a small alpha WebP, used on every screen', () => {
   assert.deepEqual(webpInfo('hero-cutout.webp'), { width: 676, height: 780 });
-  const phone = webpInfo('hero-mobile.webp');
-  assert.equal(phone.height, 900);
-  assert.ok(phone.width >= 400 && phone.width <= 720, `phone cutout width ${phone.width}`);
+  assert.ok(!fs.existsSync(path.join(ROOT, 'assets/hero-mobile.webp')), 'the old phone cutout is gone');
 });
 
 test('the poster serif loads with the page fonts', () => {
