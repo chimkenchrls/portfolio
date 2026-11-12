@@ -3291,19 +3291,47 @@
         frame = closed || still ? 0 : requestAnimationFrame(tick);
         if (!frame) last = 0;
       };
+      const wake = () => {
+        if (!frame) frame = requestAnimationFrame(tick);
+      };
+      // Closing also wakes the loop, which rests once the blob has caught up with a still pointer.
+      const close = () => {
+        want = 0;
+        wake();
+      };
       poster.addEventListener('pointermove', (event) => {
         if (event.pointerType !== 'mouse' || !mouse.matches || prefersReducedMotion() || root.classList.contains('intro-play')) return;
         const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(photo.getScreenCTM().inverse());
         target = { x: point.x, y: point.y };
         want = event.target.closest('a, button') ? 0 : 1;
-        if (!frame) frame = requestAnimationFrame(tick);
+        wake();
       });
+      // On touch screens the lens follows a finger swiping across him while the page scrolls
+      // as usual. It shows only once the finger moves, so a tap (which burns) never flashes it.
+      const fingerAt = (event) => {
+        const touch = event.touches[0];
+        return touch && new DOMPoint(touch.clientX, touch.clientY).matrixTransform(photo.getScreenCTM().inverse());
+      };
+      poster.addEventListener('touchstart', (event) => {
+        const point = fingerAt(event);
+        // A closed lens opens where the finger is, rather than swooping in from where it last was.
+        if (point && size < 0.01) trail.forEach((dot) => Object.assign(dot, { x: point.x, y: point.y }));
+      }, { passive: true });
+      poster.addEventListener('touchmove', (event) => {
+        const point = fingerAt(event);
+        if (!point || prefersReducedMotion() || root.classList.contains('intro-play')) return;
+        target = { x: point.x, y: point.y };
+        want = event.target.closest('a, button') ? 0 : 1;
+        wake();
+      }, { passive: true });
+      ['touchend', 'touchcancel'].forEach((type) => poster.addEventListener(type, close, { passive: true }));
+
       // With a mouse, he is in colour while the cursor is on the hero and burns to chrome
       // once it has been away for a moment (a quick flick past the edge does nothing).
       let away = 0;
       const steady = (event) => event.pointerType === 'mouse' && mouse.matches && !prefersReducedMotion() && !root.classList.contains('intro-play');
       poster.addEventListener('pointerleave', (event) => {
-        want = 0;
+        close();
         if (!steady(event)) return;
         clearTimeout(away);
         away = window.setTimeout(() => burn(true), 300);

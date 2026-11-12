@@ -287,6 +287,32 @@ with sync_playwright() as pw:
         p.wait_for_timeout(1050); p.screenshot(path=f"{SHOTS}/poster-phone-stairs.png")
     ctx.close()
 
+    # Phone swipes: the lens follows a finger across him, and goes when it lifts ----------
+    ctx, p, errors = page(b, 390, 844, has_touch=True, is_mobile=True, reduced_motion="no-preference")
+    p.wait_for_timeout(300)
+    p.keyboard.press("Escape")
+    p.wait_for_timeout(300)
+    cdp = ctx.new_cdp_session(p)
+    swipe = lambda kind, x, y: cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": [] if kind == "touchEnd" else [{"x": x, "y": y}]})
+    photo = box(p, ".poster-photo-desktop")
+    x, y = photo["x"] + photo["w"] * 0.4, photo["y"] + photo["h"] * 0.3  # across his face
+    swipe("touchStart", x, y)
+    for step in range(12):
+        swipe("touchMove", x - 30 + step * 6, y + step * 3)
+        p.wait_for_timeout(40)
+    p.wait_for_timeout(300)
+    painted = p.evaluate(lens)
+    check("phone: a finger swiping across him brings the chrome lens", painted > 800, str(painted))
+    if SHOTS: p.screenshot(path=f"{SHOTS}/poster-phone-swipe.png")
+    lens_box, photo_box = box(p, "canvas.chrome-lens"), box(p, ".poster-photo-desktop")
+    check("phone: the lens lies over the photo", abs(lens_box["y"] - photo_box["y"]) < 2 and abs(lens_box["h"] - photo_box["h"]) < 2, f"{lens_box} {photo_box}")
+    swipe("touchEnd", 0, 0)
+    p.wait_for_timeout(1200)
+    check("phone: and lifting the finger lets it go", p.evaluate(lens) == 0)
+    check("phone: a swipe does not burn him", not p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')"))
+    check("no errors while swiping", not errors, "; ".join(errors))
+    ctx.close()
+
     # Phone taps: a tap during the intro only skips it; later taps burn to chrome and back ----
     ctx, p, errors = page(b, 390, 844, has_touch=True, is_mobile=True)
     is_chrome = lambda: p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')")
