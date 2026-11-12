@@ -164,17 +164,18 @@
                 <feGaussianBlur stdDeviation="5" result="blur" />
                 <feMerge><feMergeNode in="blur" /><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
               </filter>
-              <!-- The burn: cloudy noise cut at a threshold that walks across it; the edge is a thin band just outside the cut. -->
+              <!-- The burn: a baked noise image (every grey level covers the same area, so the burn spreads at a steady pace)
+                   cut at a threshold that walks across it; the edge is a thin band just outside the cut. -->
               <filter id="chrome-noise" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
-                <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="3" seed="4" />
+                <feImage href="./assets/burn-noise.png" x="0" y="0" width="676" height="780" preserveAspectRatio="none" />
                 <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0" />
-                <feComponentTransfer><feFuncA class="chrome-cut" type="linear" slope="40" intercept="-38" /></feComponentTransfer>
+                <feComponentTransfer><feFuncA class="chrome-cut" type="linear" slope="40" intercept="-40" /></feComponentTransfer>
               </filter>
               <filter id="chrome-noise-edge" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
-                <feTurbulence type="fractalNoise" baseFrequency=".011" numOctaves="3" seed="4" />
+                <feImage href="./assets/burn-noise.png" x="0" y="0" width="676" height="780" preserveAspectRatio="none" />
                 <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1 0 0 0 0" result="noise" />
-                <feComponentTransfer in="noise" result="outer"><feFuncA class="chrome-cut-edge" type="linear" slope="40" intercept="-38" /></feComponentTransfer>
-                <feComponentTransfer in="noise" result="inner"><feFuncA class="chrome-cut" type="linear" slope="40" intercept="-38" /></feComponentTransfer>
+                <feComponentTransfer in="noise" result="outer"><feFuncA class="chrome-cut-edge" type="linear" slope="40" intercept="-40" /></feComponentTransfer>
+                <feComponentTransfer in="noise" result="inner"><feFuncA class="chrome-cut" type="linear" slope="40" intercept="-40" /></feComponentTransfer>
                 <feComposite in="outer" in2="inner" operator="out" />
               </filter>
               <filter id="chrome-white"><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0" /></filter>

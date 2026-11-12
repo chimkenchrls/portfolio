@@ -669,7 +669,7 @@
   // Which notch link is lit for a page (case studies belong to Projects).
   const notchCurrent = (view) => ({ home: 'home', projects: 'projects', case: 'projects', stack: 'stack', resources: 'resources', more: 'more' })[view] || null;
   // The poster intro's windows in ms: lights on, photo steps in, name sweeps, the rest settles, notch drops.
-  const posterTimeline = () => ({ light: [0, 600], photo: [400, 1100], burn: [900, 2000], name: [900, 1600], rest: [1400, 2000], notch: [1600, 2000], end: 2000 });
+  const posterTimeline = () => ({ light: [0, 600], photo: [400, 1100], burn: [700, 1800], name: [900, 1600], rest: [1400, 2000], notch: [1600, 2000], end: 2000 });
   // Where a stacked Home section sticks: at the top if it fits the screen, otherwise
   // as soon as its bottom reaches the bottom of the screen, so all of it is seen first.
   // The number shown above a Home panel's title ("01" for About); null for Home itself or an unknown id.
@@ -3153,8 +3153,8 @@
     const RIM = 7; // width of the lit edge, in photo pixels
     const BURN_MS = 1100;
     const SLOPE = 40; // sharpness of the burn's cut through the noise
-    const HIDDEN = 0.95; // noise threshold that shows none of the chrome
-    const SHOWN = -0.05; // and all of it
+    const HIDDEN = 1; // noise threshold that shows none of the chrome
+    const SHOWN = -0.04; // and all of it, edge included
     const init = () => {
       const poster = $('.poster');
       const photo = poster && $('svg.poster-photo', poster);
@@ -3242,7 +3242,7 @@
         const step = (now) => {
           if (id !== burning) return;
           const p = Math.min(1, Math.max(0, (now - start) / duration));
-          const eased = p < 0.5 ? 2 * p * p : 1 - (-2 * p + 2) ** 2 / 2;
+          const eased = 1 - (1 - p) ** 2; // starts at once, settles gently
           cut(from + (to - from) * eased);
           if (p < 1) requestAnimationFrame(step);
           else settle(chrome);

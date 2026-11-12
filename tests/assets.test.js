@@ -226,6 +226,10 @@ test('the poster cutout is a small alpha WebP, used on every screen', () => {
   assert.ok(!fs.existsSync(path.join(ROOT, 'assets/hero-mobile.webp')), 'the old phone cutout is gone');
 });
 
+test('the burn noise is a small image', () => {
+  assert.ok(fs.statSync(path.join(ROOT, 'assets/burn-noise.png')).size < 30000);
+});
+
 test('the chrome portrait is the same size and shape as the cutout', () => {
   assert.deepEqual(webpInfo('hero-chrome.webp'), { width: 676, height: 780 });
 });
