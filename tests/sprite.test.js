@@ -26,7 +26,7 @@ test('chimken is drawn in greys: every sprite letter has a colour token in both 
   assert.deepEqual(Object.keys(CHIMKEN_INK).sort(), ['A', 'K', 'S', 'W']);
   for (const name of Object.values(CHIMKEN_INK)) {
     const values = [...css.matchAll(new RegExp(`${name}:\\s*#([0-9a-f]{6});`, 'g'))].map((m) => m[1]);
-    assert.equal(values.length, 3, `${name}: light, dark, and the no-JS dark fallback`);
+    assert.equal(values.length, 2, `${name}: light and dark`);
     for (const hex of values) {
       const [r, g, b] = [0, 2, 4].map((k) => parseInt(hex.slice(k, k + 2), 16));
       assert.ok(Math.max(r, g, b) - Math.min(r, g, b) <= 24, `${name} #${hex} is not a grey`);

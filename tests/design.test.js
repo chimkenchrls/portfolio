@@ -51,8 +51,6 @@ test('depth comes from surfaces: cards read as raised in both themes, and text s
     assert.ok(contrast(token(theme, '--fg'), surface) >= 12, `${name}: text on cards`);
     assert.ok(contrast(token(theme, '--fg-muted'), surface) >= 4.5, `${name}: muted text on cards is ${contrast(token(theme, '--fg-muted'), surface).toFixed(2)}:1`);
   }
-  const noJs = css.slice(css.indexOf(':root:not([data-theme])'));
-  assert.match(noJs.slice(0, noJs.indexOf('}')), /--surface:/, 'the no-JS dark fallback has the surface too');
 });
 
 test('More-page section headings keep the centered divider style', () => {
@@ -263,10 +261,10 @@ test('404 keeps to itself and wears the frame', () => {
   assert.match(page, /text-transform: uppercase/);
 });
 
-test('the first theme is the system\'s: the head script asks it, and the no-JS page follows it too', () => {
+test('light is the first theme: the head script starts light, and the no-JS page is light', () => {
   const head = html.slice(0, html.indexOf('</head>'));
-  assert.match(head, /matchMedia\("\(prefers-color-scheme: light\)"\)/, 'the head script reads the system theme');
+  assert.match(head, /var theme = "light";/, 'the head script starts light');
+  assert.doesNotMatch(head, /prefers-color-scheme/, 'the system theme is not consulted');
   assert.doesNotMatch(head, /<html[^>]*data-theme/, 'no theme is fixed in the markup');
-  const noJs = css.indexOf(':root:not([data-theme])');
-  assert.match(css.slice(Math.max(0, noJs - 80), noJs), /@media \(prefers-color-scheme: dark\)\s*\{\s*$/, 'without JavaScript the dark tokens apply only on a dark system');
+  assert.ok(!css.includes(':root:not([data-theme])'), 'no dark fallback: without JavaScript the light tokens apply');
 });

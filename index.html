@@ -48,14 +48,13 @@
     <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png" />
     <script>
       (function () {
-        // A first visit opens in the system's theme (dark when it has no preference);
-        // a visitor's own choice (the toggle) is remembered and wins after that.
-        var theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+        // Light is the default; a visitor's own choice (the toggle) is remembered.
+        var theme = "light";
         try {
           var stored = localStorage.getItem("theme");
           if (stored === "light" || stored === "dark") theme = stored;
         } catch (e) {
-          /* storage blocked: keep the system's */
+          /* storage blocked: keep the default */
         }
         document.documentElement.setAttribute("data-theme", theme);
       })();

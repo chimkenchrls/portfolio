@@ -32,20 +32,19 @@ with sync_playwright() as pw:
     check("desktop: no errors", not errors, str(errors))
     ctx.close()
 
-    # The first visit follows the system theme; a choice made with the toggle wins after that.
+    # A first visit opens light, whatever the system prefers; a choice made with the toggle is remembered.
     theme = lambda p: p.evaluate("document.documentElement.getAttribute('data-theme')")
     for scheme in ("light", "dark"):
-        ctx, p, errors = new_page(b, color_scheme=scheme)
-        check(f"a first visit on a {scheme} system opens {scheme}", theme(p) == scheme, theme(p))
+        ctx, p, errors = new_page(b, color_scheme=scheme, first_visit=True)
+        check(f"a first visit on a {scheme} system opens light", theme(p) == "light", theme(p))
         ctx.close()
-    ctx, p, errors = new_page(b, color_scheme="light")
+    ctx, p, errors = new_page(b, color_scheme="light", first_visit=True)
     p.emulate_media(color_scheme="dark"); p.wait_for_timeout(100)
-    check("until the visitor chooses, the site follows the system as it changes", theme(p) == "dark", theme(p))
+    check("the system changing does not change the theme", theme(p) == "light", theme(p))
     p.evaluate("document.querySelector('.footer .theme-toggle').click()"); p.wait_for_timeout(600)
-    p.emulate_media(color_scheme="dark"); p.emulate_media(color_scheme="light"); p.emulate_media(color_scheme="dark"); p.wait_for_timeout(100)
-    check("once they use the toggle, their choice stays", theme(p) == "light", theme(p))
+    check("the toggle switches to dark", theme(p) == "dark", theme(p))
     p.reload(); p.wait_for_load_state("networkidle")
-    check("and is remembered over the system's", theme(p) == "light", theme(p))
+    check("and the choice is remembered", theme(p) == "dark", theme(p))
     check("theme: no errors", not errors, str(errors))
     ctx.close()
 

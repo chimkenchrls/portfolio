@@ -2,13 +2,16 @@
 import sys
 from playwright.sync_api import Browser
 
-# The site follows the system theme on a first visit. The suites were written against
-# the dark theme, so their browser reports a dark system unless a suite asks otherwise.
+# The site opens light on a first visit. The suites were written against the dark theme,
+# so their browser starts as a visitor who chose dark with the toggle (a saved choice),
+# unless a suite passes first_visit=True to see what a newcomer gets.
 _new_context = Browser.new_context
-def _dark_system(self, **options):
-    options.setdefault("color_scheme", "dark")
-    return _new_context(self, **options)
-Browser.new_context = _dark_system
+def _chose_dark(self, first_visit=False, **options):
+    context = _new_context(self, **options)
+    if not first_visit:
+        context.add_init_script("try { if (!localStorage.getItem('theme')) localStorage.setItem('theme', 'dark'); } catch (e) {}")
+    return context
+Browser.new_context = _chose_dark
 
 # The suites open the page through a deep link, which skips the poster intro (see poster.py).
 URL = "http://localhost:8000/#home"

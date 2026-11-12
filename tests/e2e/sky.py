@@ -43,13 +43,13 @@ with sync_playwright() as pw:
     check("no errors", not errors, "; ".join(errors))
     ctx.close()
 
-    ctx, p, errors = page(b, color_scheme="light")
-    check("a light system opens the light theme", p.evaluate("document.documentElement.dataset.theme") == "light")
+    ctx, p, errors = page(b, color_scheme="dark", first_visit=True)
+    check("a first visit opens light, even on a dark system", p.evaluate("document.documentElement.dataset.theme") == "light")
     check("light theme: no sky, plain page", p.evaluate(LIT) == -1 and p.evaluate("getComputedStyle(document.body).backgroundImage") == "none")
     p.keyboard.press("t")
     p.wait_for_timeout(900)
     p.reload(); p.wait_for_load_state("networkidle")
-    check("a visitor's own choice of dark is remembered over a light system", p.evaluate("document.documentElement.dataset.theme") == "dark" and p.evaluate(LIT) > 100)
+    check("a visitor's own choice of dark is remembered", p.evaluate("document.documentElement.dataset.theme") == "dark" and p.evaluate(LIT) > 100)
     if SHOTS: p.screenshot(path=f"{SHOTS}/sky-light.png")
     ctx.close()
 
