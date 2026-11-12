@@ -850,6 +850,17 @@
     if (view !== 'case') slug = null;
     return { view, slug, hash: url.hash, url: url.href };
   };
+  // The name the page curtain carries for a route: a case study carries its project's
+  // title; Home has none, because the curtain lifts straight into its intro.
+  const PAGE_NAMES = { projects: 'Projects', stack: 'Stack', resources: 'Resources', more: 'More', links: 'Links', guestbook: 'Guestbook', resume: 'Résumé' };
+  const curtainTitle = (route, data = {}) => {
+    if (!route) return null;
+    if (route.view === 'case') {
+      const project = (data.projects || []).find((item) => projectSlug(item.title) === `project-${route.slug}`);
+      return project ? project.title : PAGE_NAMES.projects;
+    }
+    return PAGE_NAMES[route.view] || null;
+  };
   // Each poke gets a different face; the order loops.
   const POKE_FACES = ['surprised', 'wink', 'delighted', 'doubt', 'grin'];
   const pokeReaction = (count) => MASCOT_REACTION[POKE_FACES[(Math.max(1, Math.floor(count) || 1) - 1) % POKE_FACES.length]];
@@ -1231,7 +1242,7 @@
       CHIMKEN_WALK_B, CHIMKEN_AIR, CHIMKEN_INK,
       mascotDirection, mascotIdle, assistantEndpoint, assistantHistory,
       MASCOT_REACTION, assistantPose, assistantTyped, pokeReaction, pokeCount, pokeTotal, POKE_EMOTES, pokeEmote, pokeDizzy, contactProblems, emailSuggestion, projectSlug, stackUses,
-      skyStars, skyPosition, skyAlpha, notchCurrent, posterTimeline, panelLabel, stickTop, coverZoom, coverShade, aboutFacts, featuredProjects, litWords, dealOffset, footerFits, guestbookProblems, guestbookPage, safeDemo, portfolioRoute,
+      skyStars, skyPosition, skyAlpha, notchCurrent, curtainTitle, posterTimeline, panelLabel, stickTop, coverZoom, coverShade, aboutFacts, featuredProjects, litWords, dealOffset, footerFits, guestbookProblems, guestbookPage, safeDemo, portfolioRoute,
     };
   }
   if (typeof document === 'undefined') return;
@@ -5223,15 +5234,87 @@
           return animation;
         });
       };
+      // The curtain: a panel in the frame's colour pours out of the notch while the old page
+      // sinks a little, the new page's name rolls in, then rolls out as the curtain lifts and
+      // the new page rises in. The first page change plays it in full (about 1.5s), later
+      // ones quicker (about 0.9s); going Home lifts straight into the intro, with no name.
+      let poured = 0;
+      let curtain = null;
+      const pour = (route, commit) => {
+        const home = route.view === 'home' && !route.hash;
+        const k = poured++ ? 0.6 : 1;
+        const glide = 'cubic-bezier(0.65, 0, 0.35, 1)';
+        const out = 'cubic-bezier(0.22, 1, 0.36, 1)';
+        const panel = el('div', 'page-curtain');
+        panel.setAttribute('aria-hidden', 'true');
+        const letters = [];
+        const title = home ? null : curtainTitle(route, data);
+        if (title) {
+          const name = el('div', 'page-curtain-name');
+          title.split(' ').forEach((word) => {
+            const line = el('span', 'page-curtain-word');
+            [...word].forEach((letter) => letters.push(line.appendChild(el('span', null, letter))));
+            name.append(line);
+          });
+          panel.append(name);
+        }
+        $('.frame').append(panel);
+        const running = [];
+        const timers = [];
+        const go = (node, frames, delay, duration, easing) => {
+          const animation = node.animate(frames, { delay, duration, easing, fill: 'both' });
+          running.push(animation);
+          return animation;
+        };
+        const later = (fn, ms) => timers.push(window.setTimeout(fn, ms));
+        const cover = (home ? 440 : 560) * k;
+        go(panel, [{ translate: '0 -100%' }, { translate: '0 0' }], 0, cover, glide);
+        // No fade: the footer waits behind the page, and a see-through page would show it.
+        const sink = go(main, [{ translate: '0 0' }, { translate: '0 24px' }], 0, cover, glide);
+        letters.forEach((letter, i) => go(letter, [{ translate: '0 110%' }, { translate: '0 0' }], (300 + i * 32) * k, 520 * k, out));
+        let swapped = false;
+        const swap = () => {
+          swapped = true;
+          sink.cancel();
+          commit();
+        };
+        const done = () => {
+          timers.forEach(clearTimeout);
+          running.forEach((animation) => animation.cancel());
+          panel.remove();
+          if (curtain && curtain.panel === panel) curtain = null;
+        };
+        later(() => {
+          swap();
+          const lift = home ? 0 : 460 * k;
+          letters.forEach((letter, i) => go(letter, [{ translate: '0 0' }, { translate: '0 -110%' }], (400 + i * 24) * k, 420 * k, glide));
+          go(panel, [{ translate: '0 0' }, { translate: '0 -100%' }], lift, 600 * k, glide).finished.then(done, () => {});
+          if (!home) later(arrive, lift);
+        }, cover);
+        // A click mid-curtain jumps to the end: the page it was heading to, with no curtain.
+        curtain = { panel, finish: () => { if (!swapped) swap(); done(); } };
+      };
       visit = (href, options = {}) => {
         const route = portfolioRoute(href, window.location.href, data);
         if (!route) return false;
-        positions.set(current, window.scrollY);
-        if (route.url !== window.location.href) {
-          current = ++serial;
-          history.pushState({ portfolioEntry: current }, '', route.url);
+        if (curtain) curtain.finish();
+        const here = portfolioRoute(window.location.href, window.location.href, data);
+        const commit = (extra = {}) => {
+          positions.set(current, window.scrollY);
+          if (route.url !== window.location.href) {
+            current = ++serial;
+            history.pushState({ portfolioEntry: current }, '', route.url);
+          }
+          show(route, { ...options, ...extra });
+        };
+        // Only a real page change gets the curtain; a jump within the same page does not.
+        const changes = !here || here.view !== route.view || here.slug !== route.slug;
+        if (options.curtain && changes && !prefersReducedMotion() && typeof main.animate === 'function') {
+          phoneMenu.close({ restoreFocus: false });
+          pour(route, () => commit({ enter: false }));
+          return true;
         }
-        show(route, options);
+        commit();
         return true;
       };
       document.addEventListener('click', (event) => {
@@ -5240,9 +5323,11 @@
         if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
         if (!portfolioRoute(link.href, window.location.href, data)) return;
         event.preventDefault();
-        visit(link.href, { replay: link.matches('[data-notch="home"]') });
+        visit(link.href, { replay: link.matches('[data-notch="home"]'), curtain: true });
       });
+      // Back and forward stay instant, as people expect.
       window.addEventListener('popstate', (event) => {
+        if (curtain) curtain.finish();
         const route = portfolioRoute(window.location.href, window.location.href, data);
         if (!route) return;
         current = Number.isInteger(event.state && event.state.portfolioEntry) ? event.state.portfolioEntry : ++serial;

@@ -501,3 +501,15 @@ test('panelLabel numbers the Home panels after the hero, number only', () => {
   assert.equal(panelLabel('home'), null);
   assert.equal(panelLabel('nope'), null);
 });
+
+test('curtainTitle names the page the curtain carries', () => {
+  const { curtainTitle } = require('../script.js');
+  const data = { projects: [{ title: 'Thready', caseStudy: {} }] };
+  assert.equal(curtainTitle({ view: 'projects' }, data), 'Projects');
+  assert.equal(curtainTitle({ view: 'stack' }, data), 'Stack');
+  assert.equal(curtainTitle({ view: 'resume' }, data), 'Résumé');
+  assert.equal(curtainTitle({ view: 'case', slug: 'thready' }, data), 'Thready', 'a case study carries its project');
+  assert.equal(curtainTitle({ view: 'case', slug: 'gone' }, data), 'Projects');
+  assert.equal(curtainTitle({ view: 'home' }, data), null, 'Home lifts straight into the intro');
+  assert.equal(curtainTitle(null, data), null);
+});

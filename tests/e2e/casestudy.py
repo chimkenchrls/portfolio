@@ -43,7 +43,7 @@ with sync_playwright() as p:
     popup.value.close()
     # Anywhere on the card that is not one of its own controls.
     page.locator(".project").first.click(position={"x": 300, "y": 110})
-    page.wait_for_load_state("networkidle")
+    page.wait_for_function("location.search.includes('view=case') && document.querySelectorAll('.case-part').length === 5", timeout=3000)  # after the page curtain
     check("clicking the card opens that project's case study", "view=case&p=ambiancy" in page.url and page.locator(".case-part").count() == 5)
     ctx.close()
 

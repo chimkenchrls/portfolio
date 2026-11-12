@@ -104,6 +104,7 @@ with sync_playwright() as pw:
     page.goto(BASE + '?view=case&p=ambiancy')
     page.evaluate('window.firstNotch = document.querySelector(".notch")')
     page.click('.notch-ck')
+    page.wait_for_function("document.documentElement.classList.contains('intro-play')", timeout=2000)  # once the page curtain has covered the old page
     check('Home from a direct case-study URL replays the poster intro', page.locator('html.intro-play').count() == 1)
     page.keyboard.press('Escape')
     check('a key press skips it and the same notch is in place', not page.locator('html.intro-play').count() and page.evaluate('firstNotch === document.querySelector(".notch") && firstNotch.getBoundingClientRect().top >= 0'))

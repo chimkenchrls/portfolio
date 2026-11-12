@@ -576,6 +576,42 @@ body {
   }
 }
 
+/* The page curtain (navigation): between pages a panel in the frame's colour pours out
+   of the notch, its lower edge rounded, carrying the new page's name. It sits under the
+   notch and over everything else in the frame. */
+.page-curtain {
+  position: fixed;
+  inset: 0 0 -80px;
+  z-index: 35;
+  display: grid;
+  place-items: center;
+  padding: 0 16px 80px;
+  background: var(--frame);
+  border-radius: 0 0 50% 50% / 0 0 80px 80px;
+  translate: 0 -100%;
+  pointer-events: none;
+}
+.page-curtain-name {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.24em;
+  max-width: 100%;
+  font: italic 400 clamp(56px, 11vw, 168px) / 1.15 "Instrument Serif", Georgia, serif;
+  color: var(--fg);
+  text-align: center;
+}
+/* Each word is a one-line window its letters roll through. */
+.page-curtain-word {
+  display: inline-flex;
+  overflow: hidden;
+  padding: 0 0.08em;
+}
+.page-curtain-word > span {
+  display: inline-block;
+  translate: 0 110%;
+}
+
 /* Small square icon buttons: theme, profile links. */
 .theme-toggle {
   display: grid;

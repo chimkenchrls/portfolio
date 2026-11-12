@@ -21,7 +21,7 @@ with sync_playwright() as pw:
     order = p.evaluate("[...document.querySelectorAll('main > section')].filter(s => s.offsetParent).map(s => s.id)")
     check("More about me orders photos, intro, background, then terminal", order[-4:] == ["outside", "personal", "background", "contact"], str(order))
     more_link = p.locator('.notch .nav-link[data-notch="more"]')
-    check("the terminal is on the More about me page, linked from the notch, no shortcut badges", more_link.inner_text().strip() == "More" and p.is_visible(".terminal") and p.locator(".notch kbd, footer kbd").count() == 0)
+    check("the terminal is on the More about me page, linked from the notch, no shortcut badges", more_link.text_content().strip() == "More" and p.is_visible(".terminal") and p.locator(".notch kbd, footer kbd").count() == 0)
     check("intro: nothing is printed before the terminal is on screen", EMAIL not in screen(p), screen(p))
     p.keyboard.press("6"); p.wait_for_timeout(450)
     mid = screen(p)
