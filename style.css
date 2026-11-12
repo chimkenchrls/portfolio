@@ -1201,6 +1201,9 @@ body {
 /* While the photo shows colour, the letters over him are filled with his own picture,
    in black and white and inverted: dark over the shirt, light over the suit, never
    tinted. The copy covers the whole stage so its fill lines up with the photo. */
+.poster-word {
+  display: inline-block; /* so each word can be swept in on its own (the phone intro) */
+}
 .poster-name-over {
   position: absolute;
   inset: 0;
@@ -4822,6 +4825,15 @@ html.intro-play .poster-photo {
 }
 html.intro-play .poster-name {
   clip-path: inset(0 100% 0 0);
+}
+/* Phones: the three lines of the name come in one after another, like a staircase. */
+@media (max-width: 639.98px) {
+  html.intro-play .poster-name {
+    clip-path: none;
+  }
+  html.intro-play .poster-word {
+    clip-path: inset(-20% 100% -20% -20%);
+  }
 }
 html.intro-play .notch {
   translate: 0 -100%;

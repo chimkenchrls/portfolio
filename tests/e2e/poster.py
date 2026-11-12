@@ -209,7 +209,7 @@ with sync_playwright() as pw:
         about = box(p, "#about")
         check(f"{width}px: the poster fills the first screen (About starts below it)", about["y"] >= height - 1, str(about))
         name, photo, side, title, meta = (box(p, s) for s in ("#hero-name", ".poster-photo-desktop", ".poster-side", ".poster-title", ".poster-meta"))
-        lines = p.evaluate("(() => { const r = document.createRange(); r.selectNodeContents(document.querySelector('#hero-name')); return new Set([...r.getClientRects()].map(c => Math.round(c.top))).size; })()")
+        lines = p.evaluate("new Set([...document.querySelectorAll('#hero-name .poster-word')].map(w => Math.round(w.getBoundingClientRect().top))).size")
         check(f"{width}px: the name is three big lines at the top, inside the screen", lines == 3 and name["x"] >= 0 and name["r"] <= width and name["y"] < 0.12 * height, f"{lines} {name}")
         check(f"{width}px: he stands in front of the name, his head no higher than its last line", photo["y"] >= name["y"] + name["h"] * 0.66 and p.evaluate("Number(getComputedStyle(document.querySelector('.poster-photo-desktop')).zIndex) > Number(getComputedStyle(document.querySelector('#hero-name')).zIndex)"), f"{photo} {name}")
         check(f"{width}px: no sideways scroll", p.evaluate("document.documentElement.scrollWidth <= innerWidth"))
@@ -219,6 +219,17 @@ with sync_playwright() as pw:
         legible(p, f"{width}px phone", over_suit=False)
         if SHOTS: p.screenshot(path=f"{SHOTS}/poster-phone-{width}.png")
         ctx.close()
+
+    # Phone intro: the name comes in like a staircase, one line after another ----
+    ctx, p, errors = page(b, 390, 844, has_touch=True, is_mobile=True)
+    p.wait_for_timeout(100)
+    steps = p.evaluate("[...document.querySelectorAll('#hero-name .poster-word')].map(w => { const a = w.getAnimations()[0]; return a ? [w.textContent, a.effect.getTiming().delay] : [w.textContent, null]; })")
+    check("phone intro: Kenneth, then Charles, then Valdez, each starting later", [w for w, _ in steps] == ["Kenneth", "Charles", "Valdez"] and all(d is not None for _, d in steps) and steps[0][1] < steps[1][1] < steps[2][1], str(steps))
+    check("phone intro: the name itself is not swept as one block", not p.evaluate("document.querySelector('#hero-name').getAnimations().length"))
+    check("phone intro: the name still reads whole for screen readers", p.inner_text("#hero-name").split() == ["Kenneth", "Charles", "Valdez"])
+    if SHOTS:
+        p.wait_for_timeout(1050); p.screenshot(path=f"{SHOTS}/poster-phone-stairs.png")
+    ctx.close()
 
     # Phone taps: a tap during the intro only skips it; later taps toggle colour ----
     ctx, p, errors = page(b, 390, 844, has_touch=True, is_mobile=True)

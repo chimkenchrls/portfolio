@@ -157,9 +157,9 @@ const PLACEHOLDERS = ['Curious about how systems connect', "Things I've built an
 
 test('the poster has one h1 with the full name and real copy only', () => {
   const home = between(html, '<section class="section poster" id="home"', '</section>');
-  const h1s = [...home.matchAll(/<h1[^>]*>([^<]*)<\/h1>/g)];
+  const h1s = [...home.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/g)];
   assert.equal(h1s.length, 1);
-  assert.equal(h1s[0][1].trim(), 'Kenneth Charles Valdez');
+  assert.equal(h1s[0][1].replace(/<[^>]+>/g, '').trim(), 'Kenneth Charles Valdez');
   assert.match(home, /class="poster-title"[^>]*>\s*Aspiring DevOps Engineer\s*</);
   assert.ok(!html.includes('Building. Learning. Shipping.'), 'the old tagline is gone');
   for (const text of PLACEHOLDERS) assert.ok(!html.includes(text), `placeholder "${text}" shipped`);

@@ -4478,7 +4478,14 @@
 
       run([$('.poster-light', poster)], [{ opacity: 0 }, { opacity: 1 }], time.light, { easing: 'ease-out' });
       run($$('.poster-photo', poster), [{ opacity: 0, translate: '0 12px' }, { opacity: 1, translate: '0 0' }], time.photo);
-      run($$('.poster-name', poster), [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], time.name, { easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+      const sweep = [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }];
+      if (window.matchMedia('(max-width: 639.98px)').matches) {
+        // Phones stack the name on three lines: Kenneth, then Charles, then Valdez.
+        // The clip reaches past each word so the italic letters' overhang is never cut.
+        run($$('#hero-name .poster-word', poster), [{ clipPath: 'inset(-20% 100% -20% -20%)' }, { clipPath: 'inset(-20% -20% -20% -20%)' }], [time.name[0], time.name[0] + 520], { step: 170, easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+      } else {
+        run($$('.poster-name', poster), sweep, time.name, { easing: 'cubic-bezier(0.65, 0, 0.35, 1)' });
+      }
       run([$('.poster-title', poster), $('.poster-side', poster), $('.poster-meta', poster)], [{ opacity: 0, translate: '0 8px' }, { opacity: 1, translate: '0 0' }], [time.rest[0], time.rest[0] + 420], { step: 70 });
       run([$('.notch')], [{ translate: '0 -100%' }, { translate: '0 0' }], time.notch);
       // CK says hello once the notch has landed.
