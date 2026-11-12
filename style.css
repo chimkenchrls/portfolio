@@ -1260,16 +1260,18 @@ body {
 .poster.is-colour .poster-name-over .poster-name {
   color: transparent;
 }
-/* Chrome has every shade from black to white, so no blend reads everywhere: the name
-   stays solid ink with a soft halo in the page's own tone behind it. The copy filled
-   with his colour photo would not match the chrome, so it steps aside. */
-.poster.is-chrome .poster-name {
-  color: var(--poster-ink);
-  mix-blend-mode: normal;
-  text-shadow: 0 0 0.16em color-mix(in srgb, var(--bg) 85%, transparent), 0 0 0.05em color-mix(in srgb, var(--bg) 80%, transparent);
-}
+/* Over the chrome the letters crossing him are plain white, never the page's ink: the
+   copy is cut to his silhouette and carries a soft dark halo, because chrome has every
+   shade and white alone would vanish on its highlights. Off him the name is unchanged. */
 .poster.is-chrome .poster-name-over {
-  display: none;
+  -webkit-mask: url("./assets/hero-cutout.webp") 50% 100% / auto var(--photo-h) no-repeat;
+  mask: url("./assets/hero-cutout.webp") 50% 100% / auto var(--photo-h) no-repeat;
+}
+.poster.is-chrome .poster-name-over .poster-name {
+  color: #ffffff;
+  background: none;
+  filter: none;
+  text-shadow: 0 0 0.16em rgb(0 0 0 / 0.55), 0 0 0.05em rgb(0 0 0 / 0.45);
 }
 .poster-title,
 .poster-side,

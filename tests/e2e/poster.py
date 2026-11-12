@@ -44,7 +44,7 @@ def lum(c):
 
 # What is behind the name is measured with its letters see-through, so a halo it carries
 # (over the chrome) counts as part of the backdrop a reader sees.
-NAME = (".poster-name-over { visibility: hidden !important; } #hero-name { color: transparent !important; }", ".poster-name-over { display: none !important; } #hero-name { color: #ff0000 !important; mix-blend-mode: normal !important; }")
+NAME = (".poster-name-over .poster-name { color: transparent !important; background: none !important; } #hero-name { color: transparent !important; }", ".poster-name-over { display: none !important; } #hero-name { color: #ff0000 !important; mix-blend-mode: normal !important; }")
 META = (".poster-meta", ".poster-meta, .poster-meta * { color: #ff0000 !important; mix-blend-mode: normal !important; }")
 
 
@@ -147,6 +147,7 @@ with sync_playwright() as pw:
     check("desktop: leaving the poster closes the lens", p.evaluate(lens) == 0, str(p.evaluate(lens)))
     # Away from the hero he burns to chrome; back on it he burns back to colour.
     full = lambda: p.eval_on_selector(".chrome-full", "n => n.getAttribute('visibility')")
+    check("desktop: over the chrome the letters crossing him stay white", p.evaluate("getComputedStyle(document.querySelector('.poster-name-over .poster-name')).color") == "rgb(255, 255, 255)")
     check("desktop: with the cursor off the hero he burns to chrome", p.evaluate("document.querySelector('.poster').classList.contains('is-chrome')") and full() == "visible")
     if SHOTS: p.screenshot(path=f"{SHOTS}/poster-away.png")
     p.wait_for_timeout(1200)
